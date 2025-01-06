@@ -35,7 +35,6 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [justCreated, setJustCreated] = useState(false);
   const [pdf, setPdf] = useState<PDF | null>(null);
-  const [showExportToPdfButton, setShowExportToPdfButton] = useState(false);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null); // State to store base64 data URL of QR code
   
   const qrCodeRef = useRef<any>(null); // Reference to QRCode component to access toDataURL
