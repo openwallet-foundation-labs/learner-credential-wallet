@@ -69,9 +69,6 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
         console.log('ERROR GENERATING PDF:');
         console.log(e);
       }
-      if (rawPdf !== null) {
-        setShowExportToPdfButton(true);
-      }
     };
 
     fetchData();
@@ -135,46 +132,6 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
     if (pdf) {
       Share.open({url: `file://${pdf.filePath}`});
     }
-  }
-
-  // Button press handler for exporting PDF
-  async function handleShareAsPdfButton() {
-    if (!isVerified) {
-      return displayNotVerifiedModal(); // Show modal if the credential isn't verified
-    }
-    // Prompt for confirmation before proceeding
-    const confirmed = await displayGlobalModal({
-      title: 'Are you sure?',
-      confirmText: 'Export to PDF',
-      cancelOnBackgroundPress: true,
-      body: (
-        <>
-          <Text style={mixins.modalBodyText}>
-            {publicLink !== null
-              ? 'This will export your credential to PDF.'
-              : 'You must create a public link before exporting to PDF. The link will automatically expire 1 year after creation.'
-            }
-          </Text>
-          <Button
-            buttonStyle={mixins.buttonClear}
-            titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
-            containerStyle={mixins.buttonClearContainer}
-            title="What does this mean?"
-            onPress={() => Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`)}
-          />
-        </>
-      )
-    });
-
-    if (!confirmed) return;
-
-    if (!publicLink) {
-    // If the public link isn't created, create it before generating the PDF
-      await createPublicLink();
-    }
-
-    // Now that we have the public link, generate the PDF
-    await handleGeneratePDF();
   }
 
   function displayNotVerifiedModal() {
@@ -289,6 +246,43 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
     } else if (url !== null) {
       setPublicLink(url);
     }
+  }
+
+  async function exportToPdf() {
+    if (!isVerified) {
+      return displayNotVerifiedModal(); // Show modal if the credential isn't verified
+    }
+
+    const confirmed = await displayGlobalModal({
+      title: 'Are you sure?',
+      confirmText: 'Export as PDF',
+      cancelOnBackgroundPress: true,
+      body: (
+        <>
+          <Text style={mixins.modalBodyText}>
+            {publicLink !== null
+              ? 'This will export your credential to PDF.'
+              : 'This will export your credential as a PDF after creating a public link. The link will automatically expire 1 year after creation.'
+            }
+          </Text>
+          <Button
+            buttonStyle={mixins.buttonClear}
+            titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
+            containerStyle={mixins.buttonClearContainer}
+            title="What does this mean?"
+            onPress={() => Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`)}
+          />
+        </>
+      )
+    });
+
+    if (!confirmed) return;
+    if (!publicLink) {
+      await createPublicLink();
+    }
+
+    // Now that we have the public link, generate the PDF
+    await handleGeneratePDF();
   }
 
   async function shareToLinkedIn() {
@@ -465,13 +459,13 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
             )
             }
             <View style={styles.otherOptionsContainer}>
-              {showExportToPdfButton && <Button
+              <Button
                 title="Export To PDF"
                 buttonStyle={mixins.buttonIcon}
                 containerStyle={mixins.buttonIconContainer}
                 titleStyle={mixins.buttonIconTitle}
                 iconRight
-                onPress={handleShareAsPdfButton}
+                onPress={exportToPdf}
                 icon={
                   <Ionicons
                     name="document-text"
@@ -479,7 +473,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                     color={theme.color.iconInactive}
                   />
                 }
-              />}
+              />
               <Button
                 title="Add to LinkedIn Profile"
                 buttonStyle={mixins.buttonIcon}
