@@ -37,31 +37,42 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const [pdf, setPdf] = useState<PDF | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null); // State to store base64 data URL of QR code
   
+  const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false);
+  
   const qrCodeRef = useRef<any>(null); // Reference to QRCode component to access toDataURL
   const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
   const inputRef = useRef<RNTextInput | null>(null);
   const disableOutsidePressHandler = inputRef.current?.isFocused() ?? false;
   const selectionColor = Platform.select({ ios: theme.color.brightAccent, android: theme.color.highlightAndroid });
 
+  useEffect(() => {
+    if (publicLink && qrCodeBase64) {
+      handleGeneratePDF(publicLink); // Generate PDF once both are available
+    }
+  }, [publicLink, qrCodeBase64]);
 
   useEffect(() => {
-    if (qrCodeRef.current) {
-      // Once the ref is available, extract the base64 data URL for the QR code
-      qrCodeRef.current.toDataURL((dataUrl: string) => {
-        setQrCodeBase64(dataUrl);
-      });
+    if (pdf && pdf.filePath && openedExportPdfModal) {
+      Share.open({ url: `file://${pdf.filePath}` })
+        .then((res) => {
+          console.log('Share successful:', res);
+        })
+        .catch((err) => {
+          console.error('Share failed:', err);
+        });
     }
-  }, [qrCodeRef, publicLink]); // Re-run when publicLink changes
+  }, [pdf]);
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!qrCodeBase64 || publicLink) {
-        console.log('QR code or public link is missing.');
-        //return;
+      if (qrCodeRef.current) {
+        qrCodeRef.current.toDataURL((dataUrl: string) => {
+          setQrCodeBase64(dataUrl);
+        });
       }
+
       let rawPdf;
       try {
-        // Pass qrCodeBase64 directly to the function
         rawPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64); 
         setPdf(rawPdf);
       } catch (e) {
@@ -114,23 +125,6 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
         </>
       )
     });
-  }
-
-  // Function to handle PDF generation
-  async function handleGeneratePDF() {
-    if (!qrCodeBase64) {
-      console.error('QR code base64 not available.');
-      return;
-    }
-    try {
-      const generatedPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64);  // Pass the QR code data URL to PDF generator
-      setPdf(generatedPdf);  // Store the generated PDF
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-    }
-    if (pdf) {
-      Share.open({url: `file://${pdf.filePath}`});
-    }
   }
 
   function displayNotVerifiedModal() {
@@ -248,6 +242,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   }
 
   async function exportToPdf() {
+    setOpenedExportPdfModal(true);
     if (!isVerified) {
       return displayNotVerifiedModal(); // Show modal if the credential isn't verified
     }
@@ -261,7 +256,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
           <Text style={mixins.modalBodyText}>
             {publicLink !== null
               ? 'This will export your credential to PDF.'
-              : 'This will export your credential as a PDF after creating a public link. The link will automatically expire 1 year after creation.'
+              : 'You can only export your credential as a PDF after creating a public link. The link will automatically expire 1 year after creation. Click "Export as PDF" to generate a public link first and then export to PDF.'
             }
           </Text>
           <Button
@@ -269,7 +264,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
             titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
             containerStyle={mixins.buttonClearContainer}
             title="What does this mean?"
-            onPress={() => Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`)}
+            onPress={() => Linking.openURL(`${LinkConfig.appWebsite.faq}#export-to-pdf`)}
           />
         </>
       )
@@ -280,8 +275,32 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
       await createPublicLink();
     }
 
-    // Now that we have the public link, generate the PDF
-    await handleGeneratePDF();
+    await handleGeneratePDF(publicLink);
+  }
+
+  // Function to handle PDF generation
+  async function handleGeneratePDF(publicLink: string | null) {
+    if (!publicLink) {
+      return;
+    }
+  
+    if (!qrCodeBase64) {
+      if (qrCodeRef.current) {
+        qrCodeRef.current.toDataURL((dataUrl: string) => {
+          setQrCodeBase64(dataUrl);
+        });
+      } else {
+        return; // Early return if QR code cannot be generated
+      }
+    }
+    
+    try {
+      const generatedPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64);
+      setPdf(generatedPdf); // Ensure that pdf state is updated with the generated PDF
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
+    setOpenedExportPdfModal(false);
   }
 
   async function shareToLinkedIn() {
@@ -337,10 +356,10 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const instructionsText = useMemo(() => {
     switch (screenMode) {
     case PublicLinkScreenMode.Default:
-      return 'Copy the link to share, or add to you LinkedIn profile.';
+      return 'Copy the link to share, or add to your LinkedIn profile.';
     case PublicLinkScreenMode.ShareCredential:
-      if (!publicLink) return 'Create a public link that anyone can use to view this credential, add to your LinkedIn profile, or send a json copy.';
-      if (justCreated) return 'Public link created. Copy the link to share, add to your LinkedIn profile, or send a json copy.';
+      if (!publicLink) return 'Create a public link that anyone can use to view this credential, export to PDF, add to your LinkedIn profile, or send a json copy.';
+      if (justCreated) return 'Public link created. Copy the link to share, export to PDF, add to your LinkedIn profile, or send a json copy.';
       return 'Public link already created. Copy the link to share, add to your LinkedIn profile, or send a json copy.';
     }
   }, [screenMode, publicLink, justCreated]);
