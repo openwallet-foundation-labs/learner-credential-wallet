@@ -13,6 +13,7 @@ import { isChapiCredentialResponse, isChapiDidAuthRequest, isVerifiableCredentia
 import { CredentialRecordRaw } from '../model';
 import { NavigationUtil } from './navigationUtil';
 import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
+import { LinkConfig } from '../../config';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 export const regexPattern = {
@@ -22,7 +23,7 @@ export const regexPattern = {
 };
 
 export function isDeepLink(text: string): boolean {
-  return text.startsWith('dccrequest://request?') || text.startsWith('org.dcconsortium://request?');
+  return text.startsWith(LinkConfig.schemes.universalAppLink) || !!LinkConfig.schemes.customProtocol.find((link) => text.startsWith(link));
 }
 
 export function queryParamsFrom(url: string): Record<string, unknown> {
