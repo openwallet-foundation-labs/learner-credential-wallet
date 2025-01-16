@@ -22,7 +22,7 @@ export const KnownDidRegistries = [
 
 export const LinkConfig = {
   schemes: {
-    customProtocol: ['dccrequest://', 'org.dcconsortium://'],
+    customProtocol: ['dccrequest://', 'org.dcconsortium://', 'https://lcw.app/request'],
     universalAppLink: 'https://lcw.app/mobile'
   },
   registerWalletUrl: 'https://lcw.app/register-wallet.html',
