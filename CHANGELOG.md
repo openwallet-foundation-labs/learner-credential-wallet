@@ -1,5 +1,17 @@
 # learner-credential-wallet Changelog
 
+## 2.1.6 - build 86
+### Fixed
+- Fix deep linking in scanned QR codes
+
+## 2.1.5 - build 85
+### Added
+- Add QR codes to PDF exports
+
+## 2.1.4 - build 84
+### Fixed
+- Fix PDF export
+
 ## 2.1.3 - build 83
 ### Fixed
 - Fix verifyCredential not working without a credentialStatus #644
