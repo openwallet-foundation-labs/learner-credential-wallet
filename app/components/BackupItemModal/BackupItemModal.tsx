@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Text } from 'react-native';
 import { ConfirmModal, LoadingIndicatorDots } from '..';
 import { useAsyncCallback } from 'react-async-hook';
