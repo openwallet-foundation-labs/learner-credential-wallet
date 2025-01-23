@@ -51,29 +51,6 @@ export default function BackupItemModal({ onRequestClose, open, onBackup, backup
       <Text style={mixins.modalBodyText}>
         {backupModalText}
       </Text>
-      <TouchableOpacity onPress={() => setEnablePassword(!enablePassword)}>
-        <View style={styles.checkboxButtonContainer}>
-          <CheckBox
-            checked={enablePassword}
-            onPress={ () => setEnablePassword(!enablePassword)}
-            checkedColor={theme.color.buttonPrimary}
-            containerStyle={[
-              mixins.checkboxContainer,
-              styles.checkboxContainer,
-            ]}
-          />
-          <Text style={styles.checkboxText}>Add password protection</Text>
-        </View>
-      </TouchableOpacity>
-      {enablePassword ? (
-        <PasswordForm
-          onChangePassword={setPassword}
-          style={styles.passwordForm}
-          textInputBackgroundColor={theme.color.foregroundPrimary}
-        />
-      ) : (
-        <Text style={styles.noteText}>Note: Not password protecting your backup will leave your backup vulnerable.</Text>
-      )}
     </ConfirmModal>
   );
 }
