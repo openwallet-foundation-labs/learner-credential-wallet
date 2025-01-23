@@ -205,7 +205,7 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
           }
         />
         <Text style={styles.paragraph}>
-            Allows publicly sharing one credential at a time.
+            Allows publicly sharing one credential at a time
         </Text>
         <Button
           title="Send a credential"
