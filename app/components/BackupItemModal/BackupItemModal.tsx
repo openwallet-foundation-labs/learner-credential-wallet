@@ -1,27 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text } from 'react-native';
-import {  CheckBox } from 'react-native-elements';
-import { ConfirmModal, LoadingIndicatorDots, PasswordForm } from '..';
-
-import { TouchableOpacity } from 'react-native';
+import { Text } from 'react-native';
+import { ConfirmModal, LoadingIndicatorDots } from '..';
 import { useAsyncCallback } from 'react-async-hook';
-
 import dynamicStyleSheet from './BackupItemModal.styles';
 import { BackupItemModalProps } from './BackupItemModal.d';
 import { useDynamicStyles } from '../../hooks';
 
 
 export default function BackupItemModal({ onRequestClose, open, onBackup, backupItemName, backupModalText }: BackupItemModalProps): React.ReactElement {
-  const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet);
-  const [enablePassword, setEnablePassword] = useState(false);
-  const [password, setPassword] = useState<string>();
-
+  const { mixins } = useDynamicStyles(dynamicStyleSheet);
   const createBackup = useAsyncCallback(
     () => onBackup(),
     { onSuccess: onRequestClose, onError: onRequestClose }
   );
-
-  const readyToBackup = !(enablePassword && !password);
 
   if (createBackup.loading) {
     return <ConfirmModal
@@ -46,7 +37,6 @@ export default function BackupItemModal({ onRequestClose, open, onBackup, backup
       title={`Backup ${backupItemName}`}
       cancelText="Cancel"
       confirmText="Create Backup"
-      confirmButtonDisabled={!readyToBackup}
     >
       <Text style={mixins.modalBodyText}>
         {backupModalText}
