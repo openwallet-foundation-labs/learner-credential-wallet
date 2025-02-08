@@ -18,7 +18,7 @@ import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { ScrollView } from 'react-native-gesture-handler';
 import { cleanCopy } from '../../lib/encode';
 import { NavigationUtil } from '../../lib/navigationUtil';
-import {CANCEL_PICKER_MESSAGES} from "../../../app.config";
+import { CANCEL_PICKER_MESSAGES } from '../../../app.config';
 
 export default function AddScreen(): React.ReactElement {
   const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);

@@ -12,7 +12,7 @@ import { errorMessageFrom, errorMessageMatches } from '../../lib/error';
 // import { decryptData, isLocked } from '../../lib/encrypt';
 import { useDynamicStyles } from '../../hooks';
 
-import {CANCEL_PICKER_MESSAGES} from "../../../app.config";
+import { CANCEL_PICKER_MESSAGES } from '../../../app.config';
 
 enum RestoreModalState {
   Loading,
