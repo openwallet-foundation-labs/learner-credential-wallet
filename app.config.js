@@ -3,6 +3,10 @@
  * Wallet Configuration File
  */
 const env = process.env;
+
+const BUILD_NUMBER = parseInt(process.env.APP_BUILD_NUMBER) || 86;
+const VERSION_NUMBER = process.env.APP_VERSION_NUMBER || '2.1.6';
+
 // Used by the 'Create Public Link' functionality
 export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
 
@@ -36,8 +40,8 @@ export const LinkConfig = {
 export default {
   displayName: 'Learner Credential Wallet',
   expo: {
-    runtimeVersion: '2.1.6',
-    version: '2.1.6',
+    runtimeVersion: VERSION_NUMBER,
+    version: VERSION_NUMBER,
     name: 'Learner Credential Wallet',
     slug: 'learner-credential-wallet',
     orientation: 'portrait',
@@ -55,7 +59,7 @@ export default {
       '**/*'
     ],
     ios: {
-      buildNumber: '86',
+      buildNumber: `${BUILD_NUMBER}`,
       supportsTablet: true,
       bundleIdentifier: 'edu.mit.eduwallet',
       deploymentTarget: '13.0',
@@ -74,7 +78,7 @@ export default {
       }
     },
     android: {
-      versionCode: 86,
+      versionCode: BUILD_NUMBER,
       adaptiveIcon: {
         foregroundImage: './app/assets/adaptive-icon.png',
         backgroundColor: '#1F2937'
