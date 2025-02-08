@@ -15,7 +15,7 @@ import {
   issuerRenderInfoFrom,
   credentialSubjectRenderInfoFrom
 } from './shared';
-import {DATE_FORMAT} from '../../../app.config';
+import { DATE_FORMAT } from '../../../app.config';
 
 export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
   credentialType: 'OpenBadgeCredential',
