@@ -3,10 +3,18 @@
  * Wallet Configuration File
  */
 const env = process.env;
+// Used by the 'Create Public Link' functionality
 export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
 
+// Feature Flags section
+export const FEATURE_FLAGS = {
+  // exampleFlag: true
+};
+
+// Display date format for VCs (expiration, date issued, etc)
 export const DATE_FORMAT = 'MMM D, YYYY';
 
+// Deep Link / Universal App Link configuration
 export const LinkConfig = {
   schemes: {
     customProtocol: ['dccrequest://', 'org.dcconsortium://', 'https://lcw.app/request'],
@@ -21,13 +29,12 @@ export const LinkConfig = {
   }
 };
 
+/**
+ * Expo App config
+ * @see https://docs.expo.dev/versions/latest/config/app/
+ */
 export default {
   displayName: 'Learner Credential Wallet',
-
-  /**
-   * Expo App config
-   * @see https://docs.expo.dev/versions/latest/config/app/
-   */
   expo: {
     runtimeVersion: '2.1.6',
     version: '2.1.6',
