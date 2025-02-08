@@ -18,7 +18,7 @@ import { navigationRef } from '../../navigation';
 
 import { convertSVGtoPDF } from '../../lib/svgToPdf';
 import { PDF } from '../../types/pdf';
-import {LinkConfig} from '../../../app.config';
+import { LinkConfig } from '../../../app.config';
 
 export enum PublicLinkScreenMode {
   Default,
