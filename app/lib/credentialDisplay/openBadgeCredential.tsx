@@ -4,7 +4,6 @@ import { View, Text } from 'react-native';
 
 import { CredentialStatusBadges } from '../../components';
 import { useDynamicStyles } from '../../hooks';
-import { DATE_FORMAT } from '../constants';
 import { getExpirationDate, getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';
 import {
@@ -16,6 +15,7 @@ import {
   issuerRenderInfoFrom,
   credentialSubjectRenderInfoFrom
 } from './shared';
+import {DATE_FORMAT} from '../../../app.config';
 
 export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
   credentialType: 'OpenBadgeCredential',
