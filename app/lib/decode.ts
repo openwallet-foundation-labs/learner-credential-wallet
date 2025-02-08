@@ -13,7 +13,8 @@ import { isChapiCredentialResponse, isChapiDidAuthRequest, isVerifiableCredentia
 import { CredentialRecordRaw } from '../model';
 import { NavigationUtil } from './navigationUtil';
 import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
-import { LinkConfig } from '../../config';
+
+import {LinkConfig} from '../../app.config';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 export const regexPattern = {

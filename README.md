@@ -76,8 +76,9 @@ and formatting errors. Most editors should support dynamic linting support while
 editing. If your editor does not, you can manually lint by running `npm run lint` 
 in the project root.
 
-This project also uses **environment variables**, which are stored in `config.ts`.
-These values can be overridden, but development values should not be committed to the repository.
+This project also uses **environment variables**, which are loaded and used in
+`app.config.js`. These values can be overridden, but development values should not 
+be committed to the repository.
 
 ### Project Structure
 
@@ -101,13 +102,7 @@ These values can be overridden, but development values should not be committed t
 
 #### Configuration
 
-Overridable configuration lives in two places:
-
-1. [`app.config.js`](./app.config.js) - created by Expo, contains app name, icon, splash
-   page color, etc.
-2. [`config.ts`](./config.ts) - contains everything else,
-   including a list of Known DID Registries, deep link schemes, app website URLs,
-   and so on.
+Overridable configuration is in [`app.config.js`](./app.config.js)
 
 ### Issuing new credential
 

@@ -1,6 +1,6 @@
 import { createContext } from 'react';
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
-import { KnownDidRegistries } from '../../config';
+import { KnownDidRegistries } from '../../app.config';
 
 const registries = new RegistryClient();
 

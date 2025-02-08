@@ -7,7 +7,6 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import OutsidePressHandler from 'react-native-outside-press';
 import Share from 'react-native-share';
 
-import { LinkConfig } from '../../../config';
 import { PublicLinkScreenProps } from './PublicLinkScreen.d';
 import dynamicStyleSheet from './PublicLinkScreen.styles';
 import { LoadingIndicatorDots, NavHeader } from '../../components';
@@ -19,6 +18,7 @@ import { navigationRef } from '../../navigation';
 
 import { convertSVGtoPDF } from '../../lib/svgToPdf';
 import { PDF } from '../../types/pdf';
+import {LinkConfig} from '../../../app.config';
 
 export enum PublicLinkScreenMode {
   Default,
@@ -36,9 +36,9 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const [justCreated, setJustCreated] = useState(false);
   const [pdf, setPdf] = useState<PDF | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null); // State to store base64 data URL of QR code
-  
+
   const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false);
-  
+
   const qrCodeRef = useRef<any>(null); // Reference to QRCode component to access toDataURL
   const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
   const inputRef = useRef<RNTextInput | null>(null);
@@ -73,7 +73,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
 
       let rawPdf;
       try {
-        rawPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64); 
+        rawPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64);
         setPdf(rawPdf);
       } catch (e) {
         console.log('ERROR GENERATING PDF:');
@@ -283,7 +283,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
     if (!publicLink) {
       return;
     }
-  
+
     if (!qrCodeBase64) {
       if (qrCodeRef.current) {
         qrCodeRef.current.toDataURL((dataUrl: string) => {
@@ -293,7 +293,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
         return; // Early return if QR code cannot be generated
       }
     }
-    
+
     try {
       const generatedPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64);
       setPdf(generatedPdf); // Ensure that pdf state is updated with the generated PDF
@@ -529,7 +529,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                   </Text>
                 </View>
               )}
-  
+
               {publicLink !== null && (
                 <View style={styles.bottomSection}>
                   <Text style={mixins.paragraphText}>
