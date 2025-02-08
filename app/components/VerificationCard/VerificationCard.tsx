@@ -9,6 +9,8 @@ import dynamicStyleSheet from './VerificationCard.styles';
 import { navigationRef } from '../../navigation';
 import { CredentialRecordRaw } from '../../model';
 
+import { DATE_FORMAT } from '../../../app.config';
+
 type CommonProps = {
   isButton?: boolean;
   showDetails?: boolean
@@ -19,8 +21,6 @@ type VerifyProps =
   | { rawCredentialRecord?: never; verifyPayload: VerifyPayload; isButton?: never | false; };
 
 type VerificationCardProps = CommonProps & VerifyProps;
-
-const DATE_FORMAT = 'MMM D, YYYY';
 
 /**
  * The VerificationCard is used to render the verification status of a
