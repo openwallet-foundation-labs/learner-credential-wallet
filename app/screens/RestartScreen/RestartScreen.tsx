@@ -6,7 +6,7 @@ import RNExitApp from 'react-native-exit-app';
 import dynamicStyleSheet from './RestartScreen.styles';
 import { SafeScreenView } from '../../components';
 import walletImage from '../../assets/wallet.png';
-import appConfig from '../../../app.json';
+import appConfig from '../../../app.config';
 import { useDynamicStyles } from '../../hooks';
 
 export default function RestartScreen(): React.ReactElement {

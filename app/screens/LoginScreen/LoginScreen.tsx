@@ -3,7 +3,7 @@ import { Text, Image, AccessibilityInfo, View } from 'react-native';
 import { Button } from 'react-native-elements';
 import { useSelector } from 'react-redux';
 
-import appConfig from '../../../app.json';
+import appConfig from '../../../app.config';
 import { selectWalletState, unlock, unlockWithBiometrics } from '../../store/slices/wallet';
 import { SafeScreenView, ErrorDialog, PasswordInput } from '../../components';
 import walletImage from '../../assets/wallet.png';
