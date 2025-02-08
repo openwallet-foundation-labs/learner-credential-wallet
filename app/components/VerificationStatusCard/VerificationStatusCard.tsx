@@ -12,7 +12,7 @@ import { StatusPurpose, hasStatusPurpose } from '../../lib/credentialStatus';
 import { issuerInRegistries } from '../../lib/issuerInRegistries';
 import { getExpirationDate } from '../../lib/credentialValidityPeriod';
 
-const DATE_FORMAT = 'MMM D, YYYY';
+import { DATE_FORMAT } from '../../../app.config';
 
 enum LogId {
   ValidSignature = 'valid_signature',
