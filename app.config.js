@@ -5,6 +5,8 @@
 const env = process.env;
 export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
 
+export const DATE_FORMAT = 'MMM D, YYYY';
+
 export const LinkConfig = {
   schemes: {
     customProtocol: ['dccrequest://', 'org.dcconsortium://', 'https://lcw.app/request'],
@@ -136,4 +138,9 @@ export const KnownDidRegistries = [
     'name': 'DCC Registry',
     'url': 'https://digitalcredentials.github.io/dcc-registry/registry.json'
   }
+];
+
+export const CANCEL_PICKER_MESSAGES = [
+  'user canceled the document picker',
+  'User canceled document picker'
 ];
