@@ -1,6 +1,5 @@
 import { Linking } from 'react-native';
-
-import {LinkConfig} from '../../app.config';
+import { LinkConfig } from '../../app.config';
 
 export function registerWallet(): void {
   Linking.canOpenURL(LinkConfig.registerWalletUrl).then(supported => {
