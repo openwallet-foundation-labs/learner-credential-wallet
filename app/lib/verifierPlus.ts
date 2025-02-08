@@ -1,4 +1,4 @@
-import { VERIFIER_PLUS_URL } from '../../config';
+import { VERIFIER_PLUS_URL } from '../../app.config';
 import { CredentialRecordRaw } from '../model';
 import { makeSelectDidForCredential, selectWithFactory } from '../store/selectorFactories';
 import { createVerifiablePresentation } from './present';
