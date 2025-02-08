@@ -6,8 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
-
-import appConfig from '../../../app.json';
+import appConfig from '../../../app.config';
 import { initialize, pollWalletState, selectWalletState } from '../../store/slices/wallet';
 import { LoadingIndicator, SafeScreenView, AccessibleView, PasswordForm } from '../../components';
 import walletImage from '../../assets/wallet.png';

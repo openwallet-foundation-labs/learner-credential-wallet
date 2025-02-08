@@ -103,7 +103,7 @@ These values can be overridden, but development values should not be committed t
 
 Overridable configuration lives in two places:
 
-1. [`app.json`](./app.json) - created by Expo, contains app name, icon, splash
+1. [`app.config.js`](./app.config.js) - created by Expo, contains app name, icon, splash
    page color, etc.
 2. [`config.ts`](./config.ts) - contains everything else,
    including a list of Known DID Registries, deep link schemes, app website URLs,

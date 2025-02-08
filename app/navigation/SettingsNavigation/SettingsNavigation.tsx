@@ -7,7 +7,7 @@ import DeviceInfo from 'react-native-device-info';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
 import { LinkConfig } from '../../../config';
-import appConfig from '../../../app.json';
+import appConfig from '../../../app.config';
 import walletImage from '../../assets/wallet.png';
 import dynamicStyleSheet from './SettingsNavigation.styles';
 import { NavHeader, ConfirmModal, BackupItemModal } from '../../components';
