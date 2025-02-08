@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import DeviceInfo from 'react-native-device-info';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
-import appConfig, {LinkConfig} from '../../../app.config';
+import appConfig, { LinkConfig } from '../../../app.config';
 import walletImage from '../../assets/wallet.png';
 import dynamicStyleSheet from './SettingsNavigation.styles';
 import { NavHeader, ConfirmModal, BackupItemModal } from '../../components';

@@ -8,7 +8,7 @@ import { credentialRequestFromChapiUrl } from './decode';
 import { encodeQueryParams } from './encode';
 import { onShareIntent } from './shareIntent';
 
-import {LinkConfig} from '../../app.config';
+import { LinkConfig } from '../../app.config';
 
 /**
  * In order to support OAuth redirects, the Android intent filter was set
