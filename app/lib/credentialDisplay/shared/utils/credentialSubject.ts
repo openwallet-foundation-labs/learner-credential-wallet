@@ -1,9 +1,9 @@
 import moment from 'moment';
 import { Subject } from '../../../../types/credential';
-import { DATE_FORMAT } from '../../../constants';
 import { educationalOperationalCredentialFrom } from '../../../decode';
 import { extractNameFromOBV3Identifier } from '../../../extractNameFromOBV3Identifier';
 import { imageSourceFrom } from './image';
+import {DATE_FORMAT} from '../../../../../app.config';
 
 type CredentialRenderInfo = {
   subjectName: string | null;
