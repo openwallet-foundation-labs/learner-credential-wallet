@@ -33,9 +33,11 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
+    "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
     "@digitalcredentials/did-method-key": "^2.0.3",
     "@digitalcredentials/ed25519-signature-2020": "^6.0.0",
     "@digitalcredentials/ed25519-verification-key-2020": "^4.0.0",
+    "@digitalcredentials/eddsa-rdfc-2022-cryptosuite": "^1.2.1-beta.6",
     "@digitalcredentials/issuer-registry-client": "^3.0.0",
     "@digitalcredentials/security-document-loader": "^6.0.0",
     "@digitalcredentials/vc": "^9.0.0",
