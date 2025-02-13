@@ -21,7 +21,7 @@ const eddsaSuite = new DataIntegrityProof({ cryptosuite: eddsaRdfc2022CryptoSuit
 // for verifying ed25519-2020 signatures
 const ed25519Suite = new Ed25519Signature2020();
 // add both suites - the vc lib will use whichever is appropriate
-const suite = [ed25519Suite, eddsaSuite]
+const suite = [ed25519Suite, eddsaSuite];
 
 const presentationPurpose = new purposes.AssertionProofPurpose();
 
