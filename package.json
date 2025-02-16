@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
-    "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
+    "@digitalcredentials/data-integrity": "^2.5.1-beta.1", 
     "@digitalcredentials/did-method-key": "^2.0.3",
     "@digitalcredentials/ed25519-signature-2020": "^6.0.0",
     "@digitalcredentials/ed25519-verification-key-2020": "^4.0.0",
