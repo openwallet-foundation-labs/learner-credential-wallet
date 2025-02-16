@@ -9,7 +9,7 @@ import * as vc from '@digitalcredentials/vc';
 import { VerifiablePresentation, PresentationError } from '../types/presentation';
 import { Credential, CredentialError } from '../types/credential';
 
-import { securityLoader } from '@digitalcredentials/security-document-loader';
+import { securityLoader } from '@digitalcredentials/security-document-loader'; 
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { getCredentialStatusChecker } from './credentialStatus';
 import { issuerInRegistries } from './issuerInRegistries';
