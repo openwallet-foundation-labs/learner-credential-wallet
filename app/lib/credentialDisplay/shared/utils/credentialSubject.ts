@@ -8,7 +8,7 @@ import { DATE_FORMAT } from '../../../../../app.config';
 type CredentialRenderInfo = {
   subjectName: string | null;
   degreeName: string | null;
-
+  issuedTo : string | null;
   title: string | null;
   description: string | null;
   criteria: string | null;
@@ -22,6 +22,7 @@ type CredentialRenderInfo = {
 export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): CredentialRenderInfo {
 
   const subjectName = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
+  const issuedTo = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
   const degreeName = credentialSubject.degree?.name ?? null;
 
   const eoc = educationalOperationalCredentialFrom(credentialSubject);
@@ -42,6 +43,7 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
 
   return {
     subjectName,
+    issuedTo,
     degreeName,
     title,
     description,
