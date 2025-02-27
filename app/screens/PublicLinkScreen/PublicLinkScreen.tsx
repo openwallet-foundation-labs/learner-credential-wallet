@@ -69,7 +69,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
     if('renderMethod' in credential){
       setRenderMethodAvailable(true);
     }
-  })
+  });
 
   useEffect(() => {
     const fetchData = async () => {
@@ -487,21 +487,21 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
             
             <View style={styles.otherOptionsContainer}>
               {renderMethodAvailable && (
-              <Button
-                title="Export To PDF"
-                buttonStyle={mixins.buttonIcon}
-                containerStyle={mixins.buttonIconContainer}
-                titleStyle={mixins.buttonIconTitle}
-                iconRight
-                onPress={exportToPdf}
-                icon={
-                  <Ionicons
-                    name="document-text"
-                    size={theme.iconSize}
-                    color={theme.color.iconInactive}
-                  />
-                }
-              />
+                <Button
+                  title="Export To PDF"
+                  buttonStyle={mixins.buttonIcon}
+                  containerStyle={mixins.buttonIconContainer}
+                  titleStyle={mixins.buttonIconTitle}
+                  iconRight
+                  onPress={exportToPdf}
+                  icon={
+                    <Ionicons
+                      name="document-text"
+                      size={theme.iconSize}
+                      color={theme.color.iconInactive}
+                    />
+                  }
+                />
               )}
               <Button
                 title="Add to LinkedIn Profile"
