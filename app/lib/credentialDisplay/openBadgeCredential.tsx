@@ -26,7 +26,7 @@ export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
 
 
     return {
-      title: title, // name was refering to oject outside of credentialSubject 
+      title: title, // name was referring to object outside of credentialSubject 
       subtitle: issuerName,
       image: achievementImage || issuerImage,
     };
@@ -36,7 +36,7 @@ export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
 function OpenBadgeCredentialCard({ rawCredentialRecord, onPressIssuer }: CredentialCardProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const { credential } = rawCredentialRecord;
-  const { credentialSubject, issuer } = credential;
+  const { credentialSubject, issuer, name  } = credential;
 
   const issuanceDate = getIssuanceDate(credential);
   const expirationDate = getExpirationDate(credential);
@@ -54,19 +54,11 @@ function OpenBadgeCredentialCard({ rawCredentialRecord, onPressIssuer }: Credent
     achievementType
   } = credentialSubjectRenderInfoFrom(credentialSubject);
 
-  const isOpenBadgeCredential = credential.type.includes('OpenBadgeCredential');
-
-  const issuedto = issuedTo?.trim() 
-    ? issuedTo 
-    : isOpenBadgeCredential 
-      ? credential.name ?? null 
-      : null;
+  const issuedtoName:string = issuedTo || name as string;
   
-  const subjectName = isOpenBadgeCredential 
-    ? (Array.isArray(credentialSubject.achievement) 
+  const credentialName =  (Array.isArray(credentialSubject.achievement) 
       ? credentialSubject.achievement.at(0)?.name ?? null  
       : credentialSubject.achievement?.name ?? null)
-    : credentialSubjectRenderInfoFrom(credentialSubject).subjectName;
 
   const {
     issuerName,
@@ -88,7 +80,7 @@ function OpenBadgeCredentialCard({ rawCredentialRecord, onPressIssuer }: Credent
           </View>
           <View style={styles.spaceBetween}>
             <View style={styles.flexRow}>
-              <Text style={styles.headerInRow} accessibilityRole="header">{subjectName}</Text>
+              <Text style={styles.headerInRow} accessibilityRole="header">{credentialName}</Text>
             </View>
             <View>
               <CardDetail label="Achievement Type" value={achievementType} inRow={true}/>
@@ -108,7 +100,7 @@ function OpenBadgeCredentialCard({ rawCredentialRecord, onPressIssuer }: Credent
         <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
         <CardDetail label="Expiration Date" value={formattedExpirationDate} />
       </View>
-      <CardDetail label="Issued To" value={issuedto} />
+      <CardDetail label="Issued To" value={issuedtoName} />
       <CardDetail label="Number of Credits" value={numberOfCredits} />
       <View style={styles.flexRow}>
         <CardDetail label="Start Date" value={startDateFmt} />
