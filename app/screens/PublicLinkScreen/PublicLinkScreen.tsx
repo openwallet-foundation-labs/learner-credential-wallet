@@ -33,6 +33,8 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const { credential } = rawCredentialRecord;
   const { name } = credential;
   const [publicLink, setPublicLink] = useState<string | null>(null);
+  const [renderMethodAvailable, setRenderMethodAvailable] = useState(false);
+  
   const [justCreated, setJustCreated] = useState(false);
   const [pdf, setPdf] = useState<PDF | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null); // State to store base64 data URL of QR code
@@ -46,7 +48,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const selectionColor = Platform.select({ ios: theme.color.brightAccent, android: theme.color.highlightAndroid });
 
   useEffect(() => {
-    if (publicLink && qrCodeBase64) {
+    if (publicLink && qrCodeBase64 && renderMethodAvailable) {
       handleGeneratePDF(publicLink); // Generate PDF once both are available
     }
   }, [publicLink, qrCodeBase64]);
@@ -62,6 +64,12 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
         });
     }
   }, [pdf]);
+
+  useEffect(() => {
+    if('renderMethod' in credential){
+      setRenderMethodAvailable(true);
+    }
+  })
 
   useEffect(() => {
     const fetchData = async () => {
@@ -476,7 +484,9 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
               />
             )
             }
+            
             <View style={styles.otherOptionsContainer}>
+              {renderMethodAvailable && (
               <Button
                 title="Export To PDF"
                 buttonStyle={mixins.buttonIcon}
@@ -492,6 +502,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                   />
                 }
               />
+              )}
               <Button
                 title="Add to LinkedIn Profile"
                 buttonStyle={mixins.buttonIcon}
