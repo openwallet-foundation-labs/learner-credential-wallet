@@ -100,7 +100,7 @@ function OpenBadgeCredentialCard({ rawCredentialRecord, onPressIssuer }: Credent
         <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
         <CardDetail label="Expiration Date" value={formattedExpirationDate} />
       </View>
-      <CardDetail label="Issued To" value={issuedtoName} />
+      <CardDetail label="Issued To" value={issuedToName} />
       <CardDetail label="Number of Credits" value={numberOfCredits} />
       <View style={styles.flexRow}>
         <CardDetail label="Start Date" value={startDateFmt} />
