@@ -201,7 +201,8 @@ class DatabaseAccess {
     }
 
     const encoder = new encoding.TextEncoder();
-    return new Int8Array(encoder.encode(key));
+    const encodedBytes = new Int8Array(encoder.encode(key));
+    return encodedBytes.slice(0, 64);
   }
 
   private static async salt(): Promise<string> {
