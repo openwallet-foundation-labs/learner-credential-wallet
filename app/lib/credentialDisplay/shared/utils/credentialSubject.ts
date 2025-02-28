@@ -22,6 +22,7 @@ type CredentialRenderInfo = {
 export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): CredentialRenderInfo {
 
   const subjectName = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
+  // Used in OBv3 components only
   const issuedTo = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
   const degreeName = credentialSubject.degree?.name ?? null;
 
