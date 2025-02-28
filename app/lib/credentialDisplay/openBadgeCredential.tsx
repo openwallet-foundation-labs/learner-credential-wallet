@@ -54,7 +54,7 @@ function OpenBadgeCredentialCard({ rawCredentialRecord, onPressIssuer }: Credent
     achievementType
   } = credentialSubjectRenderInfoFrom(credentialSubject);
 
-  const issuedtoName:string = issuedTo || name as string;
+  const issuedToName: string = issuedTo || name as string;
   
   const credentialName =  (Array.isArray(credentialSubject.achievement) 
     ? credentialSubject.achievement.at(0)?.name ?? null  
