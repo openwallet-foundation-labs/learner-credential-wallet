@@ -1,5 +1,12 @@
 # learner-credential-wallet Changelog
 
+## 2.1.8 - build 88
+### Added
+- Add eddsa-rdfc-2022 #656
+
+### Fixed
+'Wallet initialization failed' error when setting up wallet #695
+
 ## 2.1.7 - build 87
 ### Changed
 - Remove checkbox from for pw protection for Backup screen  #578
