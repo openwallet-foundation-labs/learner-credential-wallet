@@ -3,7 +3,7 @@ import { Text, View, FlatList, AccessibilityInfo } from 'react-native';
 import { Button } from 'react-native-elements';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import Swipeable from 'react-native-swipeable';
+import {Swipeable,TouchableOpacity} from 'react-native-gesture-handler';
 
 import { CredentialItem, NavHeader, ConfirmModal } from '../../components';
 import { navigationRef } from '../../navigation';
@@ -13,6 +13,7 @@ import { HomeScreenProps, RenderItemProps } from './HomeScreen.d';
 import { CredentialRecordRaw } from '../../model';
 import { useAppDispatch, useDynamicStyles, useShareCredentials } from '../../hooks';
 import { deleteCredential, selectRawCredentialRecords } from '../../store/slices/credential';
+
 
 export default function HomeScreen({ navigation }: HomeScreenProps): React.ReactElement {
   const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
@@ -30,44 +31,32 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
 
     return (
       <View style={styles.swipeItemOuter}>
+        
         <View>
           <Swipeable
-            style={styles.swipeItem}
-            leftButtons={[
-              <Button
-                key="share"
-                buttonStyle={[styles.swipeButton, mixins.buttonPrimary]}
-                containerStyle={[mixins.buttonIconContainer, styles.noShadow]}
-                titleStyle={mixins.buttonIconTitle}
-                style={styles.swipeButtonContainer}
-                onPress={() => share([item])}
-                iconRight
-                icon={
+            renderLeftActions={() => (
+              <TouchableOpacity onPress={() => share([item])} style={[mixins.buttonIconContainer, styles.noShadow]}>
+                <View style={[styles.swipeButton, mixins.buttonPrimary]}>
                   <MaterialIcons
                     name="share"
                     size={theme.iconSize}
                     color={theme.color.backgroundPrimary}
                   />
-                }
-              />,
-            ]}
-            rightButtons={[
-              <Button
-                key="delete"
-                buttonStyle={[styles.swipeButton, mixins.buttonError]}
-                containerStyle={[mixins.buttonIconContainer, styles.noShadow]}
-                titleStyle={mixins.buttonIconTitle}
-                onPress={() => setItemToDelete(item)}
-                style={styles.swipeButtonContainer}
-                icon={
+                </View>
+              </TouchableOpacity>
+
+            )}
+            renderRightActions={() => (
+              <TouchableOpacity onPress={() => setItemToDelete(item)} style={[mixins.buttonIconContainer, styles.noShadow]}>
+                <View style={[styles.swipeButton, mixins.buttonError]}>
                   <MaterialIcons
                     name="delete"
                     size={theme.iconSize}
                     color={theme.color.backgroundPrimary}
                   />
-                }
-              />,
-            ]}
+                </View>
+              </TouchableOpacity>
+            )}
           >
             <CredentialItem
               rawCredentialRecord={item}

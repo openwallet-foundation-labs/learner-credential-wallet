@@ -22,6 +22,7 @@ export default createDynamicStyleSheet(({ mixins }) => ({
   swipeButton: {
     ...mixins.buttonIcon,
     flex: 1,
+    justifyContent: 'center',
   },
   modalBodyText: {
     ...mixins.paragraphText,
@@ -32,5 +33,7 @@ export default createDynamicStyleSheet(({ mixins }) => ({
   noShadow: {
     shadowOpacity: 0,
     elevation: 0,
+    flex:1,
+    marginVertical: 10,
   }
 }));
