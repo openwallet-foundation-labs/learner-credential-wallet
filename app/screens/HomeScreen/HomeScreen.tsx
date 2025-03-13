@@ -3,7 +3,7 @@ import { Text, View, FlatList, AccessibilityInfo } from 'react-native';
 import { Button } from 'react-native-elements';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
-import {Swipeable,TouchableOpacity} from 'react-native-gesture-handler';
+import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler';
 
 import { CredentialItem, NavHeader, ConfirmModal } from '../../components';
 import { navigationRef } from '../../navigation';
