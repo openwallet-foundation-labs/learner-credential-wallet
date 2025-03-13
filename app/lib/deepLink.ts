@@ -9,6 +9,7 @@ import { encodeQueryParams } from './encode';
 import { onShareIntent } from './shareIntent';
 
 import { LinkConfig } from '../../app.config';
+import { getChapiCredentialRequest } from './credentialRequest';
 
 /**
  * In order to support OAuth redirects, the Android intent filter was set
@@ -92,8 +93,8 @@ function deepLinkConfigFor({ schemes, paths, onDeepLink }: DeepLinkConfigOptions
       if (url.includes('ReceiveSharingIntent')) {
         return getStateFromPath(path);
       } else if ('request' in query) {
-        const { request: requestString } = query;
-        const request = JSON.parse(requestString as string);
+        const request = getChapiCredentialRequest(query);
+
         const stateForExchangeCredentials = (request: ChapiCredentialRequest) => deepLinkNavigate('ExchangeCredentialsNavigation', {
           screen: 'ExchangeCredentials',
           params: { request }
