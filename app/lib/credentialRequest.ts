@@ -26,9 +26,9 @@ export function getChapiCredentialRequest(params: Record<string, unknown>): Chap
   }
   let request;
   try {
-    request = JSON.parse(requestString);
+    request = JSON.parse(decodeURI(requestString));
   } catch (err) {
-    console.log('Error extracting incoming CHAPI request:');
+    console.log(`Error extracting incoming CHAPI request string "${requestString}"`);
     console.error(err);
     throw err;
   }
