@@ -21,7 +21,6 @@ declare module 'react-native-animated-ellipsis';
 declare module 'react-native-html-to-pdf';
 declare module 'react-native-keychain';
 declare module 'react-native-receive-sharing-intent';
-declare module 'react-native-gesture-handler';
 declare module 'react-hooks-outside';
 declare module 'validator';
 declare module '@microsoft/msrcrypto';
