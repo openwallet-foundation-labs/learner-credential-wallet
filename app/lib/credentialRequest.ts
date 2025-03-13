@@ -22,9 +22,18 @@ export function isCredentialRequestParams(params?: Record<string, unknown>): par
 export function getChapiCredentialRequest(params: Record<string, unknown>): ChapiCredentialRequest {
   const { request: requestString } = (params as ChapiCredentialRequestParams);
   if (!requestString) {
-    throw new Error('[getChapiCredentialRequest] The credential request was malformed.');
+    throw new Error('[getChapiCredentialRequest] Deep link does not contain "request" param.');
   }
-  return JSON.parse(requestString);
+  let request;
+  try {
+    request = JSON.parse(requestString);
+  } catch (err) {
+    console.log('Error extracting incoming CHAPI request:');
+    console.error(err);
+    throw err;
+  }
+
+  return request;
 }
 
 export function isChapiCredentialRequestParams(params: Record<string, unknown>): params is ChapiCredentialRequestParams {
