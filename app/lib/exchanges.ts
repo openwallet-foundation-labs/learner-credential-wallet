@@ -34,7 +34,7 @@ const interactExchange = async (url: string, request={}): Promise<any> => {
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(request, null, 2)
+    body: '{}' // Empty JSON object, per VC-API/CHAPI spec.
   });
   return exchangeResponseRaw.json();
 };
@@ -53,6 +53,7 @@ const extendPath = (path: string, extension: string): string => {
 // Check if credential record matches QueryByExample VPR
 const credentialMatchesVprExampleQuery = async (vprExample: any, credentialRecord: CredentialRecordRaw, credentialRecordPath='$.credential'): Promise<boolean> => {
   const credentialRecordMatches = [];
+  console.log('Matching example:', vprExample)
   for (const [vprExampleKey, vprExampleValue] of Object.entries(vprExample)) {
     const newCredentialRecordPath = extendPath(credentialRecordPath, vprExampleKey);
     // The result is always dumped into a single-element array
@@ -86,16 +87,19 @@ const credentialMatchesVprExampleQuery = async (vprExample: any, credentialRecor
 // Query credential records by type
 const queryCredentialRecordsByType = async (query: any): Promise<CredentialRecordRaw[]> => {
   const credentialRecords = await CredentialRecord.getAllCredentialRecords();
+  console.log('Starting with all VC records:', JSON.stringify(credentialRecords, null, 2))
   let matchedCredentialRecords: CredentialRecordRaw[];
   switch (query.type) {
   case QueryType.Example: {
     const example = query.credentialQuery?.example;
     if (!example) {
       // This is an error with the exchanger, as the request is malformed
+      console.log('"example" field missing in QueryByExample.')
       return [];
     }
     const credentialRecordMatches = await Promise.all(credentialRecords.map((c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c)));
     matchedCredentialRecords = credentialRecords.filter((c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
+    console.log('Resulting matches:', matchedCredentialRecords)
     break;
   }
   case QueryType.Frame:
@@ -269,7 +273,9 @@ export const handleVcApiExchangeComplete = async ({
   }
 
   const exchangeResponse = await interactExchange(url, request);
+  console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2))
   if (!requiresAction(exchangeResponse)) {
+    console.log('Does not require action, returning.')
     return exchangeResponse;
   }
 
@@ -277,17 +283,20 @@ export const handleVcApiExchangeComplete = async ({
   let credentials: Credential[] = [];
   let filteredCredentialRecords: CredentialRecordRaw[] = [];
   const { query, challenge, domain, interact } = exchangeResponse.verifiablePresentationRequest;
+  console.log('Extracted:', JSON.stringify(query, null, 2), challenge, domain, interact)
   let queries = query;
   if (!Array.isArray(queries)) {
     queries = [query];
   }
   for (const query of queries) {
+    console.log(`Processing query type "${query.type}"`)
     switch (query.type) {
     case QueryType.DidAuthLegacy:
     case QueryType.DidAuth:
       signed = true;
       break;
     default: {
+      console.log('Querying...')
       const filteredCredentialRecordsGroup: CredentialRecordRaw[] = await queryCredentialRecordsByType(query);
       filteredCredentialRecords = filteredCredentialRecords.concat(filteredCredentialRecordsGroup);
       const filteredCredentials = filteredCredentialRecords.map((r) => r.credential);
