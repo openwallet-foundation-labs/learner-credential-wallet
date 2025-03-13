@@ -55,7 +55,6 @@
     "@reduxjs/toolkit": "^1.6.1",
     "big-integer": "^1.6.49",
     "bson": "4.4.1",
-    "deprecated-react-native-prop-types": "^5.0.0",
     "expo": "~50.0.6",
     "expo-crypto": "~12.8.0",
     "expo-dev-client": "~3.3.8",
