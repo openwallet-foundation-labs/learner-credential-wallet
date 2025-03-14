@@ -1,5 +1,22 @@
 # learner-credential-wallet Changelog
 
+## 2.1.8 - build 88
+### Added
+- Add eddsa-rdfc-2022 #656
+
+### Fixed
+'Wallet initialization failed' error when setting up wallet #695
+
+## 2.1.7 - build 87
+### Changed
+- Remove checkbox from for pw protection for Backup screen  #578
+
+### Fixed
+- Update where we get credential name from in wallet #696
+- PDF Export is Available for All Credentials Even When RenderMethod Isn't in the Credential #699
+- Remove CHAPI Registration as Part of App Install #672
+- Remove period from "Create a Public Link" instructions on Bottom Nav Share #493
+
 ## 2.1.6 - build 86
 ### Fixed
 - Fix deep linking in scanned QR codes

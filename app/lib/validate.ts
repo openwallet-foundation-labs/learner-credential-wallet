@@ -1,19 +1,28 @@
 // import '@digitalcredentials/data-integrity-rn';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
+import { DataIntegrityProof } from '@digitalcredentials/data-integrity';
+import { cryptosuite as eddsaRdfc2022CryptoSuite } from '@digitalcredentials/eddsa-rdfc-2022-cryptosuite';
+
 import { purposes } from '@digitalcredentials/jsonld-signatures';
 import * as vc from '@digitalcredentials/vc';
 
 import { VerifiablePresentation, PresentationError } from '../types/presentation';
 import { Credential, CredentialError } from '../types/credential';
 
-import { securityLoader } from '@digitalcredentials/security-document-loader';
+import { securityLoader } from '@digitalcredentials/security-document-loader'; 
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { getCredentialStatusChecker } from './credentialStatus';
 import { issuerInRegistries } from './issuerInRegistries';
 import { extractCredentialsFrom } from './verifiableObject';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
-const suite = new Ed25519Signature2020();
+// for verifying eddsa-2022 signatures
+const eddsaSuite = new DataIntegrityProof({ cryptosuite: eddsaRdfc2022CryptoSuite });
+// for verifying ed25519-2020 signatures
+const ed25519Suite = new Ed25519Signature2020();
+// add both suites - the vc lib will use whichever is appropriate
+const suite = [ed25519Suite, eddsaSuite];
+
 const presentationPurpose = new purposes.AssertionProofPurpose();
 
 export type ResultLog = {
