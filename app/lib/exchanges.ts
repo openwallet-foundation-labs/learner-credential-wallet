@@ -7,11 +7,11 @@ import { ObjectId } from 'bson';
 import { JSONPath } from 'jsonpath-plus';
 import { getHook } from 'react-hooks-outside';
 import validator from 'validator';
-import { CredentialRecord, CredentialRecordRaw } from '../model';
+import { CredentialRecord } from '../model/credential';
 import { navigationRef } from '../navigation';
 import store from '../store';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
-import { Credential } from '../types/credential';
+import { Credential, CredentialRecordRaw } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';
 import { clearGlobalModal, displayGlobalModal } from './globalModal';
 import { getGlobalModalBody } from './globalModalBody';
@@ -51,7 +51,9 @@ const extendPath = (path: string, extension: string): string => {
 };
 
 // Check if credential record matches QueryByExample VPR
-const credentialMatchesVprExampleQuery = async (vprExample: any, credentialRecord: CredentialRecordRaw, credentialRecordPath='$.credential'): Promise<boolean> => {
+export async function credentialMatchesVprExampleQuery (
+  vprExample: any, credentialRecord: CredentialRecordRaw, credentialRecordPath='$.credential'
+): Promise<boolean> {
   const credentialRecordMatches = [];
   console.log('Matching example:', vprExample)
   for (const [vprExampleKey, vprExampleValue] of Object.entries(vprExample)) {
@@ -82,7 +84,7 @@ const credentialMatchesVprExampleQuery = async (vprExample: any, credentialRecor
     }
   }
   return credentialRecordMatches.every(matches => matches);
-};
+}
 
 // Query credential records by type
 const queryCredentialRecordsByType = async (query: any): Promise<CredentialRecordRaw[]> => {
