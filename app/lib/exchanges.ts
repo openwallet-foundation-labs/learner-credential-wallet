@@ -4,7 +4,6 @@ import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ObjectId } from 'bson';
-import { JSONPath } from 'jsonpath-plus';
 import { getHook } from 'react-hooks-outside';
 import validator from 'validator';
 import { CredentialRecord } from '../model/credential';
@@ -16,6 +15,7 @@ import { VerifiablePresentation } from '../types/presentation';
 import { clearGlobalModal, displayGlobalModal } from './globalModal';
 import { getGlobalModalBody } from './globalModalBody';
 import { delay } from './time';
+import { credentialMatchesVprExampleQuery } from './credentialMatching';
 
 const MAX_INTERACTIONS = 10;
 
@@ -39,69 +39,22 @@ const interactExchange = async (url: string, request={}): Promise<any> => {
   return exchangeResponseRaw.json();
 };
 
-// Extend JSON path of credential by a literal value
-const extendPath = (path: string, extension: string): string => {
-  const jsonPathResCharsRegex = /[$@*()[\].:?]/g;
-  if (jsonPathResCharsRegex.test(extension)) {
-    // In order to escape reserved characters in a JSONPath in jsonpath-plus,
-    // you must prefix each occurrence thereof with a tick symbol (`)
-    extension = extension.replace(jsonPathResCharsRegex, (match: string) => '`' + match);
-  }
-  return `${path}.${extension}`;
-};
-
-// Check if credential record matches QueryByExample VPR
-export async function credentialMatchesVprExampleQuery (
-  vprExample: any, credentialRecord: CredentialRecordRaw, credentialRecordPath='$.credential'
-): Promise<boolean> {
-  const credentialRecordMatches = [];
-  console.log('Matching example:', vprExample)
-  for (const [vprExampleKey, vprExampleValue] of Object.entries(vprExample)) {
-    const newCredentialRecordPath = extendPath(credentialRecordPath, vprExampleKey);
-    // The result is always dumped into a single-element array
-    const [credentialRecordScope] = JSONPath({ path: newCredentialRecordPath, json: credentialRecord });
-    if (Array.isArray(vprExampleValue)) {
-      // Array query values require that matching credential records contain at least every value specified
-      // Note: This logic assumes that each array element is a literal value
-      if (!Array.isArray(credentialRecordScope)) {
-        return false;
-      }
-      if (credentialRecordScope.length < vprExampleValue.length) {
-        return false;
-      }
-      const credentialRecordArrayMatches = vprExampleValue.every((vprExVal) => {
-        return !!credentialRecordScope.includes(vprExVal);
-      });
-      credentialRecordMatches.push(credentialRecordArrayMatches);
-    } else if (typeof vprExampleValue === 'object' && vprExampleValue !== null) {
-      // Object query values will trigger a recursive call in order to handle nested queries
-      const credentialRecordObjectMatches = await credentialMatchesVprExampleQuery(vprExampleValue, credentialRecord, newCredentialRecordPath);
-      credentialRecordMatches.push(credentialRecordObjectMatches);
-    } else {
-      // Literal query values can be compared directly
-      const credentialRecordLiteralMatches = credentialRecordScope === vprExampleValue;
-      credentialRecordMatches.push(credentialRecordLiteralMatches);
-    }
-  }
-  return credentialRecordMatches.every(matches => matches);
-}
-
 // Query credential records by type
 const queryCredentialRecordsByType = async (query: any): Promise<CredentialRecordRaw[]> => {
   const credentialRecords = await CredentialRecord.getAllCredentialRecords();
-  console.log('Starting with all VC records:', JSON.stringify(credentialRecords, null, 2))
+  console.log('Starting with all VC records:', JSON.stringify(credentialRecords, null, 2));
   let matchedCredentialRecords: CredentialRecordRaw[];
   switch (query.type) {
   case QueryType.Example: {
     const example = query.credentialQuery?.example;
     if (!example) {
       // This is an error with the exchanger, as the request is malformed
-      console.log('"example" field missing in QueryByExample.')
+      console.log('"example" field missing in QueryByExample.');
       return [];
     }
     const credentialRecordMatches = await Promise.all(credentialRecords.map((c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c)));
     matchedCredentialRecords = credentialRecords.filter((c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
-    console.log('Resulting matches:', matchedCredentialRecords)
+    console.log('Resulting matches:', matchedCredentialRecords);
     break;
   }
   case QueryType.Frame:
@@ -275,9 +228,9 @@ export const handleVcApiExchangeComplete = async ({
   }
 
   const exchangeResponse = await interactExchange(url, request);
-  console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2))
+  console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2));
   if (!requiresAction(exchangeResponse)) {
-    console.log('Does not require action, returning.')
+    console.log('Does not require action, returning.');
     return exchangeResponse;
   }
 
@@ -285,20 +238,20 @@ export const handleVcApiExchangeComplete = async ({
   let credentials: Credential[] = [];
   let filteredCredentialRecords: CredentialRecordRaw[] = [];
   const { query, challenge, domain, interact } = exchangeResponse.verifiablePresentationRequest;
-  console.log('Extracted:', JSON.stringify(query, null, 2), challenge, domain, interact)
+  console.log('Extracted:', JSON.stringify(query, null, 2), challenge, domain, interact);
   let queries = query;
   if (!Array.isArray(queries)) {
     queries = [query];
   }
   for (const query of queries) {
-    console.log(`Processing query type "${query.type}"`)
+    console.log(`Processing query type "${query.type}"`);
     switch (query.type) {
     case QueryType.DidAuthLegacy:
     case QueryType.DidAuth:
       signed = true;
       break;
     default: {
-      console.log('Querying...')
+      console.log('Querying...');
       const filteredCredentialRecordsGroup: CredentialRecordRaw[] = await queryCredentialRecordsByType(query);
       filteredCredentialRecords = filteredCredentialRecords.concat(filteredCredentialRecordsGroup);
       const filteredCredentials = filteredCredentialRecords.map((r) => r.credential);

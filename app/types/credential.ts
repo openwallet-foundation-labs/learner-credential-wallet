@@ -1,4 +1,4 @@
-import { ObjectID } from "bson";
+import { ObjectID } from 'bson';
 
 export type IssuerURI = string;
 
