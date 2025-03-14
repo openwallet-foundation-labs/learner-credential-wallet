@@ -1,6 +1,6 @@
 import type { StackScreenProps } from '@react-navigation/stack';
-import type { CredentialRecordRaw } from '../../model/credential';
 import { IssuerInfoScreenParams, PublicLinkScreenParams } from '../../screens';
+import { CredentialRecordRaw } from '../../types/credential';
 
 export type CredentialNavigationParamList = {
   HomeScreen: undefined;

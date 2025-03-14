@@ -1,6 +1,5 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
-import type { CredentialRecordRaw } from '../../model/credential';
 
 import type {
   AddNavigationParamList,
@@ -8,6 +7,7 @@ import type {
   SettingsNavigationParamList,
   ShareNavigationParamsList
 } from '../';
+import { CredentialRecordRaw } from '../../types/credential';
 
 
 export type HomeNavigationParamList = {

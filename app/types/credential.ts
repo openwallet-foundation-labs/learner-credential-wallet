@@ -1,3 +1,5 @@
+import { ObjectID } from "bson";
+
 export type IssuerURI = string;
 
 export type ImageObject = {
@@ -147,4 +149,20 @@ export type CredentialImportReport = {
   success: string[];
   duplicate: string[];
   failed: string[];
+}
+
+/**
+ * The DCC VC standard is in flux right now,
+ * so we are choosing to store credentials as
+ * stringified JSON.
+ */
+export type CredentialRecordEntry = {
+  readonly _id: ObjectID;
+  readonly createdAt: Date;
+  readonly updatedAt: Date;
+  readonly rawCredential: string;
+  readonly profileRecordId: ObjectID;
+}
+export type CredentialRecordRaw = CredentialRecordEntry & {
+  readonly credential: Credential;
 }
