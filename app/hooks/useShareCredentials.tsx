@@ -5,9 +5,9 @@ import { LoadingIndicatorDots } from '../components';
 import { errorMessageMatches } from '../lib/error';
 import { clearGlobalModal, displayGlobalModal } from '../lib/globalModal';
 import { createUnsignedPresentation, sharePresentation } from '../lib/present';
-import { CredentialRecordRaw } from '../model/credential';
 import { navigationRef } from '../navigation';
 import { useDynamicStyles } from './useDynamicStyles';
+import { CredentialRecordRaw } from '../types/credential';
 
 export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => Promise<void> {
   const { mixins } = useDynamicStyles();

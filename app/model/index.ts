@@ -9,3 +9,5 @@ export {
   models,
   db,
 };
+export { CredentialRecordRaw } from '../types/credential';
+export { CredentialRecordEntry } from '../types/credential';
