@@ -1,4 +1,5 @@
-import { Credential } from '../types/credential';
+// @ts-nocheck
+import { Credential, CredentialRecordRaw } from '../types/credential';
 
 const issuerImg = 'data:image/png;base64,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';
 
@@ -150,6 +151,113 @@ export const mockCredential2: Credential = {
       'z4EiTbmC79r4dRaqLQZr2yxQASoMKneHVNHVaWh1xcDoPG2eTwYjKoYaku1Canb7a6Xp5fSogKJyEhkZCaqQ6Y5nw',
   },
 };
+
+export const rawVcRecords: CredentialRecordRaw[] = [
+  {
+    '_id': '67d35fcdd4e86a52196c58df',
+    'createdAt': '2025-03-13T22:44:29.011Z',
+    'updatedAt': '2025-03-13T22:44:29.011Z',
+    'rawCredential': '{"@context":["https://www.w3.org/2018/credentials/v1","https://w3id.org/security/suites/ed25519-2020/v1","https://w3id.org/dcc/v1","https://w3id.org/vc/status-list/2021/v1"],"type":["VerifiableCredential","Assertion"],"issuer":{"id":"did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC","name":"Example University","url":"https://cs.example.edu","image":"https://user-images.githubusercontent.com/947005/133544904-29d6139d-2e7b-4fe2-b6e9-7d1022bb6a45.png"},"issuanceDate":"2020-08-16T12:00:00.000+00:00","credentialSubject":{"id":"did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC","name":"Kayode Ezike","hasCredential":{"type":["EducationalOccupationalCredential"],"name":"GT Guide","description":"The holder of this credential is qualified to lead new student orientations."}},"expirationDate":"2025-08-16T12:00:00.000+00:00","credentialStatus":{"id":"https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU#2","type":"StatusList2021Entry","statusPurpose":"revocation","statusListIndex":2,"statusListCredential":"https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU"},"proof":{"type":"Ed25519Signature2020","created":"2022-08-19T06:55:17Z","verificationMethod":"did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC#z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC","proofPurpose":"assertionMethod","proofValue":"z4EiTbmC79r4dRaqLQZr2yxQASoMKneHVNHVaWh1xcDoPG2eTwYjKoYaku1Canb7a6Xp5fSogKJyEhkZCaqQ6Y5nw"}}',
+    'credential': {
+      '@context': [
+        'https://www.w3.org/2018/credentials/v1',
+        'https://w3id.org/security/suites/ed25519-2020/v1',
+        'https://w3id.org/dcc/v1',
+        'https://w3id.org/vc/status-list/2021/v1'
+      ],
+      'type': [
+        'VerifiableCredential',
+        'Assertion'
+      ],
+      'issuer': {
+        'id': 'did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC',
+        'name': 'Example University',
+        'url': 'https://cs.example.edu',
+        'image': 'https://user-images.githubusercontent.com/947005/133544904-29d6139d-2e7b-4fe2-b6e9-7d1022bb6a45.png'
+      },
+      'issuanceDate': '2020-08-16T12:00:00.000+00:00',
+      'credentialSubject': {
+        'id': 'did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC',
+        'name': 'Kayode Ezike',
+        'hasCredential': {
+          'type': [
+            'EducationalOccupationalCredential'
+          ],
+          'name': 'GT Guide',
+          'description': 'The holder of this credential is qualified to lead new student orientations.'
+        }
+      },
+      'expirationDate': '2025-08-16T12:00:00.000+00:00',
+      'credentialStatus': {
+        'id': 'https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU#2',
+        'type': 'StatusList2021Entry',
+        'statusPurpose': 'revocation',
+        'statusListIndex': 2,
+        'statusListCredential': 'https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU'
+      },
+      'proof': {
+        'type': 'Ed25519Signature2020',
+        'created': '2022-08-19T06:55:17Z',
+        'verificationMethod': 'did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC#z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC',
+        'proofPurpose': 'assertionMethod',
+        'proofValue': 'z4EiTbmC79r4dRaqLQZr2yxQASoMKneHVNHVaWh1xcDoPG2eTwYjKoYaku1Canb7a6Xp5fSogKJyEhkZCaqQ6Y5nw'
+      }
+    },
+    'profileRecordId': '67d35fbbd4e86a52196c58de'
+  },
+  {
+    '_id': '67d35fcdd4e86a52196c58e0',
+    'createdAt': '2025-03-13T22:44:29.013Z',
+    'updatedAt': '2025-03-13T22:44:29.013Z',
+    'rawCredential': '{"@context":["https://www.w3.org/2018/credentials/v1","https://w3id.org/security/suites/ed25519-2020/v1","https://w3id.org/dcc/v1","https://w3id.org/vc/status-list/2021/v1"],"type":["VerifiableCredential","Assertion"],"issuer":{"id":"did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC","name":"Example University","url":"https://cs.example.edu","image":"https://user-images.githubusercontent.com/947005/133544904-29d6139d-2e7b-4fe2-b6e9-7d1022bb6a45.png"},"issuanceDate":"2020-08-16T12:00:00.000+00:00","credentialSubject":{"id":"did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC","name":"Kayode Ezike","hasCredential":{"type":["EducationalOccupationalCredential"],"name":"GT Guide","description":"The holder of this credential is qualified to lead new student orientations."}},"expirationDate":"2025-08-16T12:00:00.000+00:00","credentialStatus":{"id":"https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU#2","type":"StatusList2021Entry","statusPurpose":"revocation","statusListIndex":2,"statusListCredential":"https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU"},"proof":{"type":"Ed25519Signature2020","created":"2022-08-19T06:55:17Z","verificationMethod":"did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC#z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC","proofPurpose":"assertionMethod","proofValue":"z4EiTbmC79r4dRaqLQZr2yxQASoMKneHVNHVaWh1xcDoPG2eTwYjKoYaku1Canb7a6Xp5fSogKJyEhkZCaqQ6Y5nw"}}',
+    'credential': {
+      '@context': [
+        'https://www.w3.org/2018/credentials/v1',
+        'https://w3id.org/security/suites/ed25519-2020/v1',
+        'https://w3id.org/dcc/v1',
+        'https://w3id.org/vc/status-list/2021/v1'
+      ],
+      'type': [
+        'VerifiableCredential',
+        'Assertion'
+      ],
+      'issuer': {
+        'id': 'did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC',
+        'name': 'Example University',
+        'url': 'https://cs.example.edu',
+        'image': 'https://user-images.githubusercontent.com/947005/133544904-29d6139d-2e7b-4fe2-b6e9-7d1022bb6a45.png'
+      },
+      'issuanceDate': '2020-08-16T12:00:00.000+00:00',
+      'credentialSubject': {
+        'id': 'did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC',
+        'name': 'Kayode Ezike',
+        'hasCredential': {
+          'type': [
+            'EducationalOccupationalCredential'
+          ],
+          'name': 'GT Guide',
+          'description': 'The holder of this credential is qualified to lead new student orientations.'
+        }
+      },
+      'expirationDate': '2025-08-16T12:00:00.000+00:00',
+      'credentialStatus': {
+        'id': 'https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU#2',
+        'type': 'StatusList2021Entry',
+        'statusPurpose': 'revocation',
+        'statusListIndex': 2,
+        'statusListCredential': 'https://digitalcredentials.github.io/credential-status-playground/JWZM3H8WKU'
+      },
+      'proof': {
+        'type': 'Ed25519Signature2020',
+        'created': '2022-08-19T06:55:17Z',
+        'verificationMethod': 'did:key:z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC#z6MkhVTX9BF3NGYX6cc7jWpbNnR7cAjH8LUffabZP8Qu4ysC',
+        'proofPurpose': 'assertionMethod',
+        'proofValue': 'z4EiTbmC79r4dRaqLQZr2yxQASoMKneHVNHVaWh1xcDoPG2eTwYjKoYaku1Canb7a6Xp5fSogKJyEhkZCaqQ6Y5nw'
+      }
+    },
+    'profileRecordId': '67d35fbbd4e86a52196c58de'
+  }
+];
 
 const credentials = [
   mockCredential,

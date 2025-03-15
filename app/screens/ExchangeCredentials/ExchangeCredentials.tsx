@@ -45,14 +45,14 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     const key = await Ed25519VerificationKey2020.from(didRecord?.verificationKey);
     const suite = new Ed25519Signature2020({ key });
     const url = request.protocols.vcapi as string;
-    console.log('CHAPI: Sending initial {} request to:', url)
+    console.log('CHAPI: Sending initial {} request to:', url);
     const response = await handleVcApiExchangeComplete({
       url,
       holder,
       suite,
       interactive: true
     });
-    console.log('Response:', JSON.stringify(response, null, 2))
+    console.log('Response:', JSON.stringify(response, null, 2));
 
     const credentialField = response.verifiablePresentation?.verifiableCredential;
     const credentialFieldExists = !!credentialField;
@@ -70,7 +70,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
         }
       });
     } else {
-      console.log('Credential not available.')
+      console.log('Credential not available.');
       displayGlobalModal(dataLoadingSuccessModalState);
       navigationRef.goBack();
     }
