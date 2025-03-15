@@ -25,7 +25,7 @@ async function postToExchange (url: string, request: any): Promise<any> {
     headers: {
       'Content-Type': 'application/json'
     },
-    body: request
+    body: JSON.stringify(request)
   });
   return exchangeResponseRaw.json();
 }
@@ -196,7 +196,6 @@ export async function handleVcApiExchangeComplete ({
   let credentials: Credential[] = [];
   let filteredCredentialRecords: CredentialRecordRaw[] = [];
   const { query, challenge, domain, interact } = exchangeResponse.verifiablePresentationRequest;
-  console.log('Extracted:', JSON.stringify(query, null, 2), challenge, domain, interact);
 
   let queries = query;
   if (!Array.isArray(queries)) {
@@ -225,8 +224,10 @@ export async function handleVcApiExchangeComplete ({
     const credentialRecords = await selectCredentials(filteredCredentialRecords);
     credentials = credentialRecords.map((r) => r.credential);
   }
+
   const exchangeRequest = await constructExchangeRequest({ credentials, challenge, domain, holder, suite, signed });
   const exchangeUrl = interact?.service[0]?.serviceEndpoint ?? url;
+  console.log(`Sending request to "${exchangeUrl}":`, exchangeRequest);
   return handleVcApiExchangeComplete({
     url: exchangeUrl, request: exchangeRequest, holder, suite,
     interactions: interactions + 1, interactive

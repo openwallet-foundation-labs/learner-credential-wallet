@@ -52,7 +52,6 @@ function extendPath (path: string, extension: string): string {
 export function filterCredentialRecordsByType (
   allRecords: CredentialRecordRaw[], query: any
 ): CredentialRecordRaw[] {
-  console.log('Starting with all VC records:', JSON.stringify(allRecords, null, 2));
   let matchedCredentialRecords: CredentialRecordRaw[];
   switch (query.type) {
   case VcQueryType.Example: {
@@ -66,7 +65,7 @@ export function filterCredentialRecordsByType (
       (c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c));
     matchedCredentialRecords = allRecords.filter(
       (c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
-    console.log('Resulting matches:', matchedCredentialRecords);
+    console.log('Resulting matches:', matchedCredentialRecords.length);
     break;
   }
   case VcQueryType.Frame:
