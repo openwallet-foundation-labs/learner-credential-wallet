@@ -1,12 +1,11 @@
 import uuid from 'react-native-uuid';
-// import '@digitalcredentials/data-integrity-rn';
 import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ObjectId } from 'bson';
 import { getHook } from 'react-hooks-outside';
 import validator from 'validator';
-import { CredentialRecord } from '../model/credential';
+import { CredentialRecord } from '../model';
 import { navigationRef } from '../navigation';
 import store from '../store';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
@@ -20,16 +19,16 @@ import { filterCredentialRecordsByType } from './credentialMatching';
 const MAX_INTERACTIONS = 10;
 
 // Interact with VC-API exchange
-const interactExchange = async (url: string): Promise<any> => {
+async function postToExchange (url: string, request: any): Promise<any> {
   const exchangeResponseRaw = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: '{}' // Empty JSON object, per VC-API/CHAPI spec.
+    body: request
   });
   return exchangeResponseRaw.json();
-};
+}
 
 // Select credentials to exchange with issuer or verifier
 const selectCredentials = async (credentialRecords: CredentialRecordRaw[]): Promise<CredentialRecordRaw[]> => {
@@ -171,11 +170,11 @@ type HandleVcApiExchangeCompleteParameters = {
 // Handle complete VC-API credential exchange workflow
 export async function handleVcApiExchangeComplete ({
   url,
-  // request={},
+  request = {},
   holder,
   suite,
-  interactions=0,
-  interactive=false
+  interactions = 0,
+  interactive = true
 }: HandleVcApiExchangeCompleteParameters): Promise<ExchangeResponse> {
   if (interactions === MAX_INTERACTIONS) {
     throw new Error(`Request timed out after ${interactions} interactions`);
@@ -185,7 +184,7 @@ export async function handleVcApiExchangeComplete ({
   }
 
   // Start the exchange process - POST an empty {} to the exchange API url
-  const exchangeResponse = await interactExchange(url);
+  const exchangeResponse = await postToExchange(url, request);
   console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2));
 
   if (!exchangeResponse.verifiablePresentationRequest) {
@@ -228,5 +227,8 @@ export async function handleVcApiExchangeComplete ({
   }
   const exchangeRequest = await constructExchangeRequest({ credentials, challenge, domain, holder, suite, signed });
   const exchangeUrl = interact?.service[0]?.serviceEndpoint ?? url;
-  return handleVcApiExchangeComplete({ url: exchangeUrl, request: exchangeRequest, holder, suite, interactions: interactions + 1, interactive });
+  return handleVcApiExchangeComplete({
+    url: exchangeUrl, request: exchangeRequest, holder, suite,
+    interactions: interactions + 1, interactive
+  });
 }
