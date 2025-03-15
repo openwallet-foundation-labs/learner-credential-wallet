@@ -1,12 +1,12 @@
 import { JSONPath } from 'jsonpath-plus';
-import { CredentialRecordRaw } from '../types/credential';
+import { CredentialRecordRaw, VcQueryType } from '../types/credential';
 
 // Check if credential record matches QueryByExample VPR
-export async function credentialMatchesVprExampleQuery (
+export function credentialMatchesVprExampleQuery (
   vprExample: any, credentialRecord: CredentialRecordRaw, credentialRecordPath='$.credential'
-): Promise<boolean> {
+): boolean {
   const credentialRecordMatches = [];
-  console.log('Matching example:', vprExample);
+  console.log('Attempting to match example:', vprExample);
   for (const [vprExampleKey, vprExampleValue] of Object.entries(vprExample)) {
     const newCredentialRecordPath = extendPath(credentialRecordPath, vprExampleKey);
     // The result is always dumped into a single-element array
@@ -21,12 +21,12 @@ export async function credentialMatchesVprExampleQuery (
         return false;
       }
       const credentialRecordArrayMatches = vprExampleValue.every((vprExVal) => {
-        return !!credentialRecordScope.includes(vprExVal);
+        return credentialRecordScope.includes(vprExVal);
       });
       credentialRecordMatches.push(credentialRecordArrayMatches);
     } else if (typeof vprExampleValue === 'object' && vprExampleValue !== null) {
       // Object query values will trigger a recursive call in order to handle nested queries
-      const credentialRecordObjectMatches = await credentialMatchesVprExampleQuery(vprExampleValue, credentialRecord, newCredentialRecordPath);
+      const credentialRecordObjectMatches = credentialMatchesVprExampleQuery(vprExampleValue, credentialRecord, newCredentialRecordPath);
       credentialRecordMatches.push(credentialRecordObjectMatches);
     } else {
       // Literal query values can be compared directly
@@ -46,4 +46,37 @@ function extendPath (path: string, extension: string): string {
     extension = extension.replace(jsonPathResCharsRegex, (match: string) => '`' + match);
   }
   return `${path}.${extension}`;
+}
+
+// Filter credential records by type
+export function filterCredentialRecordsByType (
+  allRecords: CredentialRecordRaw[], query: any
+): CredentialRecordRaw[] {
+  console.log('Starting with all VC records:', JSON.stringify(allRecords, null, 2));
+  let matchedCredentialRecords: CredentialRecordRaw[];
+  switch (query.type) {
+  case VcQueryType.Example: {
+    const example = query.credentialQuery?.example;
+    if (!example) {
+      // This is an error with the exchanger, as the request is malformed
+      console.log('"example" field missing in QueryByExample.');
+      return [];
+    }
+    const credentialRecordMatches = allRecords.map(
+      (c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c));
+    matchedCredentialRecords = allRecords.filter(
+      (c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
+    console.log('Resulting matches:', matchedCredentialRecords);
+    break;
+  }
+  case VcQueryType.Frame:
+  case VcQueryType.DidAuth:
+  case VcQueryType.DidAuthLegacy:
+    matchedCredentialRecords = [];
+    break;
+  default:
+    matchedCredentialRecords = [];
+    break;
+  }
+  return matchedCredentialRecords;
 }

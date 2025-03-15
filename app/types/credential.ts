@@ -166,3 +166,11 @@ export type CredentialRecordEntry = {
 export type CredentialRecordRaw = CredentialRecordEntry & {
   readonly credential: Credential;
 }
+
+// Different types of queries in verifiable presentation request
+export enum VcQueryType {
+  Example = 'QueryByExample',
+  Frame = 'QueryByFrame',
+  DidAuth = 'DIDAuthentication',
+  DidAuthLegacy = 'DIDAuth'
+}
