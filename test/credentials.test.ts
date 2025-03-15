@@ -3,10 +3,40 @@ import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020
 import * as vc from '@digitalcredentials/vc';
 
 import { getCredentialStatusChecker } from '../app/lib/credentialStatus';
-import { mockCredential } from '../app/mock/credential';
+import { rawVcRecords, mockCredential } from '../app/mock/credential';
+import { credentialMatchesVprExampleQuery, filterCredentialRecordsByType } from '../app/lib/credentialMatching';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 const suite = new Ed25519Signature2020();
+
+const query = {
+  'type': 'QueryByExample',
+  'credentialQuery': {
+    'reason': 'Please present your Verifiable Credential to complete the verification process.',
+    'example': {
+      '@context': [
+        'https://www.w3.org/2018/credentials/v1'
+      ],
+      'type': [
+        'VerifiableCredential'
+      ]
+    }
+  }
+};
+
+describe('Querying', () => {
+  it('filters raw VC records by type query', async () => {
+    const result = filterCredentialRecordsByType(rawVcRecords, query);
+    expect(result).toHaveLength(2);
+    expect(result[0]).toHaveProperty('_id', '67d35fcdd4e86a52196c58df');
+  });
+
+  it('matches a stored VC to a VPR query', async () => {
+    const result = credentialMatchesVprExampleQuery(
+      query.credentialQuery.example, rawVcRecords[0]);
+    expect(result).toBe(true);
+  });
+});
 
 describe('Verification', () => {
   it('verifies the mock VC', async () => {

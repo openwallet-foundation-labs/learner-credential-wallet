@@ -1,114 +1,34 @@
 import uuid from 'react-native-uuid';
-// import '@digitalcredentials/data-integrity-rn';
 import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ObjectId } from 'bson';
-import { JSONPath } from 'jsonpath-plus';
 import { getHook } from 'react-hooks-outside';
 import validator from 'validator';
-import { CredentialRecord, CredentialRecordRaw } from '../model';
+import { CredentialRecord } from '../model';
 import { navigationRef } from '../navigation';
 import store from '../store';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
-import { Credential } from '../types/credential';
+import { Credential, CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';
 import { clearGlobalModal, displayGlobalModal } from './globalModal';
 import { getGlobalModalBody } from './globalModalBody';
 import { delay } from './time';
+import { filterCredentialRecordsByType } from './credentialMatching';
 
 const MAX_INTERACTIONS = 10;
 
-// Different types of queries in verifiable presentation request
-enum QueryType {
-  Example = 'QueryByExample',
-  Frame = 'QueryByFrame',
-  DidAuth = 'DIDAuthentication',
-  DidAuthLegacy = 'DIDAuth'
-}
-
 // Interact with VC-API exchange
-const interactExchange = async (url: string, request={}): Promise<any> => {
+async function postToExchange (url: string, request: any): Promise<any> {
   const exchangeResponseRaw = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
     },
-    body: JSON.stringify(request, null, 2)
+    body: JSON.stringify(request)
   });
   return exchangeResponseRaw.json();
-};
-
-// Extend JSON path of credential by a literal value
-const extendPath = (path: string, extension: string): string => {
-  const jsonPathResCharsRegex = /[$@*()[\].:?]/g;
-  if (jsonPathResCharsRegex.test(extension)) {
-    // In order to escape reserved characters in a JSONPath in jsonpath-plus,
-    // you must prefix each occurrence thereof with a tick symbol (`)
-    extension = extension.replace(jsonPathResCharsRegex, (match: string) => '`' + match);
-  }
-  return `${path}.${extension}`;
-};
-
-// Check if credential record matches QueryByExample VPR
-const credentialMatchesVprExampleQuery = async (vprExample: any, credentialRecord: CredentialRecordRaw, credentialRecordPath='$.credential'): Promise<boolean> => {
-  const credentialRecordMatches = [];
-  for (const [vprExampleKey, vprExampleValue] of Object.entries(vprExample)) {
-    const newCredentialRecordPath = extendPath(credentialRecordPath, vprExampleKey);
-    // The result is always dumped into a single-element array
-    const [credentialRecordScope] = JSONPath({ path: newCredentialRecordPath, json: credentialRecord });
-    if (Array.isArray(vprExampleValue)) {
-      // Array query values require that matching credential records contain at least every value specified
-      // Note: This logic assumes that each array element is a literal value
-      if (!Array.isArray(credentialRecordScope)) {
-        return false;
-      }
-      if (credentialRecordScope.length < vprExampleValue.length) {
-        return false;
-      }
-      const credentialRecordArrayMatches = vprExampleValue.every((vprExVal) => {
-        return !!credentialRecordScope.includes(vprExVal);
-      });
-      credentialRecordMatches.push(credentialRecordArrayMatches);
-    } else if (typeof vprExampleValue === 'object' && vprExampleValue !== null) {
-      // Object query values will trigger a recursive call in order to handle nested queries
-      const credentialRecordObjectMatches = await credentialMatchesVprExampleQuery(vprExampleValue, credentialRecord, newCredentialRecordPath);
-      credentialRecordMatches.push(credentialRecordObjectMatches);
-    } else {
-      // Literal query values can be compared directly
-      const credentialRecordLiteralMatches = credentialRecordScope === vprExampleValue;
-      credentialRecordMatches.push(credentialRecordLiteralMatches);
-    }
-  }
-  return credentialRecordMatches.every(matches => matches);
-};
-
-// Query credential records by type
-const queryCredentialRecordsByType = async (query: any): Promise<CredentialRecordRaw[]> => {
-  const credentialRecords = await CredentialRecord.getAllCredentialRecords();
-  let matchedCredentialRecords: CredentialRecordRaw[];
-  switch (query.type) {
-  case QueryType.Example: {
-    const example = query.credentialQuery?.example;
-    if (!example) {
-      // This is an error with the exchanger, as the request is malformed
-      return [];
-    }
-    const credentialRecordMatches = await Promise.all(credentialRecords.map((c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c)));
-    matchedCredentialRecords = credentialRecords.filter((c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
-    break;
-  }
-  case QueryType.Frame:
-  case QueryType.DidAuth:
-  case QueryType.DidAuthLegacy:
-    matchedCredentialRecords = [];
-    break;
-  default:
-    matchedCredentialRecords = [];
-    break;
-  }
-  return matchedCredentialRecords;
-};
+}
 
 // Select credentials to exchange with issuer or verifier
 const selectCredentials = async (credentialRecords: CredentialRecordRaw[]): Promise<CredentialRecordRaw[]> => {
@@ -218,11 +138,6 @@ export const constructExchangeRequest = async ({
   return { verifiablePresentation: finalPresentation };
 };
 
-// Determine if any additional VC-API exchange interactions are required
-const requiresAction = (exchangeResponse: any): boolean => {
-  return !!exchangeResponse.verifiablePresentationRequest;
-};
-
 // Type definition for handleVcApiExchangeSimple function parameters
 type HandleVcApiExchangeSimpleParameters = {
   url: string;
@@ -253,14 +168,14 @@ type HandleVcApiExchangeCompleteParameters = {
 };
 
 // Handle complete VC-API credential exchange workflow
-export const handleVcApiExchangeComplete = async ({
+export async function handleVcApiExchangeComplete ({
   url,
-  request={},
+  request = {},
   holder,
   suite,
-  interactions=0,
-  interactive=false
-}: HandleVcApiExchangeCompleteParameters): Promise<ExchangeResponse> => {
+  interactions = 0,
+  interactive = true
+}: HandleVcApiExchangeCompleteParameters): Promise<ExchangeResponse> {
   if (interactions === MAX_INTERACTIONS) {
     throw new Error(`Request timed out after ${interactions} interactions`);
   }
@@ -268,8 +183,12 @@ export const handleVcApiExchangeComplete = async ({
     throw new Error(`Received invalid interaction URL from issuer: ${url}`);
   }
 
-  const exchangeResponse = await interactExchange(url, request);
-  if (!requiresAction(exchangeResponse)) {
+  // Start the exchange process - POST an empty {} to the exchange API url
+  const exchangeResponse = await postToExchange(url, request);
+  console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2));
+
+  if (!exchangeResponse.verifiablePresentationRequest) {
+    console.log('No VPR requested from the exchange, returning.');
     return exchangeResponse;
   }
 
@@ -277,18 +196,23 @@ export const handleVcApiExchangeComplete = async ({
   let credentials: Credential[] = [];
   let filteredCredentialRecords: CredentialRecordRaw[] = [];
   const { query, challenge, domain, interact } = exchangeResponse.verifiablePresentationRequest;
+
   let queries = query;
   if (!Array.isArray(queries)) {
     queries = [query];
   }
   for (const query of queries) {
+    console.log(`Processing query type "${query.type}"`);
     switch (query.type) {
-    case QueryType.DidAuthLegacy:
-    case QueryType.DidAuth:
+    case VcQueryType.DidAuthLegacy:
+    case VcQueryType.DidAuth:
       signed = true;
       break;
     default: {
-      const filteredCredentialRecordsGroup: CredentialRecordRaw[] = await queryCredentialRecordsByType(query);
+      console.log('Querying...');
+      const allRecords = await CredentialRecord.getAllCredentialRecords();
+      const filteredCredentialRecordsGroup: CredentialRecordRaw[] =
+        filterCredentialRecordsByType(allRecords, query);
       filteredCredentialRecords = filteredCredentialRecords.concat(filteredCredentialRecordsGroup);
       const filteredCredentials = filteredCredentialRecords.map((r) => r.credential);
       credentials = credentials.concat(filteredCredentials);
@@ -300,7 +224,12 @@ export const handleVcApiExchangeComplete = async ({
     const credentialRecords = await selectCredentials(filteredCredentialRecords);
     credentials = credentialRecords.map((r) => r.credential);
   }
+
   const exchangeRequest = await constructExchangeRequest({ credentials, challenge, domain, holder, suite, signed });
   const exchangeUrl = interact?.service[0]?.serviceEndpoint ?? url;
-  return handleVcApiExchangeComplete({ url: exchangeUrl, request: exchangeRequest, holder, suite, interactions: interactions + 1, interactive });
-};
+  console.log(`Sending request to "${exchangeUrl}":`, exchangeRequest);
+  return handleVcApiExchangeComplete({
+    url: exchangeUrl, request: exchangeRequest, holder, suite,
+    interactions: interactions + 1, interactive
+  });
+}

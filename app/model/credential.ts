@@ -1,26 +1,8 @@
 import Realm from 'realm';
-import { ObjectID} from 'bson';
+import { ObjectID } from 'bson';
 
-import { Credential } from '../types/credential';
-import {db} from './DatabaseAccess';
-
-/**
- * The DCC VC standard is in flux right now,
- * so we are choosing to store credentials as
- * stringified JSON.
- */
-
-export type CredentialRecordEntry = {
-  readonly _id: ObjectID;
-  readonly createdAt: Date;
-  readonly updatedAt: Date;
-  readonly rawCredential: string;
-  readonly profileRecordId: ObjectID;
-}
-
-export type CredentialRecordRaw = CredentialRecordEntry & {
-  readonly credential: Credential;
-}
+import { Credential, CredentialRecordEntry, CredentialRecordRaw } from '../types/credential';
+import { db } from './DatabaseAccess';
 
 export class CredentialRecord extends Realm.Object<CredentialRecord> implements CredentialRecordRaw {
   readonly _id!: ObjectID;

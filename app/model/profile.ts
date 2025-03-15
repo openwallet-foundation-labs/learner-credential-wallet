@@ -9,8 +9,9 @@ import { UnlockedWallet } from '../types/wallet';
 import { ProfileImportReport, ProfileMetadata } from '../types/profile';
 import { parseWalletContents } from '../lib/parseWallet';
 import { HumanReadableError } from '../lib/error';
-import {CredentialRecord, CredentialRecordRaw} from './credential';
+import {CredentialRecord} from './credential';
 import {DidRecord, DidRecordRaw} from './did';
+import { CredentialRecordRaw } from '../types/credential';
 
 const UNTITLED_PROFILE_NAME = 'Untitled Profile';
 export const INITIAL_PROFILE_NAME = 'Default';
