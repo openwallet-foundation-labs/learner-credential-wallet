@@ -10,25 +10,17 @@ import { CredentialRecord } from '../model/credential';
 import { navigationRef } from '../navigation';
 import store from '../store';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
-import { Credential, CredentialRecordRaw } from '../types/credential';
+import { Credential, CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';
 import { clearGlobalModal, displayGlobalModal } from './globalModal';
 import { getGlobalModalBody } from './globalModalBody';
 import { delay } from './time';
-import { credentialMatchesVprExampleQuery } from './credentialMatching';
+import { filterCredentialRecordsByType } from './credentialMatching';
 
 const MAX_INTERACTIONS = 10;
 
-// Different types of queries in verifiable presentation request
-enum QueryType {
-  Example = 'QueryByExample',
-  Frame = 'QueryByFrame',
-  DidAuth = 'DIDAuthentication',
-  DidAuthLegacy = 'DIDAuth'
-}
-
 // Interact with VC-API exchange
-const interactExchange = async (url: string, request={}): Promise<any> => {
+const interactExchange = async (url: string): Promise<any> => {
   const exchangeResponseRaw = await fetch(url, {
     method: 'POST',
     headers: {
@@ -37,36 +29,6 @@ const interactExchange = async (url: string, request={}): Promise<any> => {
     body: '{}' // Empty JSON object, per VC-API/CHAPI spec.
   });
   return exchangeResponseRaw.json();
-};
-
-// Query credential records by type
-const queryCredentialRecordsByType = async (query: any): Promise<CredentialRecordRaw[]> => {
-  const credentialRecords = await CredentialRecord.getAllCredentialRecords();
-  console.log('Starting with all VC records:', JSON.stringify(credentialRecords, null, 2));
-  let matchedCredentialRecords: CredentialRecordRaw[];
-  switch (query.type) {
-  case QueryType.Example: {
-    const example = query.credentialQuery?.example;
-    if (!example) {
-      // This is an error with the exchanger, as the request is malformed
-      console.log('"example" field missing in QueryByExample.');
-      return [];
-    }
-    const credentialRecordMatches = await Promise.all(credentialRecords.map((c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c)));
-    matchedCredentialRecords = credentialRecords.filter((c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
-    console.log('Resulting matches:', matchedCredentialRecords);
-    break;
-  }
-  case QueryType.Frame:
-  case QueryType.DidAuth:
-  case QueryType.DidAuthLegacy:
-    matchedCredentialRecords = [];
-    break;
-  default:
-    matchedCredentialRecords = [];
-    break;
-  }
-  return matchedCredentialRecords;
 };
 
 // Select credentials to exchange with issuer or verifier
@@ -177,11 +139,6 @@ export const constructExchangeRequest = async ({
   return { verifiablePresentation: finalPresentation };
 };
 
-// Determine if any additional VC-API exchange interactions are required
-const requiresAction = (exchangeResponse: any): boolean => {
-  return !!exchangeResponse.verifiablePresentationRequest;
-};
-
 // Type definition for handleVcApiExchangeSimple function parameters
 type HandleVcApiExchangeSimpleParameters = {
   url: string;
@@ -212,14 +169,14 @@ type HandleVcApiExchangeCompleteParameters = {
 };
 
 // Handle complete VC-API credential exchange workflow
-export const handleVcApiExchangeComplete = async ({
+export async function handleVcApiExchangeComplete ({
   url,
-  request={},
+  // request={},
   holder,
   suite,
   interactions=0,
   interactive=false
-}: HandleVcApiExchangeCompleteParameters): Promise<ExchangeResponse> => {
+}: HandleVcApiExchangeCompleteParameters): Promise<ExchangeResponse> {
   if (interactions === MAX_INTERACTIONS) {
     throw new Error(`Request timed out after ${interactions} interactions`);
   }
@@ -227,10 +184,12 @@ export const handleVcApiExchangeComplete = async ({
     throw new Error(`Received invalid interaction URL from issuer: ${url}`);
   }
 
-  const exchangeResponse = await interactExchange(url, request);
+  // Start the exchange process - POST an empty {} to the exchange API url
+  const exchangeResponse = await interactExchange(url);
   console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2));
-  if (!requiresAction(exchangeResponse)) {
-    console.log('Does not require action, returning.');
+
+  if (!exchangeResponse.verifiablePresentationRequest) {
+    console.log('No VPR requested from the exchange, returning.');
     return exchangeResponse;
   }
 
@@ -239,6 +198,7 @@ export const handleVcApiExchangeComplete = async ({
   let filteredCredentialRecords: CredentialRecordRaw[] = [];
   const { query, challenge, domain, interact } = exchangeResponse.verifiablePresentationRequest;
   console.log('Extracted:', JSON.stringify(query, null, 2), challenge, domain, interact);
+
   let queries = query;
   if (!Array.isArray(queries)) {
     queries = [query];
@@ -246,13 +206,15 @@ export const handleVcApiExchangeComplete = async ({
   for (const query of queries) {
     console.log(`Processing query type "${query.type}"`);
     switch (query.type) {
-    case QueryType.DidAuthLegacy:
-    case QueryType.DidAuth:
+    case VcQueryType.DidAuthLegacy:
+    case VcQueryType.DidAuth:
       signed = true;
       break;
     default: {
       console.log('Querying...');
-      const filteredCredentialRecordsGroup: CredentialRecordRaw[] = await queryCredentialRecordsByType(query);
+      const allRecords = await CredentialRecord.getAllCredentialRecords();
+      const filteredCredentialRecordsGroup: CredentialRecordRaw[] =
+        filterCredentialRecordsByType(allRecords, query);
       filteredCredentialRecords = filteredCredentialRecords.concat(filteredCredentialRecordsGroup);
       const filteredCredentials = filteredCredentialRecords.map((r) => r.credential);
       credentials = credentials.concat(filteredCredentials);
@@ -267,4 +229,4 @@ export const handleVcApiExchangeComplete = async ({
   const exchangeRequest = await constructExchangeRequest({ credentials, challenge, domain, holder, suite, signed });
   const exchangeUrl = interact?.service[0]?.serviceEndpoint ?? url;
   return handleVcApiExchangeComplete({ url: exchangeUrl, request: exchangeRequest, holder, suite, interactions: interactions + 1, interactive });
-};
+}

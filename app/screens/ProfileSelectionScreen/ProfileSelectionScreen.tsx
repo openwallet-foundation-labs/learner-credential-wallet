@@ -25,7 +25,7 @@ export default function ProfileSelectionScreen({ navigation, route }: ProfileSel
   const flatListData = useMemo(() => [...rawProfileRecords].reverse(), [rawProfileRecords]);
 
   useEffect(() => {
-    console.log('Profile records:', rawProfileRecords)
+    console.log('Profile records:', rawProfileRecords);
     if (rawProfileRecords.length === 1) {
       onSelectProfile(rawProfileRecords[0]);
     } else if (associatedProfile){
