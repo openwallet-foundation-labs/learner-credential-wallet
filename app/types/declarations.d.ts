@@ -24,6 +24,7 @@ declare module 'react-native-receive-sharing-intent';
 declare module 'react-hooks-outside';
 declare module 'validator';
 declare module '@microsoft/msrcrypto';
+declare module '@digitalcredentials/verifier-core';
 
 declare module '*.png';
 declare module '*.json';
