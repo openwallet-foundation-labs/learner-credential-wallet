@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
-    "@digitalcredentials/data-integrity": "^2.5.1-beta.1", 
+    "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
     "@digitalcredentials/did-method-key": "^2.0.3",
     "@digitalcredentials/ed25519-signature-2020": "^6.0.0",
     "@digitalcredentials/ed25519-verification-key-2020": "^4.0.0",
@@ -106,7 +106,9 @@
     "realm": "^11.10.2",
     "text-encoding": "^0.7.0",
     "util": "^0.10.4",
-    "validator": "^13.11.0"
+    "validator": "^13.11.0",
+    "@did-coop/wallet-attached-storage": "https://github.com/did-coop/wallet-attached-storage",
+    "@did.coop/did-key-ed25519": "^0.0.9"
   },
   "devDependencies": {
     "@react-native/eslint-config": "^0.73.2",
