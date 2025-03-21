@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavHeader } from '../../components';
@@ -8,7 +9,7 @@ import { WalletStorage } from '@did-coop/wallet-attached-storage';
 const WASScreen = () => {
   const testingWalletStorage = async () => {
     const appDidSigner = await Ed25519Signer.generate();
-    console.log('🚀 ~ testingWalletStorage ~ appDidSigner:', appDidSigner);
+    console.log('🚀 ~ testingWalletStorage ~ appDidSigneroooo:', appDidSigner);
 
     const space = await WalletStorage.provisionSpace({
       url: 'https://cors-anywhere.herokuapp.com/https://data.pub',
