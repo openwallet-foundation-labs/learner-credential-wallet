@@ -43,6 +43,7 @@
     "@digitalcredentials/vc": "^9.0.0",
     "@digitalcredentials/vc-bitstring-status-list": "^1.0.0",
     "@digitalcredentials/vc-status-list": "^9.0.0",
+    "@digitalcredentials/verifier-core": "^1.0.0-beta.2",
     "@digitalcredentials/vpqr": "^2.2.1",
     "@expo-google-fonts/roboto-mono": "^0.2.2",
     "@expo-google-fonts/rubik": "^0.2.0",
