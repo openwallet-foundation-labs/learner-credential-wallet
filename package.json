@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
-    "@digitalcredentials/data-integrity": "^2.5.1-beta.1", 
+    "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
     "@digitalcredentials/did-method-key": "^2.0.3",
     "@digitalcredentials/ed25519-signature-2020": "^6.0.0",
     "@digitalcredentials/ed25519-verification-key-2020": "^4.0.0",
@@ -43,6 +43,7 @@
     "@digitalcredentials/vc": "^9.0.0",
     "@digitalcredentials/vc-bitstring-status-list": "^1.0.0",
     "@digitalcredentials/vc-status-list": "^9.0.0",
+    "@digitalcredentials/verifier-core": "^1.0.0-beta.2",
     "@digitalcredentials/vpqr": "^2.2.1",
     "@expo-google-fonts/roboto-mono": "^0.2.2",
     "@expo-google-fonts/rubik": "^0.2.0",

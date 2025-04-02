@@ -1,33 +1,17 @@
 // import '@digitalcredentials/data-integrity-rn';
-import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
-import { DataIntegrityProof } from '@digitalcredentials/data-integrity';
-import { cryptosuite as eddsaRdfc2022CryptoSuite } from '@digitalcredentials/eddsa-rdfc-2022-cryptosuite';
-
-import { purposes } from '@digitalcredentials/jsonld-signatures';
-import * as vc from '@digitalcredentials/vc';
-
 import { VerifiablePresentation, PresentationError } from '../types/presentation';
 import { Credential, CredentialError } from '../types/credential';
-
-import { securityLoader } from '@digitalcredentials/security-document-loader'; 
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { getCredentialStatusChecker } from './credentialStatus';
 import { issuerInRegistries } from './issuerInRegistries';
 import { extractCredentialsFrom } from './verifiableObject';
-
-const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
-// for verifying eddsa-2022 signatures
-const eddsaSuite = new DataIntegrityProof({ cryptosuite: eddsaRdfc2022CryptoSuite });
-// for verifying ed25519-2020 signatures
-const ed25519Suite = new Ed25519Signature2020();
-// add both suites - the vc lib will use whichever is appropriate
-const suite = [ed25519Suite, eddsaSuite];
-
-const presentationPurpose = new purposes.AssertionProofPurpose();
+import { KnownDidRegistries } from '../../app.config';
+import * as verifierCore from '@digitalcredentials/verifier-core';
 
 export type ResultLog = {
   id: string,
-  valid: boolean
+  valid: boolean,
+  error?: any
 }
 
 export type Result = {
@@ -50,15 +34,9 @@ export async function verifyPresentation(
     const credential = extractCredentialsFrom(presentation)?.find(
       vc => vc.credentialStatus);
     const checkStatus = credential ? getCredentialStatusChecker(credential) : undefined;
-    const result = await vc.verify({
-      presentation,
-      presentationPurpose,
-      suite,
-      documentLoader,
-      unsignedPresentation,
-      checkStatus
+    const result = await verifierCore.verifyPresentation({
+      presentation
     });
-
     if (!result.verified) {
       console.warn('VP not verified:', JSON.stringify(result, null, 2));
     }
@@ -79,18 +57,55 @@ export async function verifyCredential(credential: Credential, registries: Regis
 
   try {
     const checkStatus = credential.credentialStatus ? getCredentialStatusChecker(credential) : undefined;
-    const result = await vc.verifyCredential({
+    const result = await verifierCore.verifyCredential({
       credential,
-      suite,
-      documentLoader,
-      // Only check revocation status if VC has a 'credentialStatus' property
-      checkStatus
+      knownDIDRegistries: KnownDidRegistries
     });
 
     // This logic catches the case where the verify response does not contain a `log` value
-    if (result.results?.[0].log === undefined) {
+    if (result.log === undefined) {
       throw result.error || new Error('Verify response does not a `log` value');
     }
+
+    result.verified = Array.isArray(result.log)
+      ? result.log.every((check: { valid: any; }) => check.valid)
+      : false;
+
+    if (!result.results) {
+      result.results = [{
+        verified: (result.log as ResultLog[]).every(check => check.valid),
+        log: result.log,
+        credential: result.credential
+      }];
+    }
+
+    if (result?.verified === false) {
+      const revocationIndex = (result.log as ResultLog[]).findIndex(
+        c => c.id === "revocation_status"
+      );
+
+      if (revocationIndex !== -1) {
+        const revocationObject = result.log[revocationIndex];
+
+        if (revocationObject?.error?.name === "status_list_not_found") {
+          (result.log as ResultLog[]).splice(revocationIndex, 1);
+
+          // Re-evaluate verification result based on remaining logs
+          result.verified = (result.log as ResultLog[]).every(log => log.valid);
+        } else {
+          const revocationResult = {
+            id: "revocation_status",
+            valid: revocationObject.valid ?? false,
+          };
+
+          (result.results[0].log ??= []).push(revocationResult);
+          result.hasStatusError = !!revocationObject.error;
+        }
+      }
+    }
+
+
+
 
     if (!result.verified) {
       console.warn('VC not verified:', JSON.stringify(result, null, 2));
