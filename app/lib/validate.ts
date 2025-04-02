@@ -2,9 +2,7 @@
 import { VerifiablePresentation, PresentationError } from '../types/presentation';
 import { Credential, CredentialError } from '../types/credential';
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
-import { getCredentialStatusChecker } from './credentialStatus';
 import { issuerInRegistries } from './issuerInRegistries';
-import { extractCredentialsFrom } from './verifiableObject';
 import { KnownDidRegistries } from '../../app.config';
 import * as verifierCore from '@digitalcredentials/verifier-core';
 
@@ -28,12 +26,8 @@ export type VerifyResponse = {
 
 export async function verifyPresentation(
   presentation: VerifiablePresentation,
-  unsignedPresentation = true,
 ): Promise<VerifyResponse> {
   try {
-    const credential = extractCredentialsFrom(presentation)?.find(
-      vc => vc.credentialStatus);
-    const checkStatus = credential ? getCredentialStatusChecker(credential) : undefined;
     const result = await verifierCore.verifyPresentation({
       presentation
     });
@@ -56,7 +50,6 @@ export async function verifyCredential(credential: Credential, registries: Regis
   }
 
   try {
-    const checkStatus = credential.credentialStatus ? getCredentialStatusChecker(credential) : undefined;
     const result = await verifierCore.verifyCredential({
       credential,
       knownDIDRegistries: KnownDidRegistries
@@ -81,20 +74,20 @@ export async function verifyCredential(credential: Credential, registries: Regis
 
     if (result?.verified === false) {
       const revocationIndex = (result.log as ResultLog[]).findIndex(
-        c => c.id === "revocation_status"
+        c => c.id === 'revocation_status'
       );
 
       if (revocationIndex !== -1) {
         const revocationObject = result.log[revocationIndex];
 
-        if (revocationObject?.error?.name === "status_list_not_found") {
+        if (revocationObject?.error?.name === 'status_list_not_found') {
           (result.log as ResultLog[]).splice(revocationIndex, 1);
 
           // Re-evaluate verification result based on remaining logs
           result.verified = (result.log as ResultLog[]).every(log => log.valid);
         } else {
           const revocationResult = {
-            id: "revocation_status",
+            id: 'revocation_status',
             valid: revocationObject.valid ?? false,
           };
 
