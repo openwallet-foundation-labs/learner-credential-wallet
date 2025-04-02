@@ -85,7 +85,7 @@ export default function VerificationStatusCard({ credential, verifyPayload }: Ve
           negativeText={`Has expired ${expirationText}`}
           verified={details[LogId.Expiration]}
         />
-        {hasCredentialStatus && hasRevocationStatus &&
+        {hasCredentialStatus && hasRevocationStatus && details[LogId.RevocationStatus] !== undefined &&
         <StatusItem
           positiveText="Has not been revoked by issuer"
           negativeText="Has been revoked by issuer"
