@@ -72,12 +72,21 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     } else {
       console.log('Credential not available.');
       displayGlobalModal(dataLoadingSuccessModalState);
-      navigationRef.goBack();
+      rejectExchange();
     }
   };
 
   const rejectExchange = () => {
-    navigationRef.goBack();
+    if (navigationRef.isReady() && navigationRef.canGoBack()) {
+      navigationRef.goBack();
+    } else {
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'CredentialNavigation',
+        params: {
+          screen: 'HomeScreen',
+        },
+      });
+    }
   };
 
   return (
