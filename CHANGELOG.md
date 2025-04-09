@@ -1,11 +1,22 @@
 # learner-credential-wallet Changelog
 
+## 2.1.9 - build 89
+### Added
+- Capability to Unbake Open Badge 3.0 #649
+- New verifier core integration #717, #718, #719
+- Presentation requests: Receive and process requests through deeplinks on LCW #697
+
+### Fixed
+- ViewPropTypes error on Android and iOS #575
+- Animated: 'use Native Driver' was not specified error #716
+- Clicking on NO the credentials request popup results in error #721
+
 ## 2.1.8 - build 88
 ### Added
 - Add eddsa-rdfc-2022 #656
 
 ### Fixed
-'Wallet initialization failed' error when setting up wallet #695
+- 'Wallet initialization failed' error when setting up wallet #695
 
 ## 2.1.7 - build 87
 ### Changed

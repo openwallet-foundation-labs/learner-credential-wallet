@@ -4,8 +4,8 @@
  */
 const env = process.env;
 
-const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 88;
-const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.1.8';
+const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 89;
+const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.1.9';
 
 // Used by the 'Create Public Link' functionality
 export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
