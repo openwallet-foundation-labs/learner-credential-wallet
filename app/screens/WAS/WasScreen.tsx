@@ -21,15 +21,38 @@ const WASScreen = () => {
   const testingWalletStorage = async () => {
     try {
       const appDidSigner = await Ed25519Signer.generate();
+
       const space = await WalletStorage.provisionSpace({
-        url: 'https://cors-anywhere.herokuapp.com/https://data.pub',
+        url: 'https://data.pub',
         signer: appDidSigner,
       });
-      console.log('🚀 ~ testingWalletStoragge ~ space:', space);
+
+      console.log('🚀 ~ Space provisioned:', space);
+
+      const nonce = 'hello world ';
+      const initialData = new Blob([nonce], { type: 'text/plain' });
+
+      const resource = space.resource('my-test-data');
+
+      const putRes = await resource.put(initialData);
+      console.log('PUT status:', putRes.status);
+      console.log('Data stored:', nonce);
+
+      const response = await resource.get();
+      console.log('🚀 ~ testingWalletStorage ~ response:', response);
+
+      if (!response.ok) {
+        console.error('❌ Failed to get resource:', response.status);
+        return;
+      }
+
+      const blob = await response.blob();
+      console.log('🚀 ~ testingWalletStorage ~ blob:', blob);
     } catch (error) {
-      console.error(error);
+      console.error('💥 Error in wallet storage test:', error);
     }
   };
+
   useEffect(() => {
     testingWalletStorage();
   }, []);
@@ -41,7 +64,7 @@ const WASScreen = () => {
       />
       <View style={styles.container}>
         <View style={styles.content}>
-          <Text style={styles.text}>Hello!</Text>
+          <Text>Hello!</Text>
         </View>
       </View>
     </>
@@ -57,10 +80,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  text: {
-    fontSize: 24,
-    color: 'white',
   },
 });
 
