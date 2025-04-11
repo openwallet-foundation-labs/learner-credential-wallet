@@ -1,11 +1,12 @@
 if (typeof globalThis.btoa === 'undefined') {
-  globalThis.btoa = (str) => Buffer.from(str, 'binary').toString('base64');
+  globalThis.btoa = str => Buffer.from(str, 'binary').toString('base64');
 }
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
 
 if (!globalThis.crypto.randomUUID) {
-  globalThis.crypto.randomUUID = () => uuidv4() as `${string}-${string}-${string}-${string}-${string}`;
+  globalThis.crypto.randomUUID = () =>
+    uuidv4() as `${string}-${string}-${string}-${string}-${string}`;
 }
 
 import React, { useEffect } from 'react';
@@ -62,9 +63,13 @@ const WASScreen = () => {
 
       if (response.ok) {
         try {
-          const blob = await response.blob();
-          const text = await new Response(blob).text();
-          console.log('Retrieved content:', text);
+          if (response.blob) {
+            const blob = await response.blob();
+            const text = await new Response(blob).text();
+            console.log('Retrieved content:', text);
+          } else {
+            console.error('response.blob is undefined');
+          }
         } catch (error) {
           console.error('Error reading content:', error);
         }
@@ -80,7 +85,7 @@ const WASScreen = () => {
   return (
     <>
       <NavHeader
-        title="W.A.S"
+        title='W.A.S'
         goBack={navigationRef.goBack}
       />
       <View style={styles.container}>
