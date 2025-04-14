@@ -1,20 +1,15 @@
-if (typeof globalThis.btoa === 'undefined') {
-  globalThis.btoa = str => Buffer.from(str, 'binary').toString('base64');
+if (typeof btoa === 'undefined') {
+  // eslint-disable-next-line no-global-assign
+  btoa = (str: any) => Buffer.from(str, 'binary').toString('base64');
 }
 import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
-
-if (!globalThis.crypto.randomUUID) {
-  globalThis.crypto.randomUUID = () =>
-    uuidv4() as `${string}-${string}-${string}-${string}-${string}`;
-}
 
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { NavHeader } from '../../components';
 import { navigationRef } from '../../navigation';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
-import { WalletStorage } from '@did-coop/wallet-attached-storage';
+import { WalletStorage } from '@did.coop/wallet-attached-storage';
 
 const WASScreen = () => {
   const testingWalletStorage = async () => {
