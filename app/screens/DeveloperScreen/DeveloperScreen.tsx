@@ -84,6 +84,9 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
     await Cache.getInstance().removeAll(CacheKey.VerificationResult);
   }
 
+  function goWas() {
+    navigationRef.navigate('WASScreen' as never);
+  }
 
   return (
     <>
@@ -99,6 +102,7 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
         <Button {...buttonStyleProps} title="Add revoked credential" onPress={addRevokedCredential} />
         <Button {...buttonStyleProps} title="Receive credential through deep link" onPress={receiveCredentialThroughDeepLink} />
         <Button {...buttonStyleProps} title="Credential share request with deep link" onPress={startShareRequest} />
+        <Button {...buttonStyleProps} title="Connect to W.A.S" onPress={goWas} />
         <View style={styles.spacer} />
       </ScrollView>
     </>
