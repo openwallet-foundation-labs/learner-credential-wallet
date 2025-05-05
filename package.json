@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
-    "@did-coop/wallet-attached-storage": "0.1.0",
+    "@did-coop/wallet-attached-storage": "^0..0",
     "@did.coop/did-key-ed25519": "^0.0.9",
     "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
     "@digitalcredentials/did-method-key": "^2.0.3",

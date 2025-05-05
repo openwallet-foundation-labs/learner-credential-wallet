@@ -9,7 +9,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { NavHeader } from '../../components';
 import { navigationRef } from '../../navigation';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
-import { WalletStorage } from '@did.coop/wallet-attached-storage';
+import { WalletStorage } from '@did-coop/wallet-attached-storage';
 
 const WASScreen = () => {
   const testingWalletStorage = async () => {
