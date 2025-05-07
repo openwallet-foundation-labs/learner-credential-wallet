@@ -3,7 +3,8 @@ import { View, Text, ScrollView, TouchableWithoutFeedback, AccessibilityInfo } f
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 
-import { MenuItem, NavHeader, ConfirmModal, AccessibleView, VerificationCard, CredentialCard } from '../../components';
+//import { MenuItem, NavHeader, ConfirmModal, AccessibleView, VerificationCard, CredentialCard, VerificationStatusCard } from '../../components';
+import { MenuItem, NavHeader, ConfirmModal, AccessibleView, CredentialCard, VerificationStatusCard } from '../../components';
 import { CredentialScreenProps, navigationRef } from '../../navigation';
 
 import dynamicStyleSheet from './CredentialScreen.styles';
@@ -12,6 +13,7 @@ import { makeSelectProfileFromCredential } from '../../store/selectorFactories';
 import { useSelectorFactory } from '../../hooks/useSelectorFactory';
 import { PublicLinkScreenMode } from '../../screens';
 import { credentialItemPropsFor } from '../../lib/credentialDisplay';
+import { useVerifyCredential } from '../../hooks';
 
 export default function CredentialScreen({ navigation, route }: CredentialScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
@@ -23,7 +25,8 @@ export default function CredentialScreen({ navigation, route }: CredentialScreen
   const { title } = credentialItemPropsFor(rawCredentialRecord.credential);
 
   const rawProfileRecord = useSelectorFactory(makeSelectProfileFromCredential, { rawCredentialRecord });
-  const { profileName } = rawProfileRecord;
+  //const { profileName } = rawProfileRecord;
+  const verifyPayload = useVerifyCredential(rawCredentialRecord, true);
 
   function onPressShare() {
     if (navigationRef.isReady()) {
@@ -130,10 +133,11 @@ export default function CredentialScreen({ navigation, route }: CredentialScreen
           >
             <View style={styles.container}>
               <CredentialCard rawCredentialRecord={rawCredentialRecord} onPressIssuer={goToIssuerInfo} />
-              <VerificationCard rawCredentialRecord={rawCredentialRecord} isButton showDetails={false}/>
+              {/* <VerificationCard rawCredentialRecord={rawCredentialRecord} isButton showDetails={false}/> */}
+              {verifyPayload && <VerificationStatusCard credential={rawCredentialRecord.credential} verifyPayload={verifyPayload} />}
               <View style={styles.profileContainer}>
                 <Text style={mixins.paragraphText}>
-                  <Text style={styles.textBold}>Profile:</Text> {profileName}
+                  {/* <Text style={styles.textBold}>Profile:</Text> {profileName} */}
                 </Text>
               </View>
             </View>
