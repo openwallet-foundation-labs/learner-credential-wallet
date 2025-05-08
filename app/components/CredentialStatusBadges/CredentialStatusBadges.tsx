@@ -57,13 +57,13 @@ export default function CredentialStatusBadges({
     }, {});
 
     // Add default values for expected checks if missing
-    ['valid_signature', 'revocation_status', 'expiration', 'registered_issuer'].forEach(key => {
+    ['valid_signature', 'expiration', 'registered_issuer'].forEach(key => {
       if (!(key in details)) {
         details[key] = false;
       }
     });
 
-    const hasFailure = ['valid_signature'].some(
+    const hasFailure = ['valid_signature','revocation_status'].some(
       key => details[key] === false
     );
 
