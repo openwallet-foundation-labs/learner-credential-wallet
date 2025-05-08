@@ -7,96 +7,71 @@ import { Buffer } from '@craftzdog/react-native-buffer';
 
 export type ReportDetails = Record<string, string[]>;
 
-export async function readFile(path: string): Promise<string> {
-  let fileContent: string = '';
-  let openBadgeCredential = '';
-  try {
-    // Extract the file extension from the resolved/provided path
-    const fileExtension = getFileExtension(path);
+//identify PNG open badges by content
+function isPngFile(base64: string): boolean {
+  const header = Buffer.from(base64.substring(0, 24), 'base64').slice(0, 8);
+  return header.equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])); // PNG magic numbers
+}
 
-    if (fileExtension === 'png') {    
-      // Read the PNG file as base64
-      const base64Image = await RNFS.readFile(path, 'base64');
-            
-      const decodedString = Buffer.from(base64Image, 'base64').toString('utf8');
-      
+export async function readFile(path: string): Promise<string> {
+  try {
+    // Always read as base64 initially
+    const base64Data = await RNFS.readFile(path, 'base64');
+
+    if (isPngFile(base64Data)) {
+      // Decode base64 to UTF-8 string for embedded JSON search
+      const decodedString = Buffer.from(base64Data, 'base64').toString('utf8');
+
       // Search for keyword and extract the object following it
-      const keyword = 'openbadgecredential';  
+      const keyword = 'openbadgecredential';
       const keywordIndex = decodedString.indexOf(keyword);
 
       // Check if the keyword is found
       if (keywordIndex !== -1) {
-        // Extract the portion of the string after the keyword
         const startIndex = keywordIndex + keyword.length;
-
         // Find start of the object
         const objectStart = decodedString.indexOf('{', startIndex);
 
         if (objectStart !== -1) {
-          // Find matching closing brace
           let braceCount = 0;
           let objectEnd = objectStart;
 
           while (objectEnd < decodedString.length) {
-            if (decodedString[objectEnd] === '{') {
-              braceCount++;
-            } else if (decodedString[objectEnd] === '}') {
-              braceCount--;
-            }
+            if (decodedString[objectEnd] === '{') braceCount++;
+            else if (decodedString[objectEnd] === '}') braceCount--;
 
-            // When brace count goes back to zero = found the end of object
-            if (braceCount === 0) {
-              break;
-            }
-
+            if (braceCount === 0) break;
             objectEnd++;
           }
-          
+
           const objectString = decodedString.slice(objectStart, objectEnd + 1);
 
-          // Parse object
           try {
             const parsedObject = JSON.parse(objectString);
-            openBadgeCredential = JSON.stringify(parsedObject, null, 2);
+            return JSON.stringify(parsedObject, null, 2);
           } catch (error) {
-            console.error('Failed to parse JSON:', error);
+            console.error('Failed to parse embedded OpenBadge JSON:', error);
+            return '';
           }
-        } 
+        } else {
+          console.warn('Could not locate start of JSON object');
+          return '';
+        }
       } else {
-        console.log('Keyword not found');
+        console.log('OpenBadge keyword not found');
+        return '';
       }
-
-      fileContent = openBadgeCredential;
-
     } else {
-      // For other file types (text, etc.), read as UTF-8
+      // Assume it's a plain JSON/text file
       const decodedPath = path.replace(/%20/g, ' ');
-      fileContent = await RNFS.readFile(decodedPath, 'utf8');
+      const fileContent = await RNFS.readFile(decodedPath, 'utf8');
+      return fileContent;
     }
-
   } catch (error) {
     console.error('Error reading file:', error);
-    fileContent = '';  // Handle error, fallback value
+    return '';
   }
-
-  if (fileContent === undefined) {
-    throw new Error('File content could not be determined');
-  }
-
-  return fileContent;
 }
-
-// Utility function to extract file extension
-function getFileExtension(path: string): string {
-  // Check if the path ends with a file extension like ".png"
-  const regex = /(?:\.([^.]+))?$/;
-  const match = path.match(regex);
-  if (match && match[1]) {
-    return match[1].toLowerCase(); // Return the extension in lowercase (e.g., png, jpg)
-  }
-  return ''; // If no extension found, return an empty string
-}
-
 
 export async function pickAndReadFile(): Promise<string> {
   const { uri } = await DocumentPicker.pickSingle({
