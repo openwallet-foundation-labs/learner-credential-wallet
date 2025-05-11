@@ -50,7 +50,7 @@ function extendPath (path: string, extension: string): string {
 
 // Filter credential records by type
 export function filterCredentialRecordsByType (
-  allRecords: CredentialRecordRaw[], query: any
+  allRecords: CredentialRecordRaw[], query: { type: VcQueryType; credentialQuery?: any }
 ): CredentialRecordRaw[] {
   let matchedCredentialRecords: CredentialRecordRaw[];
   switch (query.type) {
