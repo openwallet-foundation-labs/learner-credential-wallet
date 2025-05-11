@@ -8,7 +8,7 @@ import { Buffer } from '@craftzdog/react-native-buffer';
 export type ReportDetails = Record<string, string[]>;
 
 //identify PNG open badges by content
-function isPngFile(base64: string): boolean {
+export function isPngFile(base64: string): boolean {
   const header = Buffer.from(base64.substring(0, 24), 'base64').slice(0, 8);
   return header.equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])); // PNG magic numbers
 }
@@ -81,7 +81,7 @@ export async function pickAndReadFile(): Promise<string> {
   return readFile(uri);
 }
 
-function credentialReportDetailsFrom(report: CredentialImportReport): ReportDetails {
+export function credentialReportDetailsFrom(report: CredentialImportReport): ReportDetails {
   const sectionText: Record<string, (n: number, s: string) => string> = {
     success: (n, s) => `${n} item${s} successfully imported`,
     duplicate: (n, s) => `${n} duplicate item${s} ignored`,
@@ -100,7 +100,7 @@ function credentialReportDetailsFrom(report: CredentialImportReport): ReportDeta
   );
 }
 
-function aggregateCredentialReports(reports: CredentialImportReport[]): CredentialImportReport {
+export function aggregateCredentialReports(reports: CredentialImportReport[]): CredentialImportReport {
   return reports.reduce((prevValue, curValue) => ({
     success: prevValue.success.concat(curValue.success),
     duplicate: prevValue.duplicate.concat(curValue.duplicate),
