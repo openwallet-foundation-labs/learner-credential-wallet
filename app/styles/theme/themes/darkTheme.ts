@@ -24,6 +24,7 @@ export const darkTheme: ThemeType = {
     shadow: Color.Black,
     success: Color.Green,
     error: Color.Red,
+    warning: Color.Yellow,
     errorLight: Color.LightRed,
     transparent: Color.Transparent,
     switchActive: Color.DarkCyan,

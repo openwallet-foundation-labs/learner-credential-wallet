@@ -34,6 +34,7 @@ export default function CredentialStatusBadges({
           backgroundColor={badgeBackgroundColor}
           color={theme.color.errorLight}
           label="Not Verified"
+          icon="close"
         />
       );
     }
@@ -71,12 +72,14 @@ export default function CredentialStatusBadges({
       key => details[key] === false
     );
 
+
     if (hasFailure) {
       return (
         <StatusBadge
           backgroundColor={badgeBackgroundColor}
           color={theme.color.errorLight}
           label="Not Verified"
+          icon="close"
         />
       );
     }
@@ -85,7 +88,7 @@ export default function CredentialStatusBadges({
       return (
         <StatusBadge
           backgroundColor={badgeBackgroundColor}
-          color={theme.color.errorLight}
+          color={theme.color.warning}
           label="Warning"
           icon="error-outline"
         />

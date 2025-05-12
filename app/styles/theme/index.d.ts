@@ -23,6 +23,7 @@ export type ThemeType = {
     shadow: Color;
     success: Color;
     error: Color;
+    warning: Color;
     errorLight: Color;
     transparent: Color;
     switchActive: Color;
