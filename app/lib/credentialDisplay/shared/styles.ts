@@ -33,6 +33,28 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     color: theme.color.textPrimary,
     marginBottom: 8,
   },
+
+  issuerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  
+  issuerContent: {
+    flex: 1,
+    marginLeft: 12,
+    justifyContent: 'center',
+  },
+  
+  issuerButton: {
+    alignSelf: 'flex-start',
+    marginTop: 8,
+    borderRadius: 6,
+    // paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  
+
   dataValue: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.regular,

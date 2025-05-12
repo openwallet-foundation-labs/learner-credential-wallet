@@ -33,5 +33,7 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     width: theme.issuerIconSize - 8,
     height: theme.issuerIconSize - 8,
     marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 }));

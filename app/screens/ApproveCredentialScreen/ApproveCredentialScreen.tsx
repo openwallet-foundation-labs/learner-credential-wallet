@@ -23,7 +23,7 @@ export default function ApproveCredentialScreen({ navigation, route }: ApproveCr
     if (navigationRef.isReady()) {
       navigationRef.navigate('AcceptCredentialsNavigation', {
         screen: 'IssuerInfoScreen',
-        params: { issuerId }
+        params: { issuerId, rawCredentialRecord}
       });
     }
   }

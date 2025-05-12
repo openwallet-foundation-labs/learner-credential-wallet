@@ -29,11 +29,11 @@ export function isChapiDidAuthRequest(obj: ChapiDidAuthRequest): obj is ChapiDid
 }
 
 export async function verifyVerifiableObject(
-  obj: VerifiableObject, registries: RegistryClient
+  obj: VerifiableObject
 ): Promise<boolean> {
   try {
     if (isVerifiableCredential(obj)) {
-      return (await verifyCredential(obj, registries)).verified;
+      return (await verifyCredential(obj)).verified;
     }
     if (isVerifiablePresentation(obj)) {
       return (await verifyPresentation(obj)).verified;
@@ -79,7 +79,7 @@ export type VerifyPayload = {
 }
 
 export async function verificationResultFor(
-  { rawCredentialRecord, forceFresh = false, registries }:
+  { rawCredentialRecord, forceFresh = false}:
   { rawCredentialRecord: CredentialRecordRaw, forceFresh?: boolean, registries: RegistryClient },
 ): Promise<VerificationResult> {
   const cachedRecordId = String(rawCredentialRecord._id);
@@ -88,7 +88,7 @@ export async function verificationResultFor(
     const cachedResult = await lruCache.memoize({
       key: cachedRecordId,
       fn: () => {
-        return verifyCredential(rawCredentialRecord.credential, registries);
+        return verifyCredential(rawCredentialRecord.credential);
       },
     }) as VerificationResult;
     return cachedResult;
@@ -96,7 +96,7 @@ export async function verificationResultFor(
 
   let response, error;
   try {
-    response = await verifyCredential(rawCredentialRecord.credential, registries);
+    response = await verifyCredential(rawCredentialRecord.credential);
   } catch (err) {
     error = err as Error;
   }

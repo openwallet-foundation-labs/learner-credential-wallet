@@ -5,7 +5,7 @@ import { DidRecordRaw } from '../model';
 import { createVerifiablePresentation } from './present';
 import { parseResponseBody } from './parseResponse';
 import { extractCredentialsFrom, verifyVerifiableObject, VerifiableObject } from './verifiableObject';
-import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
+//import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 
 export type CredentialRequestParams = {
   auth_type?: string;
@@ -61,7 +61,7 @@ export function isChapiCredentialRequest(request: any): request is ChapiCredenti
 }
 
 export async function requestCredential(
-  credentialRequestParams: CredentialRequestParams, didRecord: DidRecordRaw, registries: RegistryClient
+  credentialRequestParams: CredentialRequestParams, didRecord: DidRecordRaw
 ): Promise<Credential[]> {
   const {
     auth_type = 'code',
@@ -109,7 +109,7 @@ export async function requestCredential(
   const responseBody = await parseResponseBody(response);
   const verifiableObject = responseBody as VerifiableObject;
 
-  const verified = await verifyVerifiableObject(verifiableObject, registries);
+  const verified = await verifyVerifiableObject(verifiableObject);
   if (!verified) {
     console.warn('Response was received, but could not be verified');
   }

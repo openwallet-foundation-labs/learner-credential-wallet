@@ -1,64 +1,137 @@
-import React, { useContext } from 'react';
-import { View, Text, Linking } from 'react-native';
+import React from 'react';
+import { View, Text, Linking, Image } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
-
-import { BulletList, NavHeader } from '../../components';
+import { NavHeader } from '../../components';
 import dynamicStyleSheet from './IssuerInfoScreen.styles';
 import { IssuerInfoScreenProps } from './IssuerInfoScreen.d';
-import { useDynamicStyles } from '../../hooks';
-import { DidRegistryContext } from '../../init/registries';
-import {issuerInRegistries} from '../../lib/issuerInRegistries';
+import { useDynamicStyles, useVerifyCredential } from '../../hooks';
+import defaultIssuerImage from '../../assets/defaultIssuer.png';
+
 
 const NO_URL = 'None';
 
 export default function IssuerInfoScreen({
-  navigation, route
+  navigation,
+  route,
 }: IssuerInfoScreenProps): React.ReactElement | null {
+  const { rawCredentialRecord } = route.params;
   const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const { issuerId } = route.params;
-  const registries = useContext(DidRegistryContext);
+  const verifyCredential = useVerifyCredential(rawCredentialRecord);
 
-  const issuerInfo = registries.didEntry(issuerId);
-  const registryNames = issuerInRegistries({ issuer: issuerId, registries }) || [];
+  const getImageUri = (img?: string | { id?: string }): string | undefined => {
+    if (!img) return undefined;
+    if (typeof img === 'string') return img;
+    if (typeof img === 'object' && typeof img.id === 'string') return img.id;
+    return undefined;
+  };
 
-  const { name, url, location } = issuerInfo || {};
 
-  function IssuerLink(): React.ReactElement {
-    if (!url || url === NO_URL) {
-      return <Text style={styles.dataValue}>{NO_URL}</Text>;
-    }
+  const registeredIssuerLog = verifyCredential?.result?.log?.find(
+    (entry) => entry.id === 'registered_issuer'
+  ) as { matchingIssuers?: any[] } | undefined;
 
+  const matchingIssuers = registeredIssuerLog?.matchingIssuers ?? [];
+
+  const renderLink = (url?: string, label?: string) => {
+    if (!url) return <Text style={styles.dataValue}>{NO_URL}</Text>;
     return (
-      <Text
-        style={styles.link}
-        accessibilityRole="link"
-        onPress={() => Linking.openURL(url)}
-      >
-        {url}
+      <Text style={styles.link} onPress={() => Linking.openURL(url)}>
+        {label || url}
       </Text>
     );
-  }
+  };
+
+  const issuerFromCredential = rawCredentialRecord?.credential?.issuer;
 
   return (
     <>
-      <NavHeader goBack={navigation.goBack} title="Issuer Info" />
+      <NavHeader
+        goBack={() => {
+          if (navigation.canGoBack()) {
+            navigation.goBack();
+          } else {
+            (navigation.navigate as any)('HomeNavigation');
+          }
+        }}
+        title="Issuer Info"
+      />
       <ScrollView style={styles.bodyContainer}>
-        <View style={styles.dataContainer}>
-          <Text style={styles.dataLabel}>Issuer Name</Text>
-          <Text style={styles.dataValue}>{name}</Text>
-        </View>
-        <View style={styles.dataContainer}>
-          <Text style={styles.dataLabel}>Location</Text>
-          <Text style={styles.dataValue}>{location}</Text>
-        </View>
-        <View style={styles.dataContainer}>
-          <Text style={styles.dataLabel}>Issuer URL</Text>
-          <IssuerLink />
-        </View>
-        <View style={styles.dataContainer}>
-          <Text style={styles.dataLabel}>Registries</Text>
-          <BulletList items={registryNames} style={styles.bulletList} />
-        </View>
+        <Text style={styles.sectionTitle}>Information from Known Registries</Text>
+
+        {matchingIssuers.length > 0 ? (
+          matchingIssuers.map((entry, index) => {
+            const registryName =
+              entry.registry?.federation_entity?.organization_name ?? 'Unknown Registry';
+            const governanceUrl =
+              entry.registry?.institution_additional_information?.legacy_list;
+            const issuerEntity = entry.issuer?.federation_entity ?? {};
+            const issuerImage = getImageUri(issuerFromCredential?.image);
+
+            return (
+              <View key={index} style={styles.registryBlock}>
+                <Text style={styles.registryTitle}>
+                  {registryName}{' '}
+                  {governanceUrl && (
+                    <Text
+                      style={styles.link}
+                      onPress={() => Linking.openURL(governanceUrl)}
+                    >
+                      (More info on governance)
+                    </Text>
+                  )}
+                </Text>
+
+                <Image
+                  source={issuerImage ? { uri: issuerImage } : defaultIssuerImage}
+                  style={styles.registryImage}
+                />
+
+                <View style={styles.dataContainer}>
+                  <Text style={styles.dataLabel}>Issuer Name</Text>
+                  <Text style={styles.dataValue}>
+                    {issuerEntity.organization_name ?? 'N/A'}
+                  </Text>
+                </View>
+
+                {issuerEntity.legal_name && (
+                  <View style={styles.dataContainer}>
+                    <Text style={styles.dataLabel}>Legal Name</Text>
+                    <Text style={styles.dataValue}>{issuerEntity.legal_name}</Text>
+                  </View>
+                )}
+
+                <View style={styles.dataContainer}>
+                  <Text style={styles.dataLabel}>Issuer URL</Text>
+                  {renderLink(issuerEntity.homepage_uri)}
+                </View>
+
+                <View style={styles.dataContainer}>
+                  <Text style={styles.dataLabel}>CTID URL</Text>
+                  {renderLink(entry.ctid_url)}
+                </View>
+              </View>
+            );
+          })
+        ) : (
+          <View style={styles.registryBlock}>
+            <Text style={styles.registryTitle}>Issuer (from Credential)</Text>
+
+            <Image
+              source={getImageUri(issuerFromCredential?.image) ? { uri: getImageUri(issuerFromCredential?.image) } : defaultIssuerImage}
+              style={styles.registryImage}
+            />
+
+            <View style={styles.dataContainer}>
+              <Text style={styles.dataLabel}>Issuer Name</Text>
+              <Text style={styles.dataValue}>{issuerFromCredential?.name ?? 'N/A'}</Text>
+            </View>
+
+            <View style={styles.dataContainer}>
+              <Text style={styles.dataLabel}>Issuer URL</Text>
+              {renderLink(issuerFromCredential?.url)}
+            </View>
+          </View>
+        )}
       </ScrollView>
     </>
   );

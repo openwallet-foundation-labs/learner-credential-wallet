@@ -30,4 +30,31 @@ export default createDynamicStyleSheet(({ theme }) => ({
   bulletList: {
     marginTop: -4,
   },
+
+  // 🔽 Added styles for registry rendering
+  sectionTitle: {
+    fontSize: theme.fontSize.regular,
+    fontFamily: theme.fontFamily.bold,
+    color: theme.color.textPrimary,
+    marginBottom: 16,
+  },
+  registryBlock: {
+    marginBottom: 24,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.color.textSecondary,
+  },
+  registryTitle: {
+    fontSize: theme.fontSize.regular,
+    fontFamily: theme.fontFamily.bold,
+    color: theme.color.textPrimary,
+    marginBottom: 8,
+  },
+  registryImage: {
+    width: 45,
+    height: 40,
+    borderRadius: 4,
+    marginBottom: 12,
+    backgroundColor: theme.color.backgroundSecondary,
+  },
 }));

@@ -28,6 +28,7 @@ export default function CredentialScreen({ navigation, route }: CredentialScreen
   //const { profileName } = rawProfileRecord;
   const verifyPayload = useVerifyCredential(rawCredentialRecord, true);
 
+  
   function onPressShare() {
     if (navigationRef.isReady()) {
       navigationRef.navigate('HomeNavigation', {
@@ -49,7 +50,7 @@ export default function CredentialScreen({ navigation, route }: CredentialScreen
         screen: 'CredentialNavigation',
         params: {
           screen: 'IssuerInfoScreen',
-          params: { issuerId }
+          params: { issuerId, rawCredentialRecord }
         }
       });
     }

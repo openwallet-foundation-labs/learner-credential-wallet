@@ -1,9 +1,6 @@
 // import '@digitalcredentials/data-integrity-rn';
 import { VerifiablePresentation, PresentationError } from '../types/presentation';
 import { Credential, CredentialError } from '../types/credential';
-import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
-import { issuerInRegistries } from './issuerInRegistries';
-import { KnownDidRegistries } from '../../app.config';
 import * as verifierCore from '@digitalcredentials/verifier-core';
 
 export type ResultLog = {
@@ -42,18 +39,22 @@ export async function verifyPresentation(
   }
 }
 
-export async function verifyCredential(credential: Credential, registries: RegistryClient): Promise<VerifyResponse> {
-  const { issuer } = credential;
-  const isInRegistry = issuerInRegistries({ issuer, registries });
-  if (!isInRegistry) {
-    throw new Error(CredentialError.DidNotInRegistry);
-  }
+export async function verifyCredential(credential: Credential): Promise<VerifyResponse> {
+  const response = await fetch('https://digitalcredentials.github.io/dcc-known-registries/known-did-registries.json');
+  const knownDIDRegistries = await response.json();
+  
+  // const isInRegistry = issuerInRegistries({ issuer, registries });
+  // if (!isInRegistry) {
+  //   throw new Error(CredentialError.DidNotInRegistry);
+  // }
 
   try {
     const result = await verifierCore.verifyCredential({
       credential,
-      knownDIDRegistries: KnownDidRegistries
+      knownDIDRegistries: knownDIDRegistries
     });
+
+    //console.log('Verify result:', JSON.stringify(result, null, 2));
 
     // This logic catches the case where the verify response does not contain a `log` value
     if (result.log === undefined) {
