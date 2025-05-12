@@ -8,12 +8,12 @@
     "ios": "expo run:ios",
     "lint": "eslint ./app ./App.tsx && npm run compile",
     "lint:fix": "eslint --fix ./app ./App.tsx && npm run compile",
-    "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest",
+    "test": "cross-env NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest",
     "compile": "tsc --noEmit -p tsconfig.json && echo ✓ Passed TS compile check",
     "postinstall": "npx patch-package",
     "fix-deps": "npx expo install --check",
-    "prebuild:ios": "EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p ios",
-    "prebuild:android": "EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p android"
+    "prebuild:ios": "cross-env EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p ios",
+    "prebuild:android": "cross-env EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p android"
   },
   "expo": {
     "autolinking": {
@@ -119,6 +119,7 @@
     "@typescript-eslint/eslint-plugin": "^6.16.0",
     "@typescript-eslint/parser": "^6.16.0",
     "babel-plugin-module-resolver": "^5.0.0",
+    "cross-env": "^7.0.3",
     "eslint": "^8.56.0",
     "eslint-plugin-react": "^7.24.0",
     "eslint-plugin-react-native": "^3.11.0",
