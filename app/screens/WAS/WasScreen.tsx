@@ -31,36 +31,59 @@ const WASScreen = () => {
     try {
       setStatus('loading');
       setMessage('Generating signer...');
-
+  
+      // Generate a new signer
       const appDidSigner = await Ed25519Signer.generate();
-      await AsyncStorage.setItem(WAS_STORAGE_KEYS.APP_DID_SIGNER, JSON.stringify(appDidSigner));
       console.log('Generated signer:', appDidSigner.id);
-
+  
+      // Extract the base DID controller without the verification method fragment
+      const baseDidController = appDidSigner.id.split('#')[0];
+      console.log('Controller DID:', baseDidController);
+  
       setMessage('Creating space...');
-      const spaceId = `urn:uuid:${uuidv4()}`;
+      // Use uuid v4 to generate a random UUID
+      const spaceUUID = uuidv4();
+      const spaceId = `urn:uuid:${spaceUUID}`;
       console.log('Creating space with ID:', spaceId);
-
+  
+      // Provision the space
       const space = await WalletStorage.provisionSpace({
         url: WAS_BASE_URL,
         signer: appDidSigner,
         id: spaceId as `urn:uuid:${string}`,
       });
-      console.log('Space provisioned successfully:', space);
-
-      // Store signer and spaceId in AsyncStorage
-      const signerJson = await appDidSigner.toJSON();
-      // Ensure signer has an ID
-      if (!signerJson.id && signerJson.controller && signerJson.publicKeyMultibase) {
-        signerJson.id = `${signerJson.controller}#${signerJson.publicKeyMultibase}`;
+  
+      // Create a proper space object with required metadata
+      const spaceObject = {
+        controller: baseDidController,
+        type: 'Collection',
+        items: [],
+        totalItems: 0,
+      };
+      const spaceObjectBlob = new Blob([JSON.stringify(spaceObject)], {
+        type: 'application/json',
+      });
+  
+      // Put the space object to initialize it on the server
+      const spacePutResponse = await space.put(spaceObjectBlob);
+      console.log('Space PUT response status:', spacePutResponse.status);
+  
+      if (!spacePutResponse.ok) {
+        throw new Error(`Failed to initialize space. Status: ${spacePutResponse.status}`);
       }
+  
+      // Store signer JSON for future use
+      const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
         WAS_STORAGE_KEYS.SIGNER_JSON,
         JSON.stringify(signerJson)
       );
-      // Store the full space ID with urn:uuid: prefix
-      await AsyncStorage.setItem(WAS_STORAGE_KEYS.SPACE_ID, spaceId);
-      console.log('Stored space ID:', spaceId);
-
+      
+      // Store the space ID (UUID part only, without the urn:uuid: prefix)
+      // This follows what your working example is using in the resource path
+      await AsyncStorage.setItem(WAS_STORAGE_KEYS.SPACE_ID, spaceUUID);
+      console.log('Stored space ID in AsyncStorage:', spaceUUID);
+  
       setStatus('success');
       setMessage('WAS storage successfully provisioned!');
     } catch (error) {
@@ -68,10 +91,10 @@ const WASScreen = () => {
       setStatus('error');
       setMessage(
         error instanceof Error
-          ? error.message
+          ? `Error: ${error.message}`
           : 'Failed to provision WAS storage'
       );
-
+  
       // Clear stored items if provisioning failed
       await AsyncStorage.removeItem(WAS_STORAGE_KEYS.SIGNER_JSON);
       await AsyncStorage.removeItem(WAS_STORAGE_KEYS.SPACE_ID);

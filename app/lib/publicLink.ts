@@ -91,7 +91,6 @@ export async function linkedinUrlFrom(rawCredentialRecord: CredentialRecordRaw):
 
   return url;
 }
-
 async function tryCreateWasLinkFor(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string | null> {
@@ -99,7 +98,7 @@ async function tryCreateWasLinkFor(
   const signerJsonString = await AsyncStorage.getItem(
     WAS_STORAGE_KEYS.SIGNER_JSON
   );
-  console.log('🚀 ~ signerJsonString:', signerJsonString)
+  console.log('WAS signer JSON:', signerJsonString ? 'Found' : 'Not found');
 
   if (!signerJsonString) {
     console.log(
@@ -107,49 +106,68 @@ async function tryCreateWasLinkFor(
     );
     return null;
   }
-  const signer = await Ed25519Signer.fromJSON(signerJsonString);
-
-  // Get the credential ID to use as resource path
-  const credentialId = credentialIdFor(rawCredentialRecord);
-  const credentialJson = JSON.stringify(rawCredentialRecord);
-
+  
   try {
-    // Check if we have a stored space ID
-    const storedSpaceId = await AsyncStorage.getItem(WAS_STORAGE_KEYS.SPACE_ID);
-    console.log('Stored space ID:', storedSpaceId);
+    // Parse the signer JSON to get the controller
+    const signerObject = JSON.parse(signerJsonString);
+    console.log('Parsed signer JSON:', {
+      id: signerObject.id,
+      controller: signerObject.controller
+    });
+    
+    // Create signer from the stored JSON
+    const signer = await Ed25519Signer.fromJSON(signerJsonString);
+    console.log('Recreated signer with ID:', signer.id);
+    
+    // Get the base controller DID
+    const baseDidController = signer.id.split('#')[0];
 
-    if (!storedSpaceId) {
+    // Get stored space UUID (without urn:uuid: prefix)
+    const storedSpaceUUID = await AsyncStorage.getItem(WAS_STORAGE_KEYS.SPACE_ID);
+    console.log('Stored space UUID:', storedSpaceUUID);
+
+    if (!storedSpaceUUID) {
       console.log('[publicLink.ts] No stored space ID found, falling back to verifierPlus');
       return null;
     }
 
+    // Add urn:uuid: prefix for WalletStorage.provisionSpace
+    const spaceId = `urn:uuid:${storedSpaceUUID}`;
+    
     // Connect to existing space
     const space = await WalletStorage.provisionSpace({
       url: WAS_BASE_URL,
       signer,
-      id: storedSpaceId as `urn:uuid:${string}`,
+      id: spaceId as `urn:uuid:${string}`,
     });
-    console.log('Connected to space:', space);
+    console.log('Connected to space:', space.path);
+    
+    // Get the credential ID to use as resource path
+    // Use a simple, URL-safe identifier for the resource path
+    // This should be similar to what's working in your example
+    const credentialId = credentialIdFor(rawCredentialRecord);
+    // Make sure the credential ID is URL-safe
+    const safeResourceName = encodeURIComponent(credentialId).replace(/%/g, '_');
+    console.log('Safe resource name:', safeResourceName);
+    
+    // Serialize the credential as JSON
+    const credentialJson = JSON.stringify(rawCredentialRecord);
 
-    // Create a resource for the credential
-    const resource = space.resource(credentialId);
-    const fullResourceUrl = `${WAS_BASE_URL}${resource.path}`;
+    // Create a resource with the safe name
+    const resource = space.resource(safeResourceName);
     console.log('Resource path:', resource.path);
-    console.log('Full resource URL:', fullResourceUrl);
-
+    
+    // Create the credential blob with correct content type
+    const credentialBlob = new Blob([credentialJson], {
+      type: 'application/json' // Match the working example
+    });
+    
     // Store the credential
     console.log('Storing credential with signer:', signer.id);
-    const credentialBlob = new Blob([credentialJson], {
-      type: 'application/ld+json;charset=UTF-8'
-    });
     const response = await resource.put(credentialBlob, { signer });
     console.log('Resource PUT response:', {
       status: response.status,
       ok: response.ok,
-      headers: Array.from(response.headers).reduce((acc, [key, value]) => {
-        acc[key] = value;
-        return acc;
-      }, {} as Record<string, string>)
     });
 
     if (!response.ok) {
@@ -159,13 +177,20 @@ async function tryCreateWasLinkFor(
       );
       return null;
     }
-
-    // Use the space's UUID for the public link
+    
+    // Verify the resource was created
+    const getResponse = await resource.get({ signer });
+    console.log('Resource GET response:', {
+      status: getResponse.status,
+      ok: getResponse.ok
+    });
+    
+    // Construct the public link
     const publicLink = `${WAS_BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
     return publicLink;
   } catch (error) {
-    console.error('[publicLink.ts] Network error:', error);
+    console.error('[publicLink.ts] Error in tryCreateWasLinkFor:', error);
     if (error instanceof Error) {
       console.error('Error details:', {
         name: error.name,
