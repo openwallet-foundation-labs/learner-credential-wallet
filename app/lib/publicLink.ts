@@ -118,26 +118,18 @@ async function tryCreateWasLinkFor(
     const storedSpaceId = await AsyncStorage.getItem(WAS_STORAGE_KEYS.SPACE_ID);
     console.log('Stored space ID:', storedSpaceId);
 
-    let space;
-    if (storedSpaceId) {
-      // Use existing space
-      space = await WalletStorage.provisionSpace({
-        url: WAS_BASE_URL,
-        signer,
-        id: storedSpaceId as `urn:uuid:${string}`,
-      });
-      console.log('Connected to existing space:', space);
-    } else {
-      // Provision new space
-      space = await WalletStorage.provisionSpace({
-        url: WAS_BASE_URL,
-        signer,
-      });
-      // Store the new space ID
-      await AsyncStorage.setItem(WAS_STORAGE_KEYS.SPACE_ID, space.id);
-      console.log('Created and connected to new space:', space);
+    if (!storedSpaceId) {
+      console.log('[publicLink.ts] No stored space ID found, falling back to verifierPlus');
+      return null;
     }
-    console.log('Space ID:', space.id);
+
+    // Connect to existing space
+    const space = await WalletStorage.provisionSpace({
+      url: WAS_BASE_URL,
+      signer,
+      id: storedSpaceId as `urn:uuid:${string}`,
+    });
+    console.log('Connected to space:', space);
 
     // Create a resource for the credential
     const resource = space.resource(credentialId);
