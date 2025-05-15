@@ -10,6 +10,7 @@ import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import { WalletStorage } from '@did-coop/wallet-attached-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WAS_STORAGE_KEYS, WAS_BASE_URL } from '../screens/WAS/WasScreen';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
@@ -108,21 +109,11 @@ async function tryCreateWasLinkFor(
   }
   
   try {
-    // Parse the signer JSON to get the controller
-    const signerObject = JSON.parse(signerJsonString);
-    console.log('Parsed signer JSON:', {
-      id: signerObject.id,
-      controller: signerObject.controller
-    });
-    
     // Create signer from the stored JSON
     const signer = await Ed25519Signer.fromJSON(signerJsonString);
     console.log('Recreated signer with ID:', signer.id);
-    
-    // Get the base controller DID
-    const baseDidController = signer.id.split('#')[0];
 
-    // Get stored space UUID (without urn:uuid: prefix)
+    // Get stored space UUID
     const storedSpaceUUID = await AsyncStorage.getItem(WAS_STORAGE_KEYS.SPACE_ID);
     console.log('Stored space UUID:', storedSpaceUUID);
 
@@ -142,32 +133,29 @@ async function tryCreateWasLinkFor(
     });
     console.log('Connected to space:', space.path);
     
-    // Get the credential ID to use as resource path
-    // Use a simple, URL-safe identifier for the resource path
-    // This should be similar to what's working in your example
-    const credentialId = credentialIdFor(rawCredentialRecord);
-    // Make sure the credential ID is URL-safe
-    const safeResourceName = encodeURIComponent(credentialId).replace(/%/g, '_');
-    console.log('Safe resource name:', safeResourceName);
+    // Per Dmitri's suggestion, use a UUID instead of the credential ID
+    // Create a simpler resource name with a UUID
+    const resourceUUID = uuidv4();
+    console.log('Resource UUID:', resourceUUID);
     
     // Serialize the credential as JSON
     const credentialJson = JSON.stringify(rawCredentialRecord);
 
-    // Create a resource with the safe name
-    const resource = space.resource(safeResourceName);
+    // Create a resource with the UUID
+    const resource = space.resource(resourceUUID);
     console.log('Resource path:', resource.path);
     
     // Create the credential blob with correct content type
     const credentialBlob = new Blob([credentialJson], {
-      type: 'application/json' // Match the working example
+      type: 'application/json'
     });
     
-    // Store the credential
-    console.log('Storing credential with signer:', signer.id);
+    // Store the credential in WAS
+    console.log('Storing credential in WAS with signer:', signer.id);
     const response = await resource.put(credentialBlob, { signer });
-    console.log('Resource PUT response:', {
+    console.log('WAS storage response:', {
       status: response.status,
-      ok: response.ok,
+      ok: response.ok
     });
 
     if (!response.ok) {
@@ -178,16 +166,22 @@ async function tryCreateWasLinkFor(
       return null;
     }
     
-    // Verify the resource was created
-    const getResponse = await resource.get({ signer });
-    console.log('Resource GET response:', {
-      status: getResponse.status,
-      ok: getResponse.ok
-    });
-    
-    // Construct the public link
+    // Create a public link with the standard resource path
+    // Since the space is configured with public: true, this should work in browsers
     const publicLink = `${WAS_BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
+    
+    // Store the link in the cache with the format expected by the app
+    const id = credentialIdFor(rawCredentialRecord);
+    await Cache.getInstance().store(CacheKey.PublicLinks, id, {
+      server: WAS_BASE_URL,
+      url: { 
+        view: resource.path,
+        // Include a path for unsharing
+        unshare: resource.path
+      }
+    });
+    
     return publicLink;
   } catch (error) {
     console.error('[publicLink.ts] Error in tryCreateWasLinkFor:', error);

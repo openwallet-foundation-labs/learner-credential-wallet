@@ -32,7 +32,6 @@ const WASScreen = () => {
       setStatus('loading');
       setMessage('Generating signer...');
   
-      // Generate a new signer
       const appDidSigner = await Ed25519Signer.generate();
       console.log('Generated signer:', appDidSigner.id);
   
@@ -59,6 +58,7 @@ const WASScreen = () => {
         type: 'Collection',
         items: [],
         totalItems: 0,
+        public: true
       };
       const spaceObjectBlob = new Blob([JSON.stringify(spaceObject)], {
         type: 'application/json',
@@ -79,8 +79,7 @@ const WASScreen = () => {
         JSON.stringify(signerJson)
       );
       
-      // Store the space ID (UUID part only, without the urn:uuid: prefix)
-      // This follows what your working example is using in the resource path
+      // Store the space ID
       await AsyncStorage.setItem(WAS_STORAGE_KEYS.SPACE_ID, spaceUUID);
       console.log('Stored space ID in AsyncStorage:', spaceUUID);
   
