@@ -33,7 +33,6 @@
   },
   "dependencies": {
     "@craftzdog/react-native-buffer": "^6.0.5",
-    "@did-coop/wallet-attached-storage": "^0.3.0",
     "@did.coop/did-key-ed25519": "^0.0.9",
     "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
     "@digitalcredentials/did-method-key": "^2.0.3",
@@ -58,6 +57,7 @@
     "@react-navigation/native": "^6.0.1",
     "@react-navigation/stack": "^6.0.1",
     "@reduxjs/toolkit": "^1.6.1",
+    "@wallet.storage/fetch-client": "^1.1.2",
     "big-integer": "^1.6.49",
     "bson": "4.4.1",
     "expo": "~50.0.6",

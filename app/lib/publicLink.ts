@@ -7,9 +7,9 @@ import { credentialIdFor, educationalOperationalCredentialFrom } from './decode'
 import * as verifierPlus from './verifierPlus';
 import { StoreCredentialResult } from './verifierPlus';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
-import { WalletStorage } from '@did-coop/wallet-attached-storage';
+// import { WalletStorage } from '@did-coop/wallet-attached-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WAS_STORAGE_KEYS, WAS_BASE_URL } from '../screens/WAS/WasScreen';
+import { WAS_KEYS, WAS_BASE_URL } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function createPublicLinkFor(
@@ -97,7 +97,7 @@ async function tryCreateWasLinkFor(
 ): Promise<string | null> {
   // Check if WAS space is provisioned
   const signerJsonString = await AsyncStorage.getItem(
-    WAS_STORAGE_KEYS.SIGNER_JSON
+    WAS_KEYS.SIGNER_JSON
   );
   console.log('WAS signer JSON:', signerJsonString ? 'Found' : 'Not found');
 
@@ -107,14 +107,14 @@ async function tryCreateWasLinkFor(
     );
     return null;
   }
-  
+
   try {
     // Create signer from the stored JSON
     const signer = await Ed25519Signer.fromJSON(signerJsonString);
     console.log('Recreated signer with ID:', signer.id);
 
     // Get stored space UUID
-    const storedSpaceUUID = await AsyncStorage.getItem(WAS_STORAGE_KEYS.SPACE_ID);
+    const storedSpaceUUID = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
     console.log('Stored space UUID:', storedSpaceUUID);
 
     if (!storedSpaceUUID) {
@@ -124,65 +124,65 @@ async function tryCreateWasLinkFor(
 
     // Add urn:uuid: prefix for WalletStorage.provisionSpace
     const spaceId = `urn:uuid:${storedSpaceUUID}`;
-    
+
     // Connect to existing space
-    const space = await WalletStorage.provisionSpace({
-      url: WAS_BASE_URL,
-      signer,
-      id: spaceId as `urn:uuid:${string}`,
-    });
-    console.log('Connected to space:', space.path);
-    
+    // const space = await WalletStorage.provisionSpace({
+    //   url: WAS_BASE_URL,
+    //   signer,
+    //   id: spaceId as `urn:uuid:${string}`,
+    // });
+    // console.log('Connected to space:', space.path);
+
     // Per Dmitri's suggestion, use a UUID instead of the credential ID
     // Create a simpler resource name with a UUID
     const resourceUUID = uuidv4();
     console.log('Resource UUID:', resourceUUID);
-    
+
     // Serialize the credential as JSON
     const credentialJson = JSON.stringify(rawCredentialRecord);
 
     // Create a resource with the UUID
-    const resource = space.resource(resourceUUID);
-    console.log('Resource path:', resource.path);
-    
+    // const resource = space.resource(resourceUUID);
+    // console.log('Resource path:', resource.path);
+
     // Create the credential blob with correct content type
     const credentialBlob = new Blob([credentialJson], {
       type: 'application/json'
     });
-    
+
     // Store the credential in WAS
     console.log('Storing credential in WAS with signer:', signer.id);
-    const response = await resource.put(credentialBlob, { signer });
-    console.log('WAS storage response:', {
-      status: response.status,
-      ok: response.ok
-    });
+    // const response = await resource.put(credentialBlob, { signer });
+    // console.log('WAS storage response:', {
+    //   status: response.status,
+    //   ok: response.ok
+    // });
+    //
+    // if (!response.ok) {
+    //   console.error(
+    //     '[publicLink.ts] Failed to store credential in WAS. Status:',
+    //     response.status
+    //   );
+    //   return null;
+    // }
 
-    if (!response.ok) {
-      console.error(
-        '[publicLink.ts] Failed to store credential in WAS. Status:',
-        response.status
-      );
-      return null;
-    }
-    
     // Create a public link with the standard resource path
     // Since the space is configured with public: true, this should work in browsers
-    const publicLink = `${WAS_BASE_URL}${resource.path}`;
-    console.log('Created WAS public link:', publicLink);
-    
+    // const publicLink = `${WAS_BASE_URL}${resource.path}`;
+    // console.log('Created WAS public link:', publicLink);
+
     // Store the link in the cache with the format expected by the app
     const id = credentialIdFor(rawCredentialRecord);
-    await Cache.getInstance().store(CacheKey.PublicLinks, id, {
-      server: WAS_BASE_URL,
-      url: { 
-        view: resource.path,
-        // Include a path for unsharing
-        unshare: resource.path
-      }
-    });
-    
-    return publicLink;
+    // await Cache.getInstance().store(CacheKey.PublicLinks, id, {
+    //   server: WAS_BASE_URL,
+    //   url: {
+    //     view: resource.path,
+    //     // Include a path for unsharing
+    //     unshare: resource.path
+    //   }
+    // });
+
+    // return publicLink;
   } catch (error) {
     console.error('[publicLink.ts] Error in tryCreateWasLinkFor:', error);
     if (error instanceof Error) {

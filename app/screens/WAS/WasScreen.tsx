@@ -9,16 +9,16 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { NavHeader } from '../../components';
 import { navigationRef } from '../../navigation';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
-import { WalletStorage } from '@did-coop/wallet-attached-storage';
+import { StorageClient } from '@wallet.storage/fetch-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 
-export const WAS_STORAGE_KEYS = {
+export const WAS_KEYS = {
   SPACE_ID: 'was_space_id',
-  SIGNER_JSON: 'was_signer_json',
-  APP_DID_SIGNER: 'was_app_did_signer',
+  SIGNER_JSON: 'was_signer_json'
 };
 
+// TODO: Load this from app.config.js
 export const WAS_BASE_URL = 'https://data.pub';
 
 const WASScreen = () => {
@@ -31,58 +31,44 @@ const WASScreen = () => {
     try {
       setStatus('loading');
       setMessage('Generating signer...');
-  
+
       const appDidSigner = await Ed25519Signer.generate();
       console.log('Generated signer:', appDidSigner.id);
-  
-      // Extract the base DID controller without the verification method fragment
-      const baseDidController = appDidSigner.id.split('#')[0];
-      console.log('Controller DID:', baseDidController);
-  
+
       setMessage('Creating space...');
-      // Use uuid v4 to generate a random UUID
-      const spaceUUID = uuidv4();
-      const spaceId = `urn:uuid:${spaceUUID}`;
-      console.log('Creating space with ID:', spaceId);
-  
-      // Provision the space
-      const space = await WalletStorage.provisionSpace({
-        url: WAS_BASE_URL,
-        signer: appDidSigner,
-        id: spaceId as `urn:uuid:${string}`,
-      });
-  
-      // Create a proper space object with required metadata
+      const storage = new StorageClient(new URL(WAS_BASE_URL));
+      const space = storage.space({ signer: appDidSigner });
+
       const spaceObject = {
-        controller: baseDidController,
-        type: 'Collection',
-        items: [],
-        totalItems: 0,
+        controller: appDidSigner.id.split('#')[0],
         public: true
       };
-      const spaceObjectBlob = new Blob([JSON.stringify(spaceObject)], {
-        type: 'application/json',
-      });
-  
-      // Put the space object to initialize it on the server
-      const spacePutResponse = await space.put(spaceObjectBlob);
-      console.log('Space PUT response status:', spacePutResponse.status);
-  
-      if (!spacePutResponse.ok) {
-        throw new Error(`Failed to initialize space. Status: ${spacePutResponse.status}`);
+      const spaceObjectBlob = new Blob(
+        [ JSON.stringify(spaceObject) ],
+        { type:'application/json' }
+      );
+
+      // Create the space (send an HTTP PUT request) on the server
+      const response = await space.put(spaceObjectBlob);
+
+      console.log('Space:', space);
+      console.log('Response:', response);
+
+      if (!response.ok) {
+        throw new Error(`Failed to initialize space. Status: ${response.status}`);
       }
-  
+
       // Store signer JSON for future use
       const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
-        WAS_STORAGE_KEYS.SIGNER_JSON,
+        WAS_KEYS.SIGNER_JSON,
         JSON.stringify(signerJson)
       );
-      
+
       // Store the space ID
-      await AsyncStorage.setItem(WAS_STORAGE_KEYS.SPACE_ID, spaceUUID);
-      console.log('Stored space ID in AsyncStorage:', spaceUUID);
-  
+      // await AsyncStorage.setItem(WAS_KEYS.SPACE_ID, spaceUUID);
+      // console.log('Stored space ID in AsyncStorage:', spaceUUID);
+
       setStatus('success');
       setMessage('WAS storage successfully provisioned!');
     } catch (error) {
@@ -93,10 +79,10 @@ const WASScreen = () => {
           ? `Error: ${error.message}`
           : 'Failed to provision WAS storage'
       );
-  
+
       // Clear stored items if provisioning failed
-      await AsyncStorage.removeItem(WAS_STORAGE_KEYS.SIGNER_JSON);
-      await AsyncStorage.removeItem(WAS_STORAGE_KEYS.SPACE_ID);
+      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_JSON);
+      await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
     }
   };
 
