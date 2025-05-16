@@ -27,7 +27,24 @@ export default function CredentialStatusBadges({
     const isLoading = verifyCredential?.loading;
     const isVerified = verifyCredential?.result?.verified;
 
-    // Treat this case as Not Verified (invalid credential or failed verification)
+    
+
+    // Show "Verifying" while loading
+    if (isLoading) {
+      return (
+        <StatusBadge
+          backgroundColor={badgeBackgroundColor}
+          color={theme.color.textSecondary}
+          label="Verifying"
+          icon="rotate-right"
+        />
+      );
+    }
+    
+ 
+
+    
+    // Treat empty log and null verification result as Not Verified
     if (logs.length === 0 && isVerified === null) {
       return (
         <StatusBadge
@@ -38,18 +55,7 @@ export default function CredentialStatusBadges({
         />
       );
     }
-
-    //  Show Verifying only when logs exist and loading is true
-    if (isLoading && logs.length > 0) {
-      return (
-        <StatusBadge
-          backgroundColor={badgeBackgroundColor}
-          color={theme.color.textSecondary}
-          label="Verifying"
-          icon="rotate-right"
-        />
-      );
-    }
+    
 
     //  Evaluate logs
     const details = logs.reduce<Record<string, boolean>>((acc, log) => {

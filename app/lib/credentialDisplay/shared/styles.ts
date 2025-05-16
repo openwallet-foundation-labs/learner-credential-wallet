@@ -42,7 +42,7 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
   
   issuerContent: {
     flex: 1,
-    marginLeft: 12,
+    // marginLeft: 12,
     justifyContent: 'center',
   },
   
