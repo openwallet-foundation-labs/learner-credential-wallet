@@ -37,7 +37,7 @@ async function testPublicSpaceProvisioning() {
     //! Create the space object with PUBLIC flag
     const spaceObject = {
       controller: baseDidController,
-      public: true,
+      cc: ["https://www.w3.org/ns/activitystreams#Public"],
       id: spaceId
     };
     
