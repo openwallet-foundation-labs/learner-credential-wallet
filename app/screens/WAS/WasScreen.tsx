@@ -12,14 +12,22 @@ import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import { StorageClient } from '@wallet.storage/fetch-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
+import { WAS_BASE_URL } from '../../../app.config';
 
 export const WAS_KEYS = {
   SPACE_ID: 'was_space_id',
   SIGNER_JSON: 'was_signer_json'
 };
 
-// TODO: Load this from app.config.js
-export const WAS_BASE_URL = 'https://data.pub';
+// Create a singleton instance of StorageClient
+let storageClientInstance: InstanceType<typeof StorageClient> | null = null;
+
+export function getStorageClient() {
+  if (!storageClientInstance) {
+    storageClientInstance = new StorageClient(new URL(WAS_BASE_URL));
+  }
+  return storageClientInstance;
+}
 
 const WASScreen = () => {
   const [status, setStatus] = useState<
@@ -32,43 +40,67 @@ const WASScreen = () => {
       setStatus('loading');
       setMessage('Generating signer...');
 
+      // Generate a new Ed25519 signer (key pair)
       const appDidSigner = await Ed25519Signer.generate();
       console.log('Generated signer:', appDidSigner.id);
 
+      // Extract base controller DID (without the key fragment)
+      const baseDidController = appDidSigner.id.split('#')[0];
+      console.log('Controller DID:', baseDidController);
+
       setMessage('Creating space...');
-      const storage = new StorageClient(new URL(WAS_BASE_URL));
-      const space = storage.space({ signer: appDidSigner });
+
+      // Generate a UUID for the space
+      const spaceUUID = uuidv4();
+      const spaceId = `urn:uuid:${spaceUUID}`;
+      console.log('Space ID:', spaceId);
+
+      // Use the singleton storage client
+      const storage = getStorageClient();
+      
+      // Get a reference to a space (doesn't create it yet)
+      const space = storage.space({ 
+        signer: appDidSigner,
+        id: spaceId as `urn:uuid:${string}`
+      });
 
       const spaceObject = {
-        controller: appDidSigner.id.split('#')[0],
+        controller: baseDidController,
         public: true,
         id: 'urn:uuid' + uuidv4()
       };
+      
+      console.log('Creating space with object:', spaceObject);
+      
       const spaceObjectBlob = new Blob(
-        [ JSON.stringify(spaceObject) ],
-        { type:'application/json' }
+        [JSON.stringify(spaceObject)],
+        { type: 'application/json' }
       );
 
-      // Create the space (send an HTTP PUT request) on the server
-      const response = await space.put(spaceObjectBlob);
-
-      console.log('Space:', space);
-      console.log('Response:', response);
-
+      // Create the space
+      const response = await space.put(spaceObjectBlob, {
+        signer: appDidSigner
+      });
+      
+      console.log('Space PUT response:', {
+        status: response.status,
+        ok: response.ok
+      });
+      
       if (!response.ok) {
         throw new Error(`Failed to initialize space. Status: ${response.status}`);
       }
-
-      // Store signer JSON for future use
+      
+      // Store the signer for future connections
       const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
         WAS_KEYS.SIGNER_JSON,
         JSON.stringify(signerJson)
       );
-
-      // Store the space ID
-      // await AsyncStorage.setItem(WAS_KEYS.SPACE_ID, spaceUUID);
-      // console.log('Stored space ID in AsyncStorage:', spaceUUID);
+      
+      // Store the space UUID for future connections
+      await AsyncStorage.setItem(WAS_KEYS.SPACE_ID, spaceUUID);
+      console.log('Stored space ID in AsyncStorage:', spaceUUID);
 
       setStatus('success');
       setMessage('WAS storage successfully provisioned!');

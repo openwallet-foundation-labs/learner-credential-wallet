@@ -7,44 +7,180 @@ import { credentialIdFor, educationalOperationalCredentialFrom } from './decode'
 import * as verifierPlus from './verifierPlus';
 import { StoreCredentialResult } from './verifierPlus';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
-// import { WalletStorage } from '@did-coop/wallet-attached-storage';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WAS_KEYS, WAS_BASE_URL } from '../screens/WAS/WasScreen';
+import { WAS_KEYS, getStorageClient } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
+import { WAS_BASE_URL } from '../../app.config';
+
+let cachedSigner: Ed25519Signer | null = null;
 
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string> {
   const id = credentialIdFor(rawCredentialRecord);
 
-  // First, try to use WAS if it's available
-  const wasLink = await tryCreateWasLinkFor(rawCredentialRecord);
+  const wasLink = await createWasPublicLinkIfAvailable(rawCredentialRecord);
 
   if (wasLink) {
-    // Store link in cache for future use
     await Cache.getInstance().store(CacheKey.PublicLinks, id, {
       server: WAS_BASE_URL,
-      url: { view: wasLink.replace(WAS_BASE_URL, '') },
+      url: { 
+        view: wasLink.replace(WAS_BASE_URL, ''),
+        unshare: wasLink.replace(WAS_BASE_URL, '')
+      },
     });
     return wasLink;
   }
+  
+  // Fall back to verifierPlus
+  console.log('[publicLink.ts] Using verifierPlus to create public link');
   const links = await verifierPlus.postCredential(rawCredentialRecord);
 
-  // store links in cache for future use (for copying and pasting it to share, for un-sharing)
   await Cache.getInstance().store(CacheKey.PublicLinks, id, links);
   return `${links.server}${links.url.view}`;
+}
+
+/**
+ * Creates a WAS public link for a credential if WAS is available
+ * @param rawCredentialRecord - The credential to create a link for
+ * @returns The public link URL or null if WAS is not available
+ */
+async function createWasPublicLinkIfAvailable(
+  rawCredentialRecord: CredentialRecordRaw
+): Promise<string | null> {
+  // Check if WAS space is provisioned
+  const signerJsonString = await AsyncStorage.getItem(
+    WAS_KEYS.SIGNER_JSON
+  );
+  console.log('WAS signer JSON:', signerJsonString ? 'Found' : 'Not found');
+
+  if (!signerJsonString) {
+    console.log(
+      '[publicLink.ts] WAS not provisioned (signerJsonString missing), falling back to verifierPlus'
+    );
+    return null;
+  }
+  
+  try {
+    if (!cachedSigner) {
+      cachedSigner = await Ed25519Signer.fromJSON(signerJsonString);
+    }
+    const signer = cachedSigner;
+    console.log('Using signer with ID:', signer.id);
+
+    // Get stored space UUID
+    const storedSpaceUUID = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
+    console.log('Stored space UUID:', storedSpaceUUID);
+
+    if (!storedSpaceUUID) {
+      console.log('[publicLink.ts] No stored space ID found, falling back to verifierPlus');
+      return null;
+    }
+
+    const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
+    
+    const storage = getStorageClient();
+    
+    const space = storage.space({ 
+      signer, 
+      id: spaceId
+    });
+    console.log('Using space:', space.path);
+    
+    const resourceUUID = uuidv4();
+    console.log('Resource UUID:', resourceUUID);
+    
+    const credentialJson = JSON.stringify(rawCredentialRecord);
+
+    const resource = space.resource(resourceUUID);
+    console.log('Resource path:', resource.path);
+    
+    // Create the credential blob with correct content type
+    const credentialBlob = new Blob([credentialJson], {
+      type: 'application/json'
+    });
+    console.log('Storing credential in WAS with signer:', signer.id);
+    const response = await resource.put(credentialBlob, { 
+      signer,
+      // public: true // This not working, public is not exist in the options type
+    });
+    
+    console.log('WAS storage response:', {
+      status: response.status,
+      ok: response.ok
+    });
+
+    if (!response.ok) {
+      console.error(
+        '[publicLink.ts] Failed to store credential in WAS. Status:',
+        response.status
+      );
+      return null;
+    }
+    
+    // Create the public link using the resource path
+    const publicLink = `${WAS_BASE_URL}${resource.path}`;
+    console.log('Created WAS public link:', publicLink);
+    
+    return publicLink; 
+  } catch (error) {
+    console.error('[publicLink.ts] Error in createWasPublicLinkIfAvailable:', error);
+    if (error instanceof Error) {
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    }
+    return null;
+  }
 }
 
 export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw): Promise<void> {
   const vcId = credentialIdFor(rawCredentialRecord);
 
-  const publicLinks = await Cache.getInstance()
-    .load(CacheKey.PublicLinks, vcId) as StoreCredentialResult;
-  const unshareUrl = `${publicLinks.server}${publicLinks.url.unshare}`;
-
+  try {
+    const publicLinks = await Cache.getInstance()
+      .load(CacheKey.PublicLinks, vcId) as StoreCredentialResult;
+      
+    if (publicLinks.server === WAS_BASE_URL) {
+      // This is a WAS link
+      console.log('Unsharing WAS credential');
+      
+      if (!cachedSigner) {
+        const signerJsonString = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+        if (signerJsonString) {
+          cachedSigner = await Ed25519Signer.fromJSON(signerJsonString);
+        }
+      }
+      
+      if (cachedSigner) {
+        const signer = cachedSigner;
+        
+        const resourcePath = publicLinks.url.unshare;
+        const resourceName = resourcePath.split('/').pop();
+        
+        const storedSpaceUUID = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
+        if (storedSpaceUUID) {
+          const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
+          const storage = getStorageClient();
+          const space = storage.space({ 
+            signer, 
+            id: spaceId 
+          });
+          const resource = space.resource(resourceName);
+          await resource.delete({ signer });
+        }
+      }
+    } else {
+      // This is a verifierPlus link
+      const unshareUrl = `${publicLinks.server}${publicLinks.url.unshare}`;
+      await verifierPlus.deleteCredential(rawCredentialRecord, unshareUrl);
+    }
+  } catch (error) {
+    console.error('Error unsharing credential:', error);
+  }
   await Cache.getInstance().remove(CacheKey.PublicLinks, vcId);
-
-  await verifierPlus.deleteCredential(rawCredentialRecord, unshareUrl);
 }
 
 export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw): Promise<string | null> {
@@ -91,107 +227,4 @@ export async function linkedinUrlFrom(rawCredentialRecord: CredentialRecordRaw):
   const url = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME${organizationInfo}${issuance}${expiration}${certUrl}`;
 
   return url;
-}
-async function tryCreateWasLinkFor(
-  rawCredentialRecord: CredentialRecordRaw
-): Promise<string | null> {
-  // Check if WAS space is provisioned
-  const signerJsonString = await AsyncStorage.getItem(
-    WAS_KEYS.SIGNER_JSON
-  );
-  console.log('WAS signer JSON:', signerJsonString ? 'Found' : 'Not found');
-
-  if (!signerJsonString) {
-    console.log(
-      '[publicLink.ts] WAS not provisioned (signerJsonString missing), falling back to verifierPlus'
-    );
-    return null;
-  }
-
-  try {
-    // Create signer from the stored JSON
-    const signer = await Ed25519Signer.fromJSON(signerJsonString);
-    console.log('Recreated signer with ID:', signer.id);
-
-    // Get stored space UUID
-    const storedSpaceUUID = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
-    console.log('Stored space UUID:', storedSpaceUUID);
-
-    if (!storedSpaceUUID) {
-      console.log('[publicLink.ts] No stored space ID found, falling back to verifierPlus');
-      return null;
-    }
-
-    // Add urn:uuid: prefix for WalletStorage.provisionSpace
-    const spaceId = `urn:uuid:${storedSpaceUUID}`;
-
-    // Connect to existing space
-    // const space = await WalletStorage.provisionSpace({
-    //   url: WAS_BASE_URL,
-    //   signer,
-    //   id: spaceId as `urn:uuid:${string}`,
-    // });
-    // console.log('Connected to space:', space.path);
-
-    // Per Dmitri's suggestion, use a UUID instead of the credential ID
-    // Create a simpler resource name with a UUID
-    const resourceUUID = uuidv4();
-    console.log('Resource UUID:', resourceUUID);
-
-    // Serialize the credential as JSON
-    const credentialJson = JSON.stringify(rawCredentialRecord);
-
-    // Create a resource with the UUID
-    // const resource = space.resource(resourceUUID);
-    // console.log('Resource path:', resource.path);
-
-    // Create the credential blob with correct content type
-    const credentialBlob = new Blob([credentialJson], {
-      type: 'application/json'
-    });
-
-    // Store the credential in WAS
-    console.log('Storing credential in WAS with signer:', signer.id);
-    // const response = await resource.put(credentialBlob, { signer });
-    // console.log('WAS storage response:', {
-    //   status: response.status,
-    //   ok: response.ok
-    // });
-    //
-    // if (!response.ok) {
-    //   console.error(
-    //     '[publicLink.ts] Failed to store credential in WAS. Status:',
-    //     response.status
-    //   );
-    //   return null;
-    // }
-
-    // Create a public link with the standard resource path
-    // Since the space is configured with public: true, this should work in browsers
-    // const publicLink = `${WAS_BASE_URL}${resource.path}`;
-    // console.log('Created WAS public link:', publicLink);
-
-    // Store the link in the cache with the format expected by the app
-    const id = credentialIdFor(rawCredentialRecord);
-    // await Cache.getInstance().store(CacheKey.PublicLinks, id, {
-    //   server: WAS_BASE_URL,
-    //   url: {
-    //     view: resource.path,
-    //     // Include a path for unsharing
-    //     unshare: resource.path
-    //   }
-    // });
-
-    // return publicLink;
-  } catch (error) {
-    console.error('[publicLink.ts] Error in tryCreateWasLinkFor:', error);
-    if (error instanceof Error) {
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-    }
-    return null;
-  }
 }
