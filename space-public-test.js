@@ -4,7 +4,7 @@ const { Ed25519Signer } = require('@did.coop/did-key-ed25519');
 const { v4: uuidv4 } = require('uuid');
 
 // Base URL for the WAS server
-const WAS_BASE_URL = 'https://data.pub';
+const WAS_BASE_URL = 'https://wallet-attached-storage.bengo.is';
 
 async function testPublicSpaceProvisioning() {
   try {
@@ -66,8 +66,8 @@ async function testPublicSpaceProvisioning() {
     console.log('Waiting 2 seconds before verifying...');
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Verify the space was created with the public flag
-    console.log('Verifying space was created with public flag...');
+    // Verify the space was created with the cc flag
+    console.log('Verifying space was created with cc flag...');
     const spaceGetResponse = await space.get({ signer: appDidSigner });
     
     console.log('Space GET response status:', spaceGetResponse.status);
@@ -77,11 +77,11 @@ async function testPublicSpaceProvisioning() {
       const spaceData = await spaceGetResponse.json();
       console.log('Retrieved space data:', JSON.stringify(spaceData, null, 2));
       
-      // Check if public flag is present
-      if (spaceData.public === true) {
-        console.log('SUCCESS: public flag is present in space data');
+      // Check if cc flag is present
+      if (spaceData.cc === true) {
+        console.log('SUCCESS: cc flag is present in space data');
       } else {
-        console.log('FAILURE: public flag is missing from space data');
+        console.log('FAILURE: cc flag is missing from space data');
       }
       
       // Now test creating a resource in this space
