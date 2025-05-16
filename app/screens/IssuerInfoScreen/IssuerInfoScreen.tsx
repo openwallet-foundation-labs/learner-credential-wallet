@@ -64,7 +64,7 @@ export default function IssuerInfoScreen({
               entry.registry?.federation_entity?.organization_name ?? 'Unknown Registry';
             const governanceUrl =
               entry.registry?.institution_additional_information?.legacy_list;
-              const legalName = entry.registry?.institution_additional_information?.legal_name;
+            const legalName = entry.registry?.institution_additional_information?.legal_name;
             const issuerEntity = entry.issuer?.federation_entity ?? {};
             const issuerImage = getImageUri(issuerFromCredential?.image);
 
@@ -107,11 +107,11 @@ export default function IssuerInfoScreen({
                 </View>
 
                 {entry.issuer?.credential_registry_entity?.ce_url && (
-  <View style={styles.dataContainer}>
-    <Text style={styles.dataLabel}>CTID URL</Text>
-    {renderLink(entry.issuer.credential_registry_entity.ce_url)}
-  </View>
-)}
+                  <View style={styles.dataContainer}>
+                    <Text style={styles.dataLabel}>CTID URL</Text>
+                    {renderLink(entry.issuer.credential_registry_entity.ce_url)}
+                  </View>
+                )}
               </View>
             );
           })

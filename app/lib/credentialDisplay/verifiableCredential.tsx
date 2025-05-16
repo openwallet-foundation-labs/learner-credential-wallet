@@ -5,7 +5,7 @@ import { Button } from 'react-native-elements';
 import { mixins } from '../../styles';
 
 import { CredentialStatusBadges } from '../../components';
-import { useDynamicStyles,useVerifyCredential } from '../../hooks';
+import { useDynamicStyles } from '../../hooks';
 import { getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';
 import { navigationRef } from '../../navigation';
@@ -15,7 +15,8 @@ import {
   dynamicStyleSheet,
   CardImage,
   issuerRenderInfoFrom,
-  credentialSubjectRenderInfoFrom
+  credentialSubjectRenderInfoFrom,
+  IssuerInfoButton
 } from './shared';
 import { DATE_FORMAT } from '../../../app.config';
 
@@ -35,7 +36,7 @@ export const verifiableCredentialDisplayConfig: CredentialDisplayConfig = {
 };
 
 function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps): React.ReactElement {
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  //const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const { credential } = rawCredentialRecord;
   const { credentialSubject, issuer } = credential;
@@ -43,11 +44,11 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
   const issuanceDate = getIssuanceDate(credential);
   const formattedIssuanceDate = issuanceDate ? moment(issuanceDate).format(DATE_FORMAT) : 'N/A';
 
-  const registeredIssuerLog = verifyCredential?.result?.log?.find(
-    (item) => item.id === 'registered_issuer'
-  ) as { matchingIssuers?: unknown[] } | undefined;
+  // const registeredIssuerLog = verifyCredential?.result?.log?.find(
+  //   (item) => item.id === 'registered_issuer'
+  // ) as { matchingIssuers?: unknown[] } | undefined;
 
-  const matchingIssuers = registeredIssuerLog?.matchingIssuers ?? [];
+  //const matchingIssuers = registeredIssuerLog?.matchingIssuers ?? [];
 
   const {
     title,
@@ -93,24 +94,30 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
         <View style={styles.flexRow}>
           <CardImage source={issuerImage} accessibilityLabel={issuerName} />
           <View style={styles.spaceBetween}>
-            {/* <IssuerInfoButton issuerId={issuerId} issuerName={issuerName} onPress={onPressIssuer} /> */}
-            <CardLink url={issuerUrl} />
-          </View>
-        </View>
-        {/* {matchingIssuers.length > 0 && issuerId && ( */}
-          <Button
-            title="Issuer Details"
-            buttonStyle={mixins.buttonPrimary}
-            containerStyle={styles.issuerButton}
-            titleStyle={mixins.buttonTitle}
-            onPress={() => {
+            <IssuerInfoButton issuerId={issuerId} issuerName={issuerName}  onPress={() => {
               if (issuerId && rawCredentialRecord) {
                 handleIssuerPress(issuerId, rawCredentialRecord);
               } else {
                 console.warn('Missing issuerId or rawCredentialRecord');
               }
-            }}
-          />
+            }} />
+            <CardLink url={issuerUrl} />
+          </View>
+        </View>
+        {/* {matchingIssuers.length > 0 && issuerId && ( */}
+        <Button
+          title="Issuer Details"
+          buttonStyle={mixins.buttonPrimary}
+          containerStyle={styles.issuerButton}
+          titleStyle={mixins.buttonTitle}
+          onPress={() => {
+            if (issuerId && rawCredentialRecord) {
+              handleIssuerPress(issuerId, rawCredentialRecord);
+            } else {
+              console.warn('Missing issuerId or rawCredentialRecord');
+            }
+          }}
+        />
         {/* )} */}
       </View>
       <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
