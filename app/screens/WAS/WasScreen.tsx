@@ -58,7 +58,6 @@ const WASScreen = () => {
       // Use the singleton storage client
       const storage = getStorageClient();
       
-      // Get a reference to a space (doesn't create it yet)
       const space = storage.space({ 
         signer: appDidSigner,
         id: spaceId as `urn:uuid:${string}`
@@ -67,7 +66,7 @@ const WASScreen = () => {
       const spaceObject = {
         controller: baseDidController,
         public: true,
-        id: 'urn:uuid' + uuidv4()
+        id: spaceId
       };
       
       console.log('Creating space with object:', spaceObject);
