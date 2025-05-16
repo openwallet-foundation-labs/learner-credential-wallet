@@ -97,7 +97,7 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
             <CardLink url={issuerUrl} />
           </View>
         </View>
-        {matchingIssuers.length > 0 && issuerId && (
+        {/* {matchingIssuers.length > 0 && issuerId && ( */}
           <Button
             title="Issuer Details"
             buttonStyle={mixins.buttonPrimary}
@@ -111,7 +111,7 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
               }
             }}
           />
-        )}
+        {/* )} */}
       </View>
       <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
       <CardDetail label="Issued To" value={subjectName} />

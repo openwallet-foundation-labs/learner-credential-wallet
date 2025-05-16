@@ -122,7 +122,7 @@ function OpenBadgeCredentialCard({ rawCredentialRecord }: CredentialCardProps): 
           </View>
         </View>
 
-        {matchingIssuers.length > 0 && issuerId && (
+        {/* {matchingIssuers.length > 0 && issuerId && ( */}
           <Button
             title="Issuer Details"
             buttonStyle={mixins.buttonPrimary}
@@ -136,7 +136,7 @@ function OpenBadgeCredentialCard({ rawCredentialRecord }: CredentialCardProps): 
               }
             }}
           />
-        )}
+        {/* )} */}
       </View>
 
       <View style={styles.dateStyles}>
