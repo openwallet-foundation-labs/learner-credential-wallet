@@ -41,7 +41,8 @@ const WASScreen = () => {
 
       const spaceObject = {
         controller: appDidSigner.id.split('#')[0],
-        public: true
+        public: true,
+        id: 'urn:uuid' + uuidv4()
       };
       const spaceObjectBlob = new Blob(
         [ JSON.stringify(spaceObject) ],
