@@ -5,7 +5,7 @@ import { Button } from 'react-native-elements';
 import { mixins } from '../../styles';
 
 import { CredentialStatusBadges } from '../../components';
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
+import { useDynamicStyles } from '../../hooks';
 import { getExpirationDate, getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';
 import {
@@ -13,6 +13,7 @@ import {
   CardDetail,
   dynamicStyleSheet,
   CardImage,
+  IssuerInfoButton,
   issuerRenderInfoFrom,
   credentialSubjectRenderInfoFrom
 } from './shared';
@@ -35,7 +36,7 @@ export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
 };
 
 function OpenBadgeCredentialCard({ rawCredentialRecord }: CredentialCardProps): React.ReactElement {
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  //const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const { credential } = rawCredentialRecord;
   const { credentialSubject, issuer, name } = credential;
@@ -45,11 +46,11 @@ function OpenBadgeCredentialCard({ rawCredentialRecord }: CredentialCardProps): 
   const formattedIssuanceDate = issuanceDate ? moment(issuanceDate).format(DATE_FORMAT) : 'N/A';
   const formattedExpirationDate = expirationDate ? moment(expirationDate).format(DATE_FORMAT) : 'N/A';
 
-  const registeredIssuerLog = verifyCredential?.result?.log?.find(
-    (item) => item.id === 'registered_issuer'
-  ) as { matchingIssuers?: unknown[] } | undefined;
+  // const registeredIssuerLog = verifyCredential?.result?.log?.find(
+  //   (item) => item.id === 'registered_issuer'
+  // ) as { matchingIssuers?: unknown[] } | undefined;
 
-  const matchingIssuers = registeredIssuerLog?.matchingIssuers ?? [];
+  //const matchingIssuers = registeredIssuerLog?.matchingIssuers ?? [];
 
   const {
     issuedTo,
@@ -115,42 +116,53 @@ function OpenBadgeCredentialCard({ rawCredentialRecord }: CredentialCardProps): 
         </View>
 
         <Text style={styles.dataLabel}>Issuer</Text>
-        <View style={styles.issuerRow}>
+        <View style={styles.flexRow}>
           <CardImage source={issuerImage} accessibilityLabel={issuerName} />
-          <View style={styles.issuerContent}>
-            <CardLink url={issuerUrl} />
-          </View>
-        </View>
-
-        {/* {matchingIssuers.length > 0 && issuerId && ( */}
-          <Button
-            title="Issuer Details"
-            buttonStyle={mixins.buttonPrimary}
-            containerStyle={styles.issuerButton}
-            titleStyle={mixins.buttonTitle}
-            onPress={() => {
+          <View style={styles.spaceBetween}>
+            <IssuerInfoButton issuerId={issuerId} issuerName={issuerName}  onPress={() => {
               if (issuerId && rawCredentialRecord) {
                 handleIssuerPress(issuerId, rawCredentialRecord);
               } else {
                 console.warn('Missing issuerId or rawCredentialRecord');
               }
-            }}
-          />
-        {/* )} */}
-      </View>
+            }} />
+            <View style={styles.issuerContent}>
+              <CardLink url={issuerUrl} />
+            </View>
+          </View>
+  
 
-      <View style={styles.dateStyles}>
-        <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
-        <CardDetail label="Expiration Date" value={formattedExpirationDate} />
+     
+        </View>
+        {/* {matchingIssuers.length > 0 && issuerId && ( */}
+        <Button
+          title="Issuer Details"
+          buttonStyle={mixins.buttonPrimary}
+          containerStyle={styles.issuerButton}
+          titleStyle={mixins.buttonTitle}
+          onPress={() => {
+            if (issuerId && rawCredentialRecord) {
+              handleIssuerPress(issuerId, rawCredentialRecord);
+            } else {
+              console.warn('Missing issuerId or rawCredentialRecord');
+            }
+          }}
+        />
+        {/* )} */}
+
+        <View style={styles.dateStyles}>
+          <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
+          <CardDetail label="Expiration Date" value={formattedExpirationDate} />
+        </View>
+        <CardDetail label="Issued To" value={issuedToName} />
+        <CardDetail label="Number of Credits" value={numberOfCredits} />
+        <View style={styles.flexRow}>
+          <CardDetail label="Start Date" value={startDateFmt} />
+          <CardDetail label="End Date" value={endDateFmt} />
+        </View>
+        <CardDetail label="Description" value={description} />
+        <CardDetail label="Criteria" value={criteria} isMarkdown={true} />
       </View>
-      <CardDetail label="Issued To" value={issuedToName} />
-      <CardDetail label="Number of Credits" value={numberOfCredits} />
-      <View style={styles.flexRow}>
-        <CardDetail label="Start Date" value={startDateFmt} />
-        <CardDetail label="End Date" value={endDateFmt} />
-      </View>
-      <CardDetail label="Description" value={description} />
-      <CardDetail label="Criteria" value={criteria} isMarkdown={true} />
     </View>
   );
 }
