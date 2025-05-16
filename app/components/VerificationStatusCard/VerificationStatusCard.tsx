@@ -36,6 +36,15 @@ export default function VerificationStatusCard({ credential, verifyPayload }: Ve
 
   const lastChecked = moment(verifyPayload.result.timestamp).format('MMM D, YYYY h:mmA z');
 
+  if (verifyPayload.loading) {
+    return (
+      <View style={styles.container}>
+        <Text style={styles.sectionTitle}>Credential Verification and Validation</Text>
+        <Text style={styles.bodyText}>Verifying credential...</Text>
+      </View>
+    );
+  }
+
   if (verifyPayload.error) {
     return (
       <View style={styles.container}>
