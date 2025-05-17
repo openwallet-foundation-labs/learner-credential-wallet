@@ -10,7 +10,7 @@ const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.2.0';
 // Used by the 'Create Public Link' functionality
 export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
 
-export const WAS_BASE_URL = 'https://data.pub';
+export const WAS_BASE_URL = 'https://wallet-attached-storage.bengo.is';
 
 // Feature Flags section
 export const FEATURE_FLAGS = {

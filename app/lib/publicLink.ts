@@ -101,7 +101,7 @@ async function createWasPublicLinkIfAvailable(
     });
     console.log('Storing credential in WAS with signer:', signer.id);
     const response = await resource.put(credentialBlob, { 
-      signer,
+      signer
     });
     
     console.log('WAS storage response:', {

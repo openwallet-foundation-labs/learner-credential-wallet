@@ -64,8 +64,6 @@ const WASScreen = () => {
       });
 
       const spaceObject = {
-        controller: baseDidController,
-        public: true,
         id: spaceId
       };
       
