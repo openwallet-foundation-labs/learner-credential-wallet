@@ -4,7 +4,7 @@ const { Ed25519Signer } = require('@did.coop/did-key-ed25519');
 const { v4: uuidv4 } = require('uuid');
 
 // Base URL for the WAS server
-const WAS_BASE_URL = process.env.WAS_BASE_URL ?? 'https://wallet-attached-storage.bengo.is';
+const WAS_BASE_URL = process.env.WAS_BASE_URL ?? 'https://storage.dcc.did.coop/';
 
 async function testPublicSpaceProvisioning() {
   try {
