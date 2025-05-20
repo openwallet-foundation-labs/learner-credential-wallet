@@ -42,10 +42,45 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false);
 
   const qrCodeRef = useRef<any>(null); // Reference to QRCode component to access toDataURL
-  const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
+  //const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
+  const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const inputRef = useRef<RNTextInput | null>(null);
   const disableOutsidePressHandler = inputRef.current?.isFocused() ?? false;
   const selectionColor = Platform.select({ ios: theme.color.brightAccent, android: theme.color.highlightAndroid });
+  type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
+
+   const verificationStatus = useMemo<VerificationStatus>(() => {
+      const logs = verifyCredential?.result?.log ?? [];
+      const isLoading = verifyCredential?.loading;
+      const isVerified = verifyCredential?.result?.verified;
+  
+      if (logs.length === 0 && isVerified === null) return 'not_verified';
+      if (isLoading && logs.length > 0) return 'verifying';
+  
+      const details = logs.reduce<Record<string, boolean>>((acc, log) => {
+        acc[log.id] = log.valid;
+        return acc;
+      }, {});
+  
+      ['valid_signature', 'expiration', 'registered_issuer'].forEach((key) => {
+        if (!(key in details)) {
+          details[key] = false;
+        }
+      });
+  
+      const hasFailure = ['valid_signature', 'revocation_status'].some(
+        (key) => details[key] === false
+      );
+  
+      const hasWarning = ['expiration', 'registered_issuer'].some(
+        (key) => details[key] === false
+      );
+  
+      if (hasFailure) return 'not_verified';
+      if (hasWarning) return 'warning';
+  
+      return 'verified';
+    }, [verifyCredential]);
 
   useEffect(() => {
     if (publicLink && qrCodeBase64 && renderMethodAvailable) {
@@ -165,7 +200,8 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   }
 
   async function confirmCreatePublicLink() {
-    if (!isVerified) {
+   
+    if (verificationStatus === 'not_verified') {
       return displayNotVerifiedModal();
     }
 
@@ -251,7 +287,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
 
   async function exportToPdf() {
     setOpenedExportPdfModal(true);
-    if (!isVerified) {
+    if (verificationStatus === 'not_verified') {
       return displayNotVerifiedModal(); // Show modal if the credential isn't verified
     }
 
@@ -312,7 +348,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   }
 
   async function shareToLinkedIn() {
-    if (!isVerified) {
+    if (verificationStatus === 'not_verified') {
       return displayNotVerifiedModal();
     }
 
