@@ -1,5 +1,6 @@
 import DocumentPicker from 'react-native-document-picker';
 import * as RNFS from 'react-native-fs';
+import { Platform } from 'react-native';
 
 import { ProfileRecord } from '../model';
 import { CredentialImportReport } from '../types/credential';
@@ -13,8 +14,15 @@ export function isPngFile(base64: string): boolean {
   return header.equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])); // PNG magic numbers
 }
 
-export async function readFile(path: string): Promise<string> {
+export async function readFile(uri: string): Promise<string> {
   try {
+    let path = uri;
+
+    // On iOS, remove file:// prefix if present
+    if (Platform.OS === 'ios' && path.startsWith('file://')) {
+      path = path.replace('file://', '');
+    }
+
     // Always read as base64 initially
     const base64Data = await RNFS.readFile(path, 'base64');
 
@@ -29,7 +37,6 @@ export async function readFile(path: string): Promise<string> {
       // Check if the keyword is found
       if (keywordIndex !== -1) {
         const startIndex = keywordIndex + keyword.length;
-        // Find start of the object
         const objectStart = decodedString.indexOf('{', startIndex);
 
         if (objectStart !== -1) {
@@ -45,7 +52,6 @@ export async function readFile(path: string): Promise<string> {
           }
 
           const objectString = decodedString.slice(objectStart, objectEnd + 1);
-
           try {
             const parsedObject = JSON.parse(objectString);
             return JSON.stringify(parsedObject, null, 2);
@@ -62,9 +68,7 @@ export async function readFile(path: string): Promise<string> {
         return '';
       }
     } else {
-      // Assume it's a plain JSON/text file
-      const decodedPath = path.replace(/%20/g, ' ');
-      const fileContent = await RNFS.readFile(decodedPath, 'utf8');
+      const fileContent = await RNFS.readFile(path, 'utf8');
       return fileContent;
     }
   } catch (error) {
@@ -74,11 +78,42 @@ export async function readFile(path: string): Promise<string> {
 }
 
 export async function pickAndReadFile(): Promise<string> {
-  const { uri } = await DocumentPicker.pickSingle({
-    type: DocumentPicker.types.allFiles,
-  });
+  try {
+    const file = await DocumentPicker.pickSingle({
+      type: DocumentPicker.types.allFiles,
+      copyTo: 'cachesDirectory',
+    });
 
-  return readFile(uri);
+    let path: string | null = null;
+
+    if (Platform.OS === 'ios') {
+      path = file.fileCopyUri;
+      if (!path) throw new Error('No fileCopyUri on iOS');
+      path = decodeURI(path.replace('file://', ''));
+    } else {
+      path = file.uri;
+
+      // If Android returns content:// URI, copy to accessible path
+      if (path.startsWith('content://')) {
+        const safeFileName = (file.name ?? 'imported_file').replace(/[^a-zA-Z0-9.-]/g, '_');
+        const destPath = `${RNFS.TemporaryDirectoryPath}/${safeFileName}`;
+        await RNFS.copyFile(path, destPath);
+        path = destPath;
+      } else {
+        // Decode any encoded URI and remove file:// if present
+        path = decodeURI(path.replace('file://', ''));
+      }
+    }
+
+    const exists = await RNFS.exists(path);
+
+    if (!exists) throw new Error(`File not found at ${path}`);
+
+    return readFile(path);
+  } catch (err) {
+    console.error('pickAndReadFile error:', err);
+    throw new Error('Unable to read selected file.');
+  }
 }
 
 export function credentialReportDetailsFrom(report: CredentialImportReport): ReportDetails {
