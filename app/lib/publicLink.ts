@@ -10,7 +10,7 @@ import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WAS_KEYS, getStorageClient } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
-import { WAS_BASE_URL } from '../../app.config';
+import { WAS_BASE_URL, VERIFIER_PLUS_URL } from '../../app.config';
 
 let cachedSigner: Ed25519Signer | null = null;
 
@@ -22,14 +22,14 @@ export async function createPublicLinkFor(
   const wasLink = await createWasPublicLinkIfAvailable(rawCredentialRecord);
 
   if (wasLink) {
-    await Cache.getInstance().store(CacheKey.PublicLinks, id, {
-      server: WAS_BASE_URL,
-      url: { 
-        view: wasLink.replace(WAS_BASE_URL, ''),
-        unshare: wasLink.replace(WAS_BASE_URL, '')
-      },
-    });
-    return wasLink;
+        await Cache.getInstance().store(CacheKey.PublicLinks, id, {
+          server: WAS_BASE_URL,
+          url: { 
+            view: wasLink.replace(WAS_BASE_URL, ''),
+            unshare: wasLink.replace(WAS_BASE_URL, '')
+          },
+        });
+        return wasLink;
   }
   
   // Fall back to verifierPlus
@@ -119,7 +119,7 @@ async function createWasPublicLinkIfAvailable(
     }
     
     // Create the public link using the resource path
-    const publicLink = `${WAS_BASE_URL}${resource.path}`;
+    const publicLink = `${VERIFIER_PLUS_URL}/verfiy?vc=${WAS_BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
     
     return publicLink; 

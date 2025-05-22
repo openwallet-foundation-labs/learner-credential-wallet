@@ -1,3 +1,4 @@
+/* eslint-disable react-native/no-color-literals */
 if (typeof btoa === 'undefined') {
   // eslint-disable-next-line no-global-assign
   globalThis.btoa = (str: any) => Buffer.from(str, 'binary').toString('base64');
