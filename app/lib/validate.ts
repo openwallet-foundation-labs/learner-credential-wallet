@@ -56,6 +56,10 @@ export async function verifyCredential(credential: Credential): Promise<VerifyRe
 
     //console.log('Verify result:', JSON.stringify(result, null, 2));
 
+    if (result.results?.[0].error){
+      result.results[0].log = result.results[0].error.log;
+    }
+
     // This logic catches the case where the verify response does not contain a `log` value
     if (result.log === undefined) {
       throw result.error || new Error('Verify response does not a `log` value');
