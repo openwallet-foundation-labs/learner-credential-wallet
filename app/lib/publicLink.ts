@@ -150,7 +150,7 @@ async function createWasPublicLinkIfAvailable(
     }
     
     // Create the public link using the resource path
-    const publicLink = `${VERIFIER_PLUS_URL}/#verfiy?vc=${WAS_BASE_URL}${resource.path}`;
+    const publicLink = `${VERIFIER_PLUS_URL}/#verify?vc=${WAS_BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
 
     return publicLink; 
