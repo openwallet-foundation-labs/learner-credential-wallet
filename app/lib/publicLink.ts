@@ -23,40 +23,14 @@ export async function createPublicLinkFor(
 
   if (wasLink) {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-
-      const tryWasLink = await fetch(wasLink, {
-        signal: controller.signal
+      await Cache.getInstance().store(CacheKey.PublicLinks, id, {
+        server: WAS_BASE_URL,
+        url: { 
+          view: wasLink.replace(WAS_BASE_URL, ''),
+          unshare: wasLink.replace(WAS_BASE_URL, '')
+        },
       });
-
-      clearTimeout(timeoutId);
-
-      if (tryWasLink.ok) {
-        // Check if response is JSON
-        const contentType = tryWasLink.headers.get('content-type');
-        if (!contentType?.includes('application/json')) {
-          console.error('[publicLink.ts] Invalid content type:', contentType);
-          throw new Error('Invalid content type');
-        }
-
-        // Try to parse the response to verify it's valid JSON
-        const response = await tryWasLink.json();
-        if (!response) {
-          throw new Error('Invalid JSON response');
-        }
-
-        await Cache.getInstance().store(CacheKey.PublicLinks, id, {
-          server: WAS_BASE_URL,
-          url: { 
-            view: wasLink.replace(WAS_BASE_URL, ''),
-            unshare: wasLink.replace(WAS_BASE_URL, '')
-          },
-        });
-        return wasLink;
-      } else {
-        console.error('[publicLink.ts] Failed to fetch WAS link:', tryWasLink.status);
-      }
+      return wasLink;
     } catch (error) {
       console.error('[publicLink.ts] Error checking WAS link:', error);
       // Fall through to verifierPlus
