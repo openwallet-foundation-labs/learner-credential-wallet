@@ -154,7 +154,7 @@ const WASScreen = () => {
   const renderConnectionDetails = () => {
     if (!connectionDetails) return null;
 
-    const spaceUrl = `${WAS_BASE_URL}/space/${connectionDetails.spaceId.split('urn:uuid:')[1]}/`;
+    const spaceUrl = `${WAS_BASE_URL}/space/${connectionDetails.spaceId.split('urn:uuid:')[1]}`;
 
     return (
       <View style={[styles.content, { backgroundColor: theme.color.backgroundPrimary }]}>
