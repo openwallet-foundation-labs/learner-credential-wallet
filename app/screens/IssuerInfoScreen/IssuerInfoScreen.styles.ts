@@ -55,6 +55,7 @@ export default createDynamicStyleSheet(({ theme }) => ({
     height: 40,
     borderRadius: 4,
     marginBottom: 12,
-    backgroundColor: theme.color.backgroundSecondary,
+    resizeMode: 'contain',
+    backgroundColor: theme.color.textSecondary,
   },
 }));
