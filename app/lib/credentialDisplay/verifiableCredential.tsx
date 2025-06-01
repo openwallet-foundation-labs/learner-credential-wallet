@@ -1,54 +1,43 @@
 import moment from 'moment';
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ImageSourcePropType } from 'react-native';
 import { Button } from 'react-native-elements';
 import { mixins } from '../../styles';
-
+import { useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { CredentialNavigationParamList } from '../../navigation/CredentialNavigation/CredentialNavigation.d';
 import { CredentialStatusBadges } from '../../components';
-import { useDynamicStyles } from '../../hooks';
+import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';
-import { navigationRef } from '../../navigation';
+import defaultIssuerImage from '../../assets/defaultIssuer.png';
 import {
   CardLink,
   CardDetail,
   dynamicStyleSheet,
   CardImage,
-  issuerRenderInfoFrom,
+  issuerRenderInfoWithVerification,
   credentialSubjectRenderInfoFrom,
   IssuerInfoButton
 } from './shared';
+
+
 import { DATE_FORMAT } from '../../../app.config';
-
-export const verifiableCredentialDisplayConfig: CredentialDisplayConfig = {
-  credentialType: 'VerifiableCredential',
-  cardComponent: VerifiableCredentialCard,
-  itemPropsResolver: ({ credentialSubject, issuer }) => {
-    const { title } = credentialSubjectRenderInfoFrom(credentialSubject);
-    const { issuerName, issuerImage } = issuerRenderInfoFrom(issuer);
-
-    return {
-      title,
-      subtitle: issuerName,
-      image: issuerImage,
-    };
-  }
+const getSafeImageSource = (imageUri?: string | null): ImageSourcePropType => {
+  return imageUri && imageUri.trim() !== '' ? { uri: imageUri } : defaultIssuerImage;
 };
 
+type NavigationProp = StackNavigationProp<CredentialNavigationParamList>;
+
 function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps): React.ReactElement {
-  //const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const { credential } = rawCredentialRecord;
+  const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  const navigation = useNavigation<NavigationProp>();
   const { credentialSubject, issuer } = credential;
 
   const issuanceDate = getIssuanceDate(credential);
   const formattedIssuanceDate = issuanceDate ? moment(issuanceDate).format(DATE_FORMAT) : 'N/A';
-
-  // const registeredIssuerLog = verifyCredential?.result?.log?.find(
-  //   (item) => item.id === 'registered_issuer'
-  // ) as { matchingIssuers?: unknown[] } | undefined;
-
-  //const matchingIssuers = registeredIssuerLog?.matchingIssuers ?? [];
 
   const {
     title,
@@ -65,22 +54,7 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
     issuerUrl,
     issuerId,
     issuerImage,
-  } = issuerRenderInfoFrom(issuer);
-
-  const handleIssuerPress = (id: string, record: typeof rawCredentialRecord) => {
-    if (navigationRef.isReady()) {
-      navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
-        params: {
-          screen: 'IssuerInfoScreen',
-          params: {
-            issuerId: id,
-            rawCredentialRecord: record,
-          },
-        },
-      });
-    }
-  };
+  } = issuerRenderInfoWithVerification(issuer, verifyCredential?.result);
 
   return (
     <View style={styles.cardContainer}>
@@ -92,19 +66,28 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
         <Text style={styles.header} accessibilityRole="header">{title}</Text>
         <Text style={styles.dataLabel}>Issuer</Text>
         <View style={styles.flexRow}>
-          <CardImage source={issuerImage} accessibilityLabel={issuerName} />
+          <CardImage source={getSafeImageSource(issuerImage)} accessibilityLabel={issuerName} />
           <View style={styles.spaceBetween}>
-            <IssuerInfoButton issuerId={issuerId} issuerName={issuerName}  onPress={() => {
-              if (issuerId && rawCredentialRecord) {
-                handleIssuerPress(issuerId, rawCredentialRecord);
-              } else {
-                console.warn('Missing issuerId or rawCredentialRecord');
-              }
-            }} />
-            <CardLink url={issuerUrl} />
+            <IssuerInfoButton
+              issuerId={issuerId}
+              issuerName={issuerName}
+              onPress={() => {
+                if (issuerId && rawCredentialRecord) {
+                  navigation.navigate('IssuerInfoScreen', {
+                    issuerId,
+                    rawCredentialRecord,
+                  });
+                } else {
+                  console.warn('Missing issuerId or rawCredentialRecord');
+                }
+              }}
+            />
+            <View style={styles.issuerContent}>
+              <CardLink url={issuerUrl} />
+            </View>
           </View>
         </View>
-        {/* {matchingIssuers.length > 0 && issuerId && ( */}
+
         <Button
           title="Issuer Details"
           buttonStyle={mixins.buttonPrimary}
@@ -112,13 +95,15 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
           titleStyle={mixins.buttonTitle}
           onPress={() => {
             if (issuerId && rawCredentialRecord) {
-              handleIssuerPress(issuerId, rawCredentialRecord);
+              navigation.navigate('IssuerInfoScreen', {
+                issuerId,
+                rawCredentialRecord,
+              });
             } else {
               console.warn('Missing issuerId or rawCredentialRecord');
             }
           }}
         />
-        {/* )} */}
       </View>
       <CardDetail label="Issuance Date" value={formattedIssuanceDate} />
       <CardDetail label="Issued To" value={subjectName} />
@@ -132,3 +117,19 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
     </View>
   );
 }
+
+
+export const verifiableCredentialDisplayConfig: CredentialDisplayConfig = {
+  credentialType: 'VerifiableCredential',
+  cardComponent: VerifiableCredentialCard,
+  itemPropsResolver: ({ credentialSubject, issuer }) => {
+    const { title, achievementImage } = credentialSubjectRenderInfoFrom(credentialSubject);
+    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(issuer);
+
+    return {
+      title,
+      subtitle: issuerName,
+      image: achievementImage || issuerImage || defaultIssuerImage,
+    };
+  }
+};

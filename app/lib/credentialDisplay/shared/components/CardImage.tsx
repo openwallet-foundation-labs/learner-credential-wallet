@@ -1,12 +1,12 @@
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import React, { ComponentProps } from 'react';
-import { Image, View } from 'react-native';
+import { Image, ImageSourcePropType, View } from 'react-native';
 import { useDynamicStyles } from '../../../../hooks';
 import { Color } from '../../../../styles';
 import { createDynamicStyleSheet } from '../../../dynamicStyles';
 
 type CardImageProps = {
-  source: string | null,
+  source: string | ImageSourcePropType | null,
   accessibilityLabel?: string | null,
   defaultIcon?: ComponentProps<typeof MaterialCommunityIcons>['name'];
   size?: number,
@@ -26,17 +26,21 @@ export default function CardImage({ source, accessibilityLabel, defaultIcon = 'c
       <View style={[styles.imageContainer, containerStyle]}>
         <MaterialCommunityIcons
           name={defaultIcon}
-          size={size-4}
+          size={size - 4}
           color={Color.Gray800}
         />
       </View>
     );
   }
 
+  // Determine if source is a string or already a valid image source
+  const imageSource: ImageSourcePropType =
+    typeof source === 'string' ? { uri: source } : source;
+
   return (
     <View style={[styles.imageContainer, containerStyle]}>
       <Image
-        source={{ uri: source }}
+        source={imageSource}
         style={styles.image}
         accessible={true}
         accessibilityLabel={accessibilityLabel || 'issuer'}

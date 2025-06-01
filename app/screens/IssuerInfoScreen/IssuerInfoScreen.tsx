@@ -6,7 +6,7 @@ import dynamicStyleSheet from './IssuerInfoScreen.styles';
 import { IssuerInfoScreenProps } from './IssuerInfoScreen.d';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import defaultIssuerImage from '../../assets/defaultIssuer.png';
-
+import { issuerRenderInfoWithVerification } from '../../lib/credentialDisplay/shared/utils/issuer';
 
 const NO_URL = 'None';
 
@@ -17,6 +17,7 @@ export default function IssuerInfoScreen({
   const { rawCredentialRecord } = route.params;
   const { styles } = useDynamicStyles(dynamicStyleSheet);
   const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  const credential = rawCredentialRecord.credential;
 
   const getImageUri = (img?: string | { id?: string }): string | undefined => {
     if (!img) return undefined;
@@ -24,7 +25,6 @@ export default function IssuerInfoScreen({
     if (typeof img === 'object' && typeof img.id === 'string') return img.id;
     return undefined;
   };
-
 
   const registeredIssuerLog = verifyCredential?.result?.log?.find(
     (entry) => entry.id === 'registered_issuer'
@@ -41,19 +41,11 @@ export default function IssuerInfoScreen({
     );
   };
 
-  const issuerFromCredential = rawCredentialRecord?.credential?.issuer;
+  const fallbackIssuer = issuerRenderInfoWithVerification(credential.issuer, verifyCredential?.result);
 
   return (
     <>
-      <NavHeader
-        goBack={() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-          } else {
-            (navigation.navigate as any)('HomeNavigation');
-          }
-        }}
-        title="Issuer Info"
+      <NavHeader title="Issuer Info" goBack={navigation.goBack}
       />
       <ScrollView style={styles.bodyContainer}>
         <Text style={styles.sectionTitle}>Information from Known Registries</Text>
@@ -63,10 +55,12 @@ export default function IssuerInfoScreen({
             const registryName =
               entry.registry?.federation_entity?.organization_name ?? 'Unknown Registry';
             const governanceUrl =
-              entry.registry?.institution_additional_information?.legacy_list;
-            const legalName = entry.registry?.institution_additional_information?.legal_name;
+              entry.registry?.federation_entity?.policy_uri;
+            const legalName = entry.issuer?.institution_additional_information?.legal_name;
             const issuerEntity = entry.issuer?.federation_entity ?? {};
-            const issuerImage = getImageUri(issuerFromCredential?.image);
+            const issuerImageUri = getImageUri(issuerEntity.logo_uri);
+
+            console.log('issuerImageUri', issuerImageUri);
 
             return (
               <View key={index} style={styles.registryBlock}>
@@ -83,8 +77,8 @@ export default function IssuerInfoScreen({
                 </Text>
 
                 <Image
-                  source={issuerImage ? { uri: issuerImage } : defaultIssuerImage}
-                  style={styles.registryImage}
+                  source={issuerImageUri ? { uri: issuerImageUri } : defaultIssuerImage}
+                  style={styles.registryImage} resizeMode="contain"
                 />
 
                 <View style={styles.dataContainer}>
@@ -120,18 +114,24 @@ export default function IssuerInfoScreen({
             <Text style={styles.registryTitle}>Issuer (from Credential)</Text>
 
             <Image
-              source={getImageUri(issuerFromCredential?.image) ? { uri: getImageUri(issuerFromCredential?.image) } : defaultIssuerImage}
-              style={styles.registryImage}
+              source={
+                fallbackIssuer.issuerImage
+                  ? { uri: fallbackIssuer.issuerImage }
+                  : defaultIssuerImage
+              }
+              style={styles.registryImage} resizeMode="contain"
             />
 
             <View style={styles.dataContainer}>
               <Text style={styles.dataLabel}>Issuer Name</Text>
-              <Text style={styles.dataValue}>{issuerFromCredential?.name ?? 'N/A'}</Text>
+              <Text style={styles.dataValue}>
+                {fallbackIssuer.issuerName || 'N/A'}
+              </Text>
             </View>
 
             <View style={styles.dataContainer}>
               <Text style={styles.dataLabel}>Issuer URL</Text>
-              {renderLink(issuerFromCredential?.url)}
+              {renderLink(fallbackIssuer.issuerUrl ?? undefined)}
             </View>
           </View>
         )}

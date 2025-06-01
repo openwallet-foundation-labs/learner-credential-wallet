@@ -12,7 +12,8 @@ import dynamicStyleSheet from './PublicLinkScreen.styles';
 import { LoadingIndicatorDots, NavHeader } from '../../components';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { createPublicLinkFor, getPublicViewLink, linkedinUrlFrom, unshareCredential } from '../../lib/publicLink';
-import { useDynamicStyles, useShareCredentials, useVerifyCredential } from '../../hooks';
+import { useDynamicStyles, useShareCredentials } from '../../hooks';
+//import { useDynamicStyles, useShareCredentials, useVerifyCredential } from '../../hooks';
 import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
 import { navigationRef } from '../../navigation';
 
@@ -25,7 +26,7 @@ export enum PublicLinkScreenMode {
   ShareCredential
 }
 
-export default function PublicLinkScreen ({ navigation, route }: PublicLinkScreenProps): React.ReactElement {
+export default function PublicLinkScreen({ navigation, route }: PublicLinkScreenProps): React.ReactElement {
   const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet);
 
   const share = useShareCredentials();
@@ -34,7 +35,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const { name } = credential;
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [renderMethodAvailable, setRenderMethodAvailable] = useState(false);
-  
+
   const [justCreated, setJustCreated] = useState(false);
   const [pdf, setPdf] = useState<PDF | null>(null);
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null); // State to store base64 data URL of QR code
@@ -42,7 +43,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false);
 
   const qrCodeRef = useRef<any>(null); // Reference to QRCode component to access toDataURL
-  const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
+  //const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
   const inputRef = useRef<RNTextInput | null>(null);
   const disableOutsidePressHandler = inputRef.current?.isFocused() ?? false;
   const selectionColor = Platform.select({ ios: theme.color.brightAccent, android: theme.color.highlightAndroid });
@@ -66,7 +67,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   }, [pdf]);
 
   useEffect(() => {
-    if('renderMethod' in credential){
+    if ('renderMethod' in credential) {
       setRenderMethodAvailable(true);
     }
   });
@@ -135,15 +136,15 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
     });
   }
 
-  function displayNotVerifiedModal() {
-    return displayGlobalModal({
-      title: 'Unable to Share Credential',
-      body: 'Only verified credentials can be shared.',
-      confirmText: 'Close',
-      cancelButton: false,
-      cancelOnBackgroundPress: true,
-    });
-  }
+  // function displayNotVerifiedModal() {
+  //   return displayGlobalModal({
+  //     title: 'Unable to Share Credential',
+  //     body: 'Only verified credentials can be shared.',
+  //     confirmText: 'Close',
+  //     cancelButton: false,
+  //     cancelOnBackgroundPress: true,
+  //   });
+  // }
 
   async function createPublicLink() {
     try {
@@ -165,9 +166,9 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   }
 
   async function confirmCreatePublicLink() {
-    if (!isVerified) {
-      return displayNotVerifiedModal();
-    }
+    // if (!isVerified) {
+    //   return displayNotVerifiedModal();
+    // }
 
     const confirmed = await displayGlobalModal({
       title: 'Are you sure?',
@@ -225,7 +226,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
     }
   }
 
-  async function openLink () {
+  async function openLink() {
     if (publicLink !== null) {
       await Linking.canOpenURL(publicLink);
       Linking.openURL(publicLink);
@@ -251,9 +252,9 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
 
   async function exportToPdf() {
     setOpenedExportPdfModal(true);
-    if (!isVerified) {
-      return displayNotVerifiedModal(); // Show modal if the credential isn't verified
-    }
+    // if (!isVerified) {
+    //   return displayNotVerifiedModal(); // Show modal if the credential isn't verified
+    // }
 
     const confirmed = await displayGlobalModal({
       title: 'Are you sure?',
@@ -312,9 +313,9 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
   }
 
   async function shareToLinkedIn() {
-    if (!isVerified) {
-      return displayNotVerifiedModal();
-    }
+    // if (!isVerified) {
+    //   return displayNotVerifiedModal();
+    // }
 
     const confirmed = await displayGlobalModal({
       title: 'Are you sure?',
@@ -408,15 +409,17 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                   >
                     <TextInput
                       ref={inputRef}
-                      style={{...mixins.input, ...styles.linkText}}
+                      style={{ ...mixins.input, ...styles.linkText }}
                       value={publicLink}
                       selectionColor={selectionColor}
-                      theme={{ colors: {
-                        placeholder: theme.color.textPrimary,
-                        text: theme.color.textPrimary,
-                        disabled: theme.color.textPrimary,
-                        primary: theme.color.brightAccent,
-                      }}}
+                      theme={{
+                        colors: {
+                          placeholder: theme.color.textPrimary,
+                          text: theme.color.textPrimary,
+                          disabled: theme.color.textPrimary,
+                          primary: theme.color.brightAccent,
+                        }
+                      }}
                       autoCorrect={false}
                       spellCheck={false}
                       mode="outlined"
@@ -426,8 +429,8 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                   </OutsidePressHandler>
                   <Button
                     title="Copy"
-                    buttonStyle={{...mixins.buttonPrimary, ...styles.copyButton}}
-                    containerStyle={{...mixins.buttonContainer, ...styles.copyButtonContainer}}
+                    buttonStyle={{ ...mixins.buttonPrimary, ...styles.copyButton }}
+                    containerStyle={{ ...mixins.buttonContainer, ...styles.copyButtonContainer }}
                     titleStyle={mixins.buttonTitle}
                     onPress={copyToClipboard}
                   />
@@ -436,7 +439,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                   <Button
                     title="Unshare"
                     buttonStyle={{ ...mixins.buttonIcon, ...styles.actionButton }}
-                    containerStyle={{...mixins.buttonContainer}}
+                    containerStyle={{ ...mixins.buttonContainer }}
                     titleStyle={mixins.buttonIconTitle}
                     onPress={unshareLink}
                     icon={
@@ -451,7 +454,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
                   <View style={styles.spacer} />
                   <Button
                     title="View Link"
-                    buttonStyle={{...mixins.buttonIcon, ...styles.actionButton }}
+                    buttonStyle={{ ...mixins.buttonIcon, ...styles.actionButton }}
                     containerStyle={mixins.buttonContainer}
                     titleStyle={mixins.buttonIconTitle}
                     onPress={openLink}
@@ -469,8 +472,8 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
             ) : (
               <Button
                 title="Create Public Link"
-                buttonStyle={{...mixins.buttonIcon, ...mixins.buttonPrimary }}
-                containerStyle={{...mixins.buttonIconContainer, ...styles.createLinkButtonContainer}}
+                buttonStyle={{ ...mixins.buttonIcon, ...mixins.buttonPrimary }}
+                containerStyle={{ ...mixins.buttonIconContainer, ...styles.createLinkButtonContainer }}
                 titleStyle={mixins.buttonTitle}
                 iconRight
                 onPress={confirmCreatePublicLink}
@@ -484,7 +487,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
               />
             )
             }
-            
+
             <View style={styles.otherOptionsContainer}>
               {renderMethodAvailable && (
                 <Button
@@ -544,7 +547,7 @@ export default function PublicLinkScreen ({ navigation, route }: PublicLinkScree
               {publicLink !== null && (
                 <View style={styles.bottomSection}>
                   <Text style={mixins.paragraphText}>
-                  You may also share the public link by having another person scan this QR code.
+                    You may also share the public link by having another person scan this QR code.
                   </Text>
                   <View style={styles.qrCodeContainer}>
                     <View style={styles.qrCode}>
