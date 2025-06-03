@@ -109,7 +109,7 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
         <Button {...buttonStyleProps} title="View developer logs" onPress={viewLogs} />
         <Button {...buttonStyleProps} title="Clear developer logs" onPress={clearLogs} />
         <Button {...buttonStyleProps} title="Clear verification cache" onPress={clearVerificationCache} />
-        <Button {...buttonStyleProps} title={hasWasConnection ? "W.A.S. Connection" : "Connect to W.A.S"} onPress={goWas} />
+        <Button {...buttonStyleProps} title={hasWasConnection ? 'W.A.S. Connection' : 'Connect to W.A.S'} onPress={goWas} />
         <View style={styles.spacer} />
         <Text style={styles.header}>Credentials</Text>
         <Button {...buttonStyleProps} title="Add mock credentials" onPress={addMockCredentials}/>

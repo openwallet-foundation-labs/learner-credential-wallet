@@ -43,11 +43,63 @@ const WASScreen = () => {
     controllerDid: string;
   } | null>(null);
 
+  const deleteSpace = async () => {
+    try {
+      setStatus('loading');
+      setMessage('Deleting space...');
+
+      if (!connectionDetails) {
+        throw new Error('No connection details found');
+      }
+
+      // Get the stored signer
+      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+      if (!signerJson) {
+        throw new Error('No signer found');
+      }
+
+      const signer = await Ed25519Signer.fromJSON(signerJson);
+
+      const storage = getStorageClient();
+
+      const space = storage.space({
+        signer,
+        id: connectionDetails.spaceId as `urn:uuid:${string}`,
+      });
+
+      // Delete the space
+      const response = await space.delete({
+        signer,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete space. Status: ${response.status}`);
+      }
+
+      // Clear stored items
+      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_JSON);
+      await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
+
+      setStatus('success');
+      setMessage('Space successfully deleted');
+      setHasConnection(false);
+      setConnectionDetails(null);
+    } catch (error) {
+      console.error('Error deleting WAS space:', error);
+      setStatus('error');
+      setMessage(
+        error instanceof Error
+          ? `Error: ${error.message}`
+          : 'Failed to delete WAS space'
+      );
+    }
+  };
+
   const checkExistingConnection = async () => {
     try {
       const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
       const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-      
+
       if (spaceId && signerJson) {
         setHasConnection(true);
         const signer = await Ed25519Signer.fromJSON(signerJson);
@@ -87,8 +139,8 @@ const WASScreen = () => {
 
       // Use the singleton storage client
       const storage = getStorageClient();
-      
-      const space = storage.space({ 
+
+      const space = storage.space({
         signer: appDidSigner,
         id: spaceId as `urn:uuid:${string}`
       });
@@ -96,9 +148,9 @@ const WASScreen = () => {
       const spaceObject = {
         id: spaceId
       };
-      
+
       console.log('Creating space with object:', spaceObject);
-      
+
       const spaceObjectBlob = new Blob(
         [JSON.stringify(spaceObject)],
         { type: 'application/json' }
@@ -108,23 +160,23 @@ const WASScreen = () => {
       const response = await space.put(spaceObjectBlob, {
         signer: appDidSigner
       });
-      
+
       console.log('Space PUT response:', {
         status: response.status,
         ok: response.ok
       });
-      
+
       if (!response.ok) {
         throw new Error(`Failed to initialize space. Status: ${response.status}`);
       }
-      
+
       // Store the signer for future connections
       const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
         WAS_KEYS.SIGNER_JSON,
         JSON.stringify(signerJson)
       );
-      
+
       // Store the space UUID for future connections
       await AsyncStorage.setItem(WAS_KEYS.SPACE_ID, spaceUUID);
       console.log('Stored space ID in AsyncStorage:', spaceUUID);
@@ -154,27 +206,66 @@ const WASScreen = () => {
   const renderConnectionDetails = () => {
     if (!connectionDetails) return null;
 
-    const spaceUrl = `${WAS_BASE_URL}/space/${connectionDetails.spaceId.split('urn:uuid:')[1]}`;
+    const spaceUrl = `${WAS_BASE_URL}/space/${
+      connectionDetails.spaceId.split('urn:uuid:')[1]
+    }`;
 
     return (
-      <View style={[styles.content, { backgroundColor: theme.color.backgroundPrimary }]}>
+      <View
+        style={[
+          styles.content,
+          { backgroundColor: theme.color.backgroundPrimary },
+        ]}
+      >
         <View style={styles.detailsContainer}>
-          <Text style={[styles.label, { color: theme.color.textSecondary }]}>Storage Provider</Text>
-          <Text style={[styles.value, { color: theme.color.textPrimary }]}>{WAS_BASE_URL}</Text>
+          <Text style={[styles.label, { color: theme.color.textSecondary }]}>
+            Storage Provider
+          </Text>
+          <Text style={[styles.value, { color: theme.color.textPrimary }]}>
+            {WAS_BASE_URL}
+          </Text>
 
-          <Text style={[styles.label, styles.labelWithMargin, { color: theme.color.textSecondary }]}>Space URL</Text>
+          <Text
+            style={[
+              styles.label,
+              styles.labelWithMargin,
+              { color: theme.color.textSecondary },
+            ]}
+          >
+            Space URL
+          </Text>
           <TouchableOpacity onPress={() => Linking.openURL(spaceUrl)}>
-            <Text style={[styles.value, { color: theme.color.linkColor }]}>{spaceUrl}</Text>
+            <Text style={[styles.value, { color: theme.color.linkColor }]}>
+              {spaceUrl}
+            </Text>
           </TouchableOpacity>
 
-          <Text style={[styles.label, styles.labelWithMargin, { color: theme.color.textSecondary }]}>Controller DID</Text>
-          <Text style={[styles.value, { color: theme.color.textPrimary }]}>{connectionDetails.controllerDid}</Text>
-
-          <TouchableOpacity 
-            style={[styles.deleteButton, { backgroundColor: theme.color.buttonDisabled }]}
-            disabled={true}
+          <Text
+            style={[
+              styles.label,
+              styles.labelWithMargin,
+              { color: theme.color.textSecondary },
+            ]}
           >
-            <Text style={[styles.deleteButtonText, { color: theme.color.textPrimary }]}>
+            Controller DID
+          </Text>
+          <Text style={[styles.value, { color: theme.color.textPrimary }]}>
+            {connectionDetails.controllerDid}
+          </Text>
+
+          <TouchableOpacity
+            style={[
+              styles.deleteButton,
+              { backgroundColor: theme.color.error },
+            ]}
+            onPress={deleteSpace}
+          >
+            <Text
+              style={[
+                styles.deleteButtonText,
+                { color: theme.color.textPrimary },
+              ]}
+            >
               Delete/Unprovision Space
             </Text>
           </TouchableOpacity>
@@ -191,17 +282,29 @@ const WASScreen = () => {
     switch (status) {
     case 'loading':
       return (
-        <View style={[styles.content, { backgroundColor: theme.color.backgroundPrimary }]}>
+        <View
+          style={[
+            styles.content,
+            { backgroundColor: theme.color.backgroundPrimary },
+          ]}
+        >
           <ActivityIndicator
             size='large'
             color={theme.color.buttonPrimary}
           />
-          <Text style={[styles.message, { color: theme.color.textPrimary }]}>{message}</Text>
+          <Text style={[styles.message, { color: theme.color.textPrimary }]}>
+            {message}
+          </Text>
         </View>
       );
     case 'success':
       return (
-        <View style={[styles.content, { backgroundColor: theme.color.backgroundPrimary }]}>
+        <View
+          style={[
+            styles.content,
+            { backgroundColor: theme.color.backgroundPrimary },
+          ]}
+        >
           <Text style={[styles.message, { color: theme.color.success }]}>
             {message}
           </Text>
@@ -209,18 +312,38 @@ const WASScreen = () => {
       );
     case 'error':
       return (
-        <View style={[styles.content, { backgroundColor: theme.color.backgroundPrimary }]}>
-          <Text style={[styles.message, { color: theme.color.error }]}>{message}</Text>
+        <View
+          style={[
+            styles.content,
+            { backgroundColor: theme.color.backgroundPrimary },
+          ]}
+        >
+          <Text style={[styles.message, { color: theme.color.error }]}>
+            {message}
+          </Text>
         </View>
       );
     default:
       return (
-        <View style={[styles.content, { backgroundColor: theme.color.backgroundPrimary }]}>
+        <View
+          style={[
+            styles.content,
+            { backgroundColor: theme.color.backgroundPrimary },
+          ]}
+        >
           <TouchableOpacity
-            style={[styles.connectButton, { backgroundColor: theme.color.buttonPrimary }]}
+            style={[
+              styles.connectButton,
+              { backgroundColor: theme.color.buttonPrimary },
+            ]}
             onPress={provisionWAS}
           >
-            <Text style={[styles.connectButtonText, { color: theme.color.textPrimaryDark }]}>
+            <Text
+              style={[
+                styles.connectButtonText,
+                { color: theme.color.textPrimaryDark },
+              ]}
+            >
               Connect to W.A.S.
             </Text>
           </TouchableOpacity>
@@ -235,7 +358,12 @@ const WASScreen = () => {
         title={hasConnection ? 'W.A.S. Connection' : 'W.A.S'}
         goBack={navigationRef.goBack}
       />
-      <View style={[styles.container, { backgroundColor: theme.color.backgroundPrimary }]}>
+      <View
+        style={[
+          styles.container,
+          { backgroundColor: theme.color.backgroundPrimary },
+        ]}
+      >
         {renderContent()}
       </View>
     </>
