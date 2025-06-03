@@ -8,7 +8,7 @@ const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 90;
 const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.2.0';
 
 // Used by the 'Create Public Link' functionality
-export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
+export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://feditest.ngrok.dev';
 
 export const WAS_BASE_URL = 'https://storage.dcc.did.coop';
 
