@@ -1,40 +1,74 @@
 import DocumentPicker from 'react-native-document-picker';
 import * as RNFS from 'react-native-fs';
 import { Platform } from 'react-native';
+import base64 from 'react-native-base64';
 
 import { ProfileRecord } from '../model';
 import { CredentialImportReport } from '../types/credential';
-import { Buffer } from '@craftzdog/react-native-buffer';
+
+// Type augmentation for global object
+declare global {
+  // eslint-disable-next-line no-var
+  var base64ToArrayBuffer: ((base64Str: string) => ArrayBuffer) | undefined;
+}
+
+// Local polyfill for base64ToArrayBuffer to avoid global dependency issues
+if (typeof global.base64ToArrayBuffer !== 'function') {
+  global.base64ToArrayBuffer = (base64Str: string) => {
+    const decoded = base64.decode(base64Str);
+    const bytes = new Uint8Array(decoded.length);
+    for (let i = 0; i < decoded.length; i++) {
+      bytes[i] = decoded.charCodeAt(i);
+    }
+    return bytes.buffer;
+  };
+}
 
 export type ReportDetails = Record<string, string[]>;
 
-//identify PNG open badges by content
-export function isPngFile(base64: string): boolean {
-  const header = Buffer.from(base64.substring(0, 24), 'base64').slice(0, 8);
-  return header.equals(Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A])); // PNG magic numbers
+export function base64ToArrayBuffer(base64Str: string): ArrayBuffer {
+  const decoded = base64.decode(base64Str);
+  const bytes = new Uint8Array(decoded.length);
+  for (let i = 0; i < decoded.length; i++) {
+    bytes[i] = decoded.charCodeAt(i);
+  }
+  return bytes.buffer;
+}
+
+// Identify PNG open badges by content
+export function isPngFile(base64Str: string): boolean {
+  try {
+    // Read just enough base64 characters to get the PNG header (8 bytes)
+    const base64Header = base64Str.substring(0, 24);
+    const arrayBuffer = base64ToArrayBuffer(base64Header);
+    const header = new Uint8Array(arrayBuffer).slice(0, 8);
+    const pngMagic = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
+    const isPng = pngMagic.every((b, i) => header[i] === b);
+
+    return isPng;
+  } catch (e) {
+    return false;
+  }
 }
 
 export async function readFile(uri: string): Promise<string> {
   try {
     let path = uri;
 
-    // On iOS, remove file:// prefix if present
     if (Platform.OS === 'ios' && path.startsWith('file://')) {
       path = path.replace('file://', '');
     }
-
-    // Always read as base64 initially
+    // Read as base64 first
     const base64Data = await RNFS.readFile(path, 'base64');
 
     if (isPngFile(base64Data)) {
-      // Decode base64 to UTF-8 string for embedded JSON search
-      const decodedString = Buffer.from(base64Data, 'base64').toString('utf8');
+      // Decode base64 to UTF-8 string for embedded JSON extraction
+      const decodedString = base64.decode(base64Data);
 
-      // Search for keyword and extract the object following it
+      // Search for the OpenBadge JSON inside PNG
       const keyword = 'openbadgecredential';
       const keywordIndex = decodedString.indexOf(keyword);
 
-      // Check if the keyword is found
       if (keywordIndex !== -1) {
         const startIndex = keywordIndex + keyword.length;
         const objectStart = decodedString.indexOf('{', startIndex);
@@ -54,17 +88,15 @@ export async function readFile(uri: string): Promise<string> {
           const objectString = decodedString.slice(objectStart, objectEnd + 1);
           try {
             const parsedObject = JSON.parse(objectString);
+
             return JSON.stringify(parsedObject, null, 2);
           } catch (error) {
-            console.error('Failed to parse embedded OpenBadge JSON:', error);
             return '';
           }
         } else {
-          console.warn('Could not locate start of JSON object');
           return '';
         }
       } else {
-        console.log('OpenBadge keyword not found');
         return '';
       }
     } else {
@@ -93,12 +125,17 @@ export async function pickAndReadFile(): Promise<string> {
     } else {
       path = file.uri;
 
-      // If Android returns content:// URI, copy to accessible path
       if (path.startsWith('content://')) {
-        const safeFileName = (file.name ?? 'imported_file').replace(/[^a-zA-Z0-9.-]/g, '_');
+        // Sanitize filename by removing extra dots to avoid collision
+        const safeFileName = (file.name ?? 'imported_file').replace(/[^a-zA-Z0-9]/g, '_');
         const destPath = `${RNFS.TemporaryDirectoryPath}/${safeFileName}`;
-        await RNFS.copyFile(path, destPath);
-        path = destPath;
+
+        try {
+          await RNFS.copyFile(path, destPath);
+          path = destPath;
+        } catch (copyError) {
+          throw copyError;
+        }
       } else {
         // Decode any encoded URI and remove file:// if present
         path = decodeURI(path.replace('file://', ''));
@@ -109,9 +146,9 @@ export async function pickAndReadFile(): Promise<string> {
 
     if (!exists) throw new Error(`File not found at ${path}`);
 
-    return readFile(path);
+    const content = await readFile(path);
+    return content;
   } catch (err) {
-    console.error('pickAndReadFile error:', err);
     throw new Error('Unable to read selected file.');
   }
 }
@@ -129,7 +166,6 @@ export function credentialReportDetailsFrom(report: CredentialImportReport): Rep
       .map(([key, value]) => {
         const plural = value.length !== 1 ? 's' : '';
         const headerText = sectionText[key](value.length, plural);
-
         return [headerText, value];
       }),
   );
