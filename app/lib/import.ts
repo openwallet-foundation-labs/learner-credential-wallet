@@ -130,12 +130,9 @@ export async function pickAndReadFile(): Promise<string> {
         const safeFileName = (file.name ?? 'imported_file').replace(/[^a-zA-Z0-9]/g, '_');
         const destPath = `${RNFS.TemporaryDirectoryPath}/${safeFileName}`;
 
-        try {
-          await RNFS.copyFile(path, destPath);
+        await RNFS.copyFile(path, destPath);
           path = destPath;
-        } catch (copyError) {
-          throw copyError;
-        }
+
       } else {
         // Decode any encoded URI and remove file:// if present
         path = decodeURI(path.replace('file://', ''));
