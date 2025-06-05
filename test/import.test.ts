@@ -12,7 +12,6 @@ import {
 import DocumentPicker from 'react-native-document-picker';
 import * as RNFS from 'react-native-fs';
 import { ProfileRecord } from '../app/model/profile';
-import { Buffer } from '@craftzdog/react-native-buffer';
 import { Platform } from 'react-native';
 
 jest.mock('react-native-document-picker', () => ({
@@ -42,27 +41,24 @@ jest.mock('react-native/Libraries/Utilities/Platform', () => ({
 describe('Utility Functions', () => {
   describe('isPngFile', () => {
     it('should return true for valid PNG base64', () => {
-      const pngHeader = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]).toString('base64');
+      const pngHeader = 'iVBORw0KGgo='; // base64 of PNG magic number
       const result = isPngFile(pngHeader + 'restofbase64');
       expect(result).toBe(true);
     });
 
     it('should return false for non-PNG base64', () => {
-      const fakeHeader = Buffer.from('notapngfileheader').toString('base64');
+      const fakeHeader = btoa('notapngfileheader');
       expect(isPngFile(fakeHeader)).toBe(false);
     });
   });
 
   describe('readFile', () => {
     it('should return parsed embedded JSON from PNG file', async () => {
-      const pngHeader = Buffer.from([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
+      const pngHeader = 'iVBORw0KGgo=';
       const embeddedJson = JSON.stringify({ openbadgecredential: { name: 'Test' } });
-      const content = Buffer.concat([
-        pngHeader,
-        Buffer.from(`randomtextopenbadgecredential${embeddedJson}`),
-      ]).toString('base64');
+      const fakeContent = pngHeader + btoa(`randomtextopenbadgecredential${embeddedJson}`);
 
-      (RNFS.readFile as jest.Mock).mockResolvedValueOnce(content);
+      (RNFS.readFile as jest.Mock).mockResolvedValueOnce(fakeContent);
 
       const result = await readFile('fakepath');
       expect(JSON.parse(result)).toHaveProperty('openbadgecredential.name', 'Test');
@@ -70,8 +66,8 @@ describe('Utility Functions', () => {
 
     it('should return plain content for non-PNG file', async () => {
       (RNFS.readFile as jest.Mock)
-        .mockResolvedValueOnce('notapng') // base64
-        .mockResolvedValueOnce('{"key":"value"}'); // utf8 fallback
+        .mockResolvedValueOnce('bm90YXBuZw==') // base64 of "notapng"
+        .mockResolvedValueOnce('{"key":"value"}'); // fallback
 
       const result = await readFile('file.json');
       expect(JSON.parse(result)).toHaveProperty('key', 'value');
@@ -79,84 +75,84 @@ describe('Utility Functions', () => {
   });
 
   describe('pickAndReadFile', () => {
-      const originalPlatform = Platform.OS;
+    const originalPlatform = Platform.OS;
 
-      afterEach(() => {
-        Object.defineProperty(Platform, 'OS', {
-          value: originalPlatform,
-        });
+    afterEach(() => {
+      Object.defineProperty(Platform, 'OS', {
+        value: originalPlatform,
+      });
+    });
+
+    it('should pick and read a content:// file on Android', async () => {
+      Object.defineProperty(Platform, 'OS', { value: 'android' });
+
+      (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
+        uri: 'content://some/file.json',
+        name: 'badge file (1).json',
       });
 
-      it('should pick and read a content:// file on Android', async () => {
-        Object.defineProperty(Platform, 'OS', { value: 'android' });
+      (RNFS.readFile as jest.Mock)
+        .mockResolvedValueOnce('bm90YXBuZw==') // base64
+        .mockResolvedValueOnce('{"android": "content"}');
 
-        (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
-          uri: 'content://some/file.json',
-          name: 'badge file (1).json',
-        });
+      const result = await pickAndReadFile();
+      expect(RNFS.copyFile).toHaveBeenCalled();
+      expect(result).toContain('content');
+    });
 
-        (RNFS.readFile as jest.Mock)
-          .mockResolvedValueOnce('notapng') // base64
-          .mockResolvedValueOnce('{"android": "content"}');
-
-        const result = await pickAndReadFile();
-        expect(RNFS.copyFile).toHaveBeenCalled();
-        expect(result).toContain('content');
-      });
-      
-      it('should pick and read a file on Android', async () => {
-        Object.defineProperty(Platform, 'OS', {
-          value: 'android',
-        });
-
-        const fakeUri = 'file://test.json';
-
-        (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
-          uri: fakeUri,
-          name: 'test.json',
-        });
-
-        (RNFS.readFile as jest.Mock)
-          .mockResolvedValueOnce('notapng') // base64
-          .mockResolvedValueOnce('{"android":true}');
-
-        const result = await pickAndReadFile();
-        expect(result).toContain('true');
+    it('should pick and read a file on Android', async () => {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'android',
       });
 
-      it('should pick and read a file on iOS', async () => {
-        Object.defineProperty(Platform, 'OS', {
-          value: 'ios',
-        });
+      const fakeUri = 'file://test.json';
 
-        const fakeUri = 'file://test.json';
-
-        (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
-          uri: fakeUri,
-          fileCopyUri: fakeUri,
-          name: 'test.json',
-        });
-
-        (RNFS.readFile as jest.Mock)
-          .mockResolvedValueOnce('notapng') // base64
-          .mockResolvedValueOnce('{"ios":true}');
-
-        const result = await pickAndReadFile();
-        expect(result).toContain('true');
+      (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
+        uri: fakeUri,
+        name: 'test.json',
       });
+
+      (RNFS.readFile as jest.Mock)
+        .mockResolvedValueOnce('bm90YXBuZw==') // base64
+        .mockResolvedValueOnce('{"android":true}');
+
+      const result = await pickAndReadFile();
+      expect(result).toContain('true');
+    });
+
+    it('should pick and read a file on iOS', async () => {
+      Object.defineProperty(Platform, 'OS', {
+        value: 'ios',
+      });
+
+      const fakeUri = 'file://test.json';
+
+      (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
+        uri: fakeUri,
+        fileCopyUri: fakeUri,
+        name: 'test.json',
+      });
+
+      (RNFS.readFile as jest.Mock)
+        .mockResolvedValueOnce('bm90YXBuZw==') // base64
+        .mockResolvedValueOnce('{"ios":true}');
+
+      const result = await pickAndReadFile();
+      expect(result).toContain('true');
+    });
 
     it('should pick a file and read it', async () => {
       const fakeUri = 'file://test.json';
 
       (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
         uri: fakeUri,
-        fileCopyUri: fakeUri, // Add this!
+        fileCopyUri: fakeUri,
         name: 'test.json',
       });
 
       (RNFS.readFile as jest.Mock)
-        .mockResolvedValueOnce('notapng') // base64
-        .mockResolvedValueOnce('{"test":123}'); // utf8 fallback
+        .mockResolvedValueOnce('bm90YXBuZw==') // base64
+        .mockResolvedValueOnce('{"test":123}');
 
       const result = await pickAndReadFile();
       expect(result).toContain('123');
