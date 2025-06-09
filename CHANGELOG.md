@@ -1,15 +1,19 @@
 # learner-credential-wallet Changelog
 
-## 2.1.9 - build 89
+## 2.2.3 - build 93
 ### Added
 - Capability to Unbake Open Badge 3.0 #649
-- New verifier core integration #717, #718, #719
-- Presentation requests: Receive and process requests through deeplinks on LCW #697
+- Integrate verifier-core in LCW & Adjust Response Handling #719
+- Install and Configure verifier-core in LCW #718
+- Content & Design for Error Messaging Based on Updates to Verifier Core #709
+- Design for Issuer & Issuer Registry Display #713
+- Updating Issuer & Issuer Registry Display #727
+- Integrate verifier-core and shared known issuer registry list #728
 
 ### Fixed
+- Identify and remove duplicate validation logic in LCW #717
+- Animated: 'use Native Driver' not specified #716
 - ViewPropTypes error on Android and iOS #575
-- Animated: 'use Native Driver' was not specified error #716
-- Clicking on NO the credentials request popup results in error #721
 
 ## 2.1.8 - build 88
 ### Added
@@ -20,7 +24,7 @@
 
 ## 2.1.7 - build 87
 ### Changed
-- Remove checkbox from for pw protection for Backup screen  #578
+- Remove checkbox from for pw protection for Backup screen #578
 
 ### Fixed
 - Update where we get credential name from in wallet #696
@@ -30,15 +34,15 @@
 
 ## 2.1.6 - build 86
 ### Fixed
-- Fix deep linking in scanned QR codes
+- Deep Linking for QR codes #627
 
 ## 2.1.5 - build 85
 ### Added
-- Add QR codes to PDF exports
+- Add QR code to PDFs for verification #650
 
 ## 2.1.4 - build 84
 ### Fixed
-- Fix PDF export
+- Fix PDF export #604
 
 ## 2.1.3 - build 83
 ### Fixed
