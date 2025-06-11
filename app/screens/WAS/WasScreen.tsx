@@ -132,11 +132,37 @@ const WASScreen = () => {
         throw new Error(`Failed to delete space. Status: ${response.status}`);
       }
 
+      const mapData = await AsyncStorage.getItem('map');
+      if (mapData) {
+        const map = JSON.parse(mapData);
+        const publicLinkKeys = map.__keys__?.publiclinks || [];
+        console.log('Found public link keys:', publicLinkKeys);
+
+        // Process each public link
+        for (const key of publicLinkKeys) {
+          try {
+            const index = map[`publiclinks_${key}`];
+            if (index !== undefined) {
+              // Get the actual data from map_{index}
+              const mapData = await AsyncStorage.getItem(`map_${index}`);
+              if (mapData) {
+                const data = JSON.parse(mapData);
+                // Check if this is a WAS link
+                if (data.rawData?.server === WAS_BASE_URL) {
+                  console.log('Removing WAS link for key:', key);
+                  await Cache.getInstance().remove(CacheKey.PublicLinks, key);
+                }
+              }
+            }
+          } catch (error) {
+            console.error('Error processing link:', key, error);
+          }
+        }
+      }
+
       // Clear stored items
       await AsyncStorage.removeItem(WAS_KEYS.SIGNER_JSON);
       await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
-
-      await Cache.getInstance().removeAll(CacheKey.PublicLinks);
 
       setStatus('success');
       setMessage('Space successfully deleted');
