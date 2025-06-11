@@ -15,6 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS_BASE_URL } from '../../../app.config';
 import { useThemeContext } from '../../hooks';
+import { Cache, CacheKey } from '../../lib/cache';
 
 if (typeof globalThis.base64FromArrayBuffer !== 'function') {
   globalThis.base64FromArrayBuffer = function base64FromArrayBuffer(arrayBuffer) {
@@ -134,6 +135,8 @@ const WASScreen = () => {
       // Clear stored items
       await AsyncStorage.removeItem(WAS_KEYS.SIGNER_JSON);
       await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
+
+      await Cache.getInstance().removeAll(CacheKey.PublicLinks);
 
       setStatus('success');
       setMessage('Space successfully deleted');
