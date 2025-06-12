@@ -172,7 +172,7 @@ function About({ navigation }: AboutProps): React.ReactElement {
           </Text>.
         </Text>
         <Text style={styles.paragraphCenter}>
-          Copyright 2021-2022 Massachusetts Institute of Technology
+          Copyright 2021-2025 Massachusetts Institute of Technology
         </Text>
         <TouchableOpacity onPress={goToDeveloperScreen}>
           <Text style={styles.paragraphCenter}>
