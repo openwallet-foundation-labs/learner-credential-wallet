@@ -176,7 +176,7 @@ const stylez = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  // eslint-disable-next-line react-native/no-color-literals
+
   rectangle: {
     height: 250,
     width: 250,
