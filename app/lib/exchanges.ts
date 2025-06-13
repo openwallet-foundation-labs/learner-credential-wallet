@@ -3,11 +3,10 @@ import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ObjectId } from 'bson';
-import { getHook } from 'react-hooks-outside';
+import store from '../store';
 import validator from 'validator';
 import { CredentialRecord } from '../model';
 import { navigationRef } from '../navigation';
-import store from '../store';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
 import { Credential, CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';
@@ -37,7 +36,7 @@ const selectCredentials = async (credentialRecords: CredentialRecordRaw[]): Prom
   store.dispatch(clearSelectedExchangeCredentials());
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const selectedExchangeCredentials: CredentialRecordRaw[] = getHook('selectedExchangeCredentials');
+    const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
     if (selectedExchangeCredentials.length === 0) {
       break;
     } else {
@@ -54,7 +53,7 @@ const selectCredentials = async (credentialRecords: CredentialRecordRaw[]): Prom
     // increase likelihood that the selected credentials
     // have been recorded before processing them
     await delay(1000);
-    const selectedExchangeCredentials: CredentialRecordRaw[] = getHook('selectedExchangeCredentials');
+    const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
     if (selectedExchangeCredentials.length > 0) {
       resolvePromise(selectedExchangeCredentials);
       unsubscribe();
