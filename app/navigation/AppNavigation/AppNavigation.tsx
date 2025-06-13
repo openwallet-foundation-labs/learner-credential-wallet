@@ -5,11 +5,10 @@ import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
 import { createNavigationContainerRef } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ReactHooksWrapper, setHook } from 'react-hooks-outside';
 
 import { RootNavigation, SetupNavigation, RootNavigationParamsList } from '../';
 import { RestartScreen, LoginScreen } from '../../screens';
-import { useAppLoading, useDynamicStyles, useSelectedExchangeCredentials } from '../../hooks';
+import { useAppLoading, useDynamicStyles } from '../../hooks';
 import { selectWalletState } from '../../store/slices/wallet';
 import { EventProvider } from 'react-native-outside-press';
 import { deepLinkConfig } from '../../lib/deepLink';
@@ -17,8 +16,6 @@ import { GlobalConfirmModal } from '../../components';
 
 export const navigationRef = createNavigationContainerRef<RootNavigationParamsList>();
 
-// Enable global access to hooks
-setHook('selectedExchangeCredentials', useSelectedExchangeCredentials);
 SplashScreen.preventAutoHideAsync();
 
 export default function AppNavigation(): React.ReactElement | null {
@@ -68,7 +65,6 @@ export default function AppNavigation(): React.ReactElement | null {
           ref={navigationRef}
           linking={deepLinkConfig}
         >
-          <ReactHooksWrapper />
           {renderScreen()}
         </NavigationContainer>
       </EventProvider>
