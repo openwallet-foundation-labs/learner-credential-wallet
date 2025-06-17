@@ -77,6 +77,34 @@ export const WAS_KEYS = {
   SIGNER_JSON: 'was_signer_json'
 };
 
+/**
+ * Removes a WAS public link from the cache if it exists
+ * @param key - The key of the public link to check and potentially remove
+ * @param map - The storage map containing the link data
+ * @returns Promise<boolean> - True if the link was removed, false otherwise
+ */
+export async function removeWasPublicLink(key: string, map: Record<string, any>): Promise<boolean> {
+  try {
+    const index = map[`publiclinks_${key}`];
+    if (index !== undefined) {
+      const mapData = await AsyncStorage.getItem(`map_${index}`);
+      if (mapData) {
+        const data = JSON.parse(mapData);
+        // Check if this is a WAS link
+        if (data.rawData?.server === WAS_BASE_URL) {
+          console.log('Removing WAS link for key:', key);
+          await Cache.getInstance().remove(CacheKey.PublicLinks, key);
+          return true;
+        }
+      }
+    }
+    return false;
+  } catch (error) {
+    console.error('Error processing link:', key, error);
+    return false;
+  }
+}
+
 // Create a singleton instance of StorageClient
 let storageClientInstance: InstanceType<typeof StorageClient> | null = null;
 
@@ -135,28 +163,14 @@ const WASScreen = () => {
       const mapData = await AsyncStorage.getItem('map');
       if (mapData) {
         const map = JSON.parse(mapData);
-        const publicLinkKeys = map.__keys__?.publiclinks || [];
-        console.log('Found public link keys:', publicLinkKeys);
+        // Get all keys that start with 'publiclinks_'
+        const publicLinkKeys = Object.keys(map)
+          .filter(key => key.startsWith('publiclinks_'))
+          .map(key => key.replace('publiclinks_', ''));
 
         // Process each public link
         for (const key of publicLinkKeys) {
-          try {
-            const index = map[`publiclinks_${key}`];
-            if (index !== undefined) {
-              // Get the actual data from map_{index}
-              const mapData = await AsyncStorage.getItem(`map_${index}`);
-              if (mapData) {
-                const data = JSON.parse(mapData);
-                // Check if this is a WAS link
-                if (data.rawData?.server === WAS_BASE_URL) {
-                  console.log('Removing WAS link for key:', key);
-                  await Cache.getInstance().remove(CacheKey.PublicLinks, key);
-                }
-              }
-            }
-          } catch (error) {
-            console.error('Error processing link:', key, error);
-          }
+          await removeWasPublicLink(key, map);
         }
       }
 
