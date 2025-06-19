@@ -3,31 +3,24 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { removeWasPublicLink } from '../app/lib/removeWasPublicLink';
 
-// Mock the function directly since we can't import it easily
-const WAS_BASE_URL = 'https://test-was-server.com';
+// Mock the WAS_BASE_URL for testing
+jest.mock('../app.config', () => ({
+  WAS_BASE_URL: 'https://test-was-server.com'
+}));
 
-// Copy the function here for testing since we can't import it easily
-async function removeWasPublicLink(key: string, map: Record<string, any>): Promise<boolean> {
-  try {
-    const index = map[`publiclinks_${key}`];
-    if (index !== undefined) {
-      const mapData = await AsyncStorage.getItem(`map_${index}`);
-      if (mapData) {
-        const data = JSON.parse(mapData);
-        if (data.rawData?.server === WAS_BASE_URL) {
-          console.log('Removing WAS link for key:', key);
-          // Would call Cache.getInstance().remove() in real implementation
-          return true;
-        }
-      }
-    }
-    return false;
-  } catch (error) {
-    console.error('Error processing link:', key, error);
-    return false;
+// Mock the Cache class
+jest.mock('../app/lib/cache', () => ({
+  CacheKey: {
+    PublicLinks: 'publiclinks'
+  },
+  Cache: {
+    getInstance: jest.fn(() => ({
+      remove: jest.fn()
+    }))
   }
-}
+}));
 
 const mockAsyncStorage = AsyncStorage as jest.Mocked<typeof AsyncStorage>;
 
@@ -56,7 +49,7 @@ describe('removeWasPublicLink', () => {
     // Mock AsyncStorage to return WAS server data
     const mockMapData = {
       rawData: {
-        server: WAS_BASE_URL
+        server: 'https://test-was-server.com'
       }
     };
     mockAsyncStorage.getItem.mockResolvedValue(JSON.stringify(mockMapData));
