@@ -328,7 +328,7 @@ const WASScreen = () => {
           '(created)',
           '(expires)',
           '(key-id)',
-          '(request-target)',
+          '(request-target)'
         ],
         created: new Date(),
         expires: new Date(Date.now() + 30 * 1000),
