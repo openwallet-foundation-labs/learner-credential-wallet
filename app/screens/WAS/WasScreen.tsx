@@ -18,6 +18,7 @@ import { useThemeContext } from '../../hooks';
 import { removeWasPublicLink } from '../../lib/removeWasPublicLink';
 import { shareData } from '../../lib/shareData';
 import { displayGlobalModal } from '../../lib/globalModal';
+import { createHttpSignatureAuthorization } from 'authorization-signature';
 
 if (typeof globalThis.base64FromArrayBuffer !== 'function') {
   globalThis.base64FromArrayBuffer = function base64FromArrayBuffer(arrayBuffer) {
@@ -292,7 +293,7 @@ const WASScreen = () => {
         cancelOnBackgroundPress: true,
         body: (
           <Text style={{ color: theme.color.textPrimary }}>
-            This will export your entire WAS space as a tarball file. The file will be shared through your device's native sharing options.
+            This will export your entire WAS space as a tarball file.
           </Text>
         )
       });
@@ -303,19 +304,48 @@ const WASScreen = () => {
         return;
       }
   
+      // Get the stored signer
+      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+      if (!signerJson) {
+        throw new Error('No signer found');
+      }
+
+      const signer = await Ed25519Signer.fromJSON(signerJson);
+  
       // Extract space UUID from the URN format
       const spaceUuid = connectionDetails.spaceId.replace('urn:uuid:', '');
       const exportUrl = `${WAS_BASE_URL}/space/${spaceUuid}`;
       
       console.log('Fetching space export from:', exportUrl);
   
-      const response = await fetch(exportUrl, {
+      // Add HTTP signature authorization
+      const authorization = await createHttpSignatureAuthorization({
+        signer,
+        url: new URL(exportUrl),
+        method: 'GET',
+        headers: {},
+        includeHeaders: [
+          '(created)',
+          '(expires)',
+          '(key-id)',
+          '(request-target)',
+        ],
+        created: new Date(),
+        expires: new Date(Date.now() + 30 * 1000),
+      });
+
+      // Create the authorized request
+      const authorizedRequest = new Request(exportUrl, {
         method: 'GET',
         headers: {
           'Accept': 'application/x-tar, application/octet-stream, */*',
-          // Remove Content-Type header for GET requests - it's not needed
+          'Authorization': authorization,
         }
       });
+  
+      console.log('Export request headers:', authorizedRequest.headers);
+  
+      const response = await fetch(authorizedRequest);
   
       console.log('Export response status:', response.status);
       console.log('Export response headers:', response.headers);
@@ -383,7 +413,7 @@ const WASScreen = () => {
         try {
           await shareData(fileName, base64, 'application/octet-stream');
         } catch (fallbackError) {
-          throw new Error(`Failed to share file: ${shareError.message}`);
+          throw new Error(`Failed to share file: ${(shareError as Error).message}`);
         }
       }
   
