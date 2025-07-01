@@ -16,9 +16,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { WAS_BASE_URL } from '../../../app.config';
 import { useThemeContext } from '../../hooks';
 import { removeWasPublicLink } from '../../lib/removeWasPublicLink';
-import { shareData } from '../../lib/shareData';
+import { shareBinaryFile } from '../../lib/shareData';
 import { displayGlobalModal } from '../../lib/globalModal';
-import { createHttpSignatureAuthorization } from 'authorization-signature';
+
 
 if (typeof globalThis.base64FromArrayBuffer !== 'function') {
   globalThis.base64FromArrayBuffer = function base64FromArrayBuffer(arrayBuffer) {
@@ -118,9 +118,7 @@ const WASScreen = () => {
       }
 
       const signer = await Ed25519Signer.fromJSON(signerJson);
-
       const storage = getStorageClient();
-
       const space = storage.space({
         signer,
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
@@ -282,11 +280,8 @@ const WASScreen = () => {
       setStatus('loading');
       setMessage('Exporting space...');
   
-      if (!connectionDetails) {
-        throw new Error('No connection details found');
-      }
+      if (!connectionDetails) throw new Error('No connection details found');
   
-      // Show confirmation modal
       const confirmed = await displayGlobalModal({
         title: 'Export Space',
         confirmText: 'Export',
@@ -304,143 +299,54 @@ const WASScreen = () => {
         return;
       }
   
-      // Get the stored signer
       const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-      if (!signerJson) {
-        throw new Error('No signer found');
-      }
-
+      if (!signerJson) throw new Error('No signer found');
+  
       const signer = await Ed25519Signer.fromJSON(signerJson);
+      const storage = getStorageClient();
   
-      // Extract space UUID from the URN format
-      const spaceUuid = connectionDetails.spaceId.replace('urn:uuid:', '');
-      const exportUrl = `${WAS_BASE_URL}/space/${spaceUuid}`;
-      
-      console.log('Fetching space export from:', exportUrl);
-  
-      // Add HTTP signature authorization
-      const authorization = await createHttpSignatureAuthorization({
+      const space = storage.space({
         signer,
-        url: new URL(exportUrl),
-        method: 'GET',
-        headers: {},
-        includeHeaders: [
-          '(created)',
-          '(expires)',
-          '(key-id)',
-          '(request-target)'
-        ],
-        created: new Date(),
-        expires: new Date(Date.now() + 30 * 1000),
+        id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
-
-      // Create the authorized request
-      const authorizedRequest = new Request(exportUrl, {
-        method: 'GET',
+  
+      const response = await space.get({
         headers: {
-          'Accept': 'application/x-tar, application/octet-stream, */*',
-          'Authorization': authorization,
+          Accept: 'application/x-tar',
         }
       });
   
-      console.log('Export request headers:', authorizedRequest.headers);
+      if (!response.ok) throw new Error(`Failed to export space. Status: ${response.status}`);
   
-      const response = await fetch(authorizedRequest);
+      const blob = await response.blob?.();
+      if (!blob) throw new Error('Failed to get blob from response');
+
+      const fileName = `was-space-${connectionDetails.spaceId.split('urn:uuid:')[1]}.tar`;
   
-      console.log('Export response status:', response.status);
-      console.log('Export response headers:', response.headers);
+      const reader = new FileReader();
   
-      if (!response.ok) {
-        const errorText = await response.text().catch(() => 'Unknown error');
-        throw new Error(`Failed to export space. Status: ${response.status}, Error: ${errorText}`);
-      }
+      const base64 = await new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const dataUrl = reader.result as string;
+          const base64Data = dataUrl.split(',')[1]; // strip "data:*/*;base64,"
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
   
-      // Check if we actually got binary data
-      const contentType = response.headers.get('content-type');
-      console.log('Response content-type:', contentType);
-  
-      let arrayBuffer;
       try {
-        // Use arrayBuffer() instead of blob() for better React Native compatibility
-        arrayBuffer = await response.arrayBuffer();
-        console.log('ArrayBuffer size:', arrayBuffer.byteLength);
-        
-        if (arrayBuffer.byteLength === 0) {
-          throw new Error('Received empty file from server');
-        }
-      } catch (bufferError) {
-        console.error('Error getting arrayBuffer:', bufferError);
-        throw new Error('Failed to process downloaded data');
-      }
-      
-      // Convert array buffer to base64 using the global function
-      let base64;
-      try {
-        if (typeof globalThis.base64FromArrayBuffer === 'function') {
-          base64 = globalThis.base64FromArrayBuffer(arrayBuffer);
-        } else {
-          // Fallback base64 conversion
-          const uint8Array = new Uint8Array(arrayBuffer);
-          const binaryString = Array.from(uint8Array)
-            .map(byte => String.fromCharCode(byte))
-            .join('');
-          base64 = btoa(binaryString);
-        }
-        
-        if (!base64 || base64.length === 0) {
-          throw new Error('Failed to convert data to base64');
-        }
-        
-        console.log('Base64 conversion successful, length:', base64.length);
-      } catch (base64Error) {
-        console.error('Error converting to base64:', base64Error);
-        throw new Error('Failed to encode file data');
-      }
-      
-      // Create filename with timestamp
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('.')[0]; // Remove milliseconds
-      const fileName = `was-space-${timestamp}.tar`;
-      
-      console.log('Sharing file:', fileName);
-      
-      // Use shareData utility to handle the file sharing
-      try {
-        await shareData(fileName, base64, 'application/x-tar');
-        console.log('Share completed successfully');
-      } catch (shareError) {
-        console.error('Error sharing file:', shareError);
-        // Try alternative mime types if the first one fails
-        try {
-          await shareData(fileName, base64, 'application/octet-stream');
-        } catch (fallbackError) {
-          throw new Error(`Failed to share file: ${(shareError as Error).message}`);
-        }
+        await shareBinaryFile(fileName, base64, 'application/x-tar');
+      } catch (err) {
+        await shareBinaryFile(fileName, base64, 'application/x-tar');
       }
   
       setStatus('success');
-      setMessage('Space exported successfully! Check your device\'s sharing options.');
-  
-    } catch (error) {
-      console.error('Error exporting space:', error);
+      setMessage('Space exported and ready to share!');
+    } catch (err) {
+      console.error('Error exporting space:', err);
       setStatus('error');
-      
-      // Provide more specific error messages
-      let errorMessage = 'Failed to export space';
-      if (error instanceof Error) {
-        if (error.message.includes('Network request failed')) {
-          errorMessage = 'Network error: Please check your internet connection';
-        } else if (error.message.includes('Failed to fetch')) {
-          errorMessage = 'Unable to connect to the server. Please try again later.';
-        } else if (error.message.includes('Status: 404')) {
-          errorMessage = 'Space not found on server. It may have been deleted.';
-        } else if (error.message.includes('Status: 403')) {
-          errorMessage = 'Access denied. Please check your credentials.';
-        } else {
-          errorMessage = `Error: ${error.message}`;
-        }
-      }
-      
-      setMessage(errorMessage);
+      setMessage(err instanceof Error ? `Error: ${err.message}` : 'Failed to export space');
     }
   };
 

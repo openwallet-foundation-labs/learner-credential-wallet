@@ -11,7 +11,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WAS_KEYS, getStorageClient } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS_BASE_URL, VERIFIER_PLUS_URL } from '../../app.config';
-import { createHttpSignatureAuthorization } from 'authorization-signature';
 
 let cachedSigner: Ed25519Signer | null = null;
 
@@ -109,37 +108,9 @@ async function createWasPublicLinkIfAvailable(
     console.log('Storing credential in WAS with signer:', signer.id);
     
     // Manually create HTTP signature authorization for the resource PUT request
-    const resourceUrl = new URL(resource.path, WAS_BASE_URL);
-    const authorization = await createHttpSignatureAuthorization({
+    const response = await resource.put(credentialBlob, { 
       signer,
-      url: resourceUrl,
-      method: 'PUT',
-      headers: {
-        'content-type': 'application/json',
-      },
-      includeHeaders: [
-        '(created)',
-        '(expires)',
-        '(key-id)',
-        '(request-target)',
-        'content-type',
-      ],
-      created: new Date(),
-      expires: new Date(Date.now() + 30 * 1000),
     });
-
-    // Create the authorized request manually
-    const authorizedRequest = new Request(resourceUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authorization,
-      },
-      body: credentialBlob,
-    });
-
-    console.log('Sending authorized request to:', resourceUrl.toString());
-    const response = await fetch(authorizedRequest);
     
     console.log('WAS storage response:', {
       status: response.status,
@@ -147,12 +118,9 @@ async function createWasPublicLinkIfAvailable(
     });
 
     if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
       console.error(
         '[publicLink.ts] Failed to store credential in WAS. Status:',
         response.status,
-        'Error:',
-        errorText
       );
       return null;
     }

@@ -29,3 +29,28 @@ export async function shareData(fileName: string, data: string, type = 'text/pla
     message: Platform.OS === 'ios' ? undefined : data,
   });
 }
+
+
+/**
+ * Share a binary file.
+ * @param fileName - The name of the file to share.
+ * @param base64Data - The base64 encoded data of the file to share.
+ * @param mimeType - The mime type of the file to share.
+ * @returns 
+ */
+export async function shareBinaryFile(fileName: string, base64Data: string, mimeType = 'application/octet-stream') {
+  const path = `${RNFS.DocumentDirectoryPath}/${fileName}`;
+
+  if (await RNFS.exists(path)) {
+    await RNFS.unlink(path);
+  }
+
+  await RNFS.writeFile(path, base64Data, 'base64');
+
+  return Share.open({
+    title: fileName,
+    url: `file://${path}`,
+    type: mimeType,
+  });
+}
+
