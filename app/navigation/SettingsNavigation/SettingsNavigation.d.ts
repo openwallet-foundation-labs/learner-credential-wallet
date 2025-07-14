@@ -17,6 +17,7 @@ export type SettingsNavigationParamList = {
   AddExistingProfileScreen: undefined;
   DetailsScreen: DetailsScreenParams;
   DeveloperScreen: undefined;
+  WASScreen: undefined;
 };
 
 export type SettingsProps = StackScreenProps<SettingsNavigationParamList, 'Settings'>;
