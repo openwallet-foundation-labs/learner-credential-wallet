@@ -1,15 +1,17 @@
 import Realm from 'realm';
-import { ObjectID } from 'bson';
 
 import { Credential, CredentialRecordEntry, CredentialRecordRaw } from '../types/credential';
 import { db } from './DatabaseAccess';
 
-export class CredentialRecord extends Realm.Object<CredentialRecord> implements CredentialRecordRaw {
-  readonly _id!: ObjectID;
+const ObjectId = Realm.BSON.ObjectId;
+type ObjectId = Realm.BSON.ObjectId;
+
+export class CredentialRecord extends Realm.Object implements CredentialRecordRaw {
+  readonly _id!: ObjectId;
   readonly createdAt!: Date;
   readonly updatedAt!: Date;
   readonly rawCredential!: string;
-  readonly profileRecordId!: ObjectID;
+  readonly profileRecordId!: ObjectId;
 
   get credential(): Credential {
     return JSON.parse(this.rawCredential) as Credential;
@@ -24,7 +26,7 @@ export class CredentialRecord extends Realm.Object<CredentialRecord> implements 
       updatedAt: 'date',
       rawCredential: 'string',
       profileRecordId: 'objectId',
-    }
+    },
   };
 
   asRaw(): CredentialRecordRaw {
@@ -40,17 +42,17 @@ export class CredentialRecord extends Realm.Object<CredentialRecord> implements 
 
   static entryFrom(record: CredentialRecordEntry): CredentialRecordEntry {
     return {
-      _id: new ObjectID(record._id),
+      _id: new ObjectId(record._id),
       createdAt: new Date(record.createdAt),
       updatedAt: new Date(record.updatedAt),
       rawCredential: record.rawCredential,
-      profileRecordId: new ObjectID(record.profileRecordId),
+      profileRecordId: new ObjectId(record.profileRecordId),
     };
   }
 
   static rawFrom({ credential, profileRecordId }: AddCredentialRecordParams): CredentialRecordRaw {
     return {
-      _id: new ObjectID(),
+      _id: new ObjectId(),
       createdAt: new Date(),
       updatedAt: new Date(),
       rawCredential: JSON.stringify(credential),
@@ -78,10 +80,13 @@ export class CredentialRecord extends Realm.Object<CredentialRecord> implements 
 
   static async deleteCredentialRecord(rawCredentialRecord: CredentialRecordRaw): Promise<void> {
     await db.withInstance((instance) => {
-      const credentialRecord = instance.objectForPrimaryKey(CredentialRecord.schema.name, new ObjectID(rawCredentialRecord._id));
+      const credentialRecord = instance.objectForPrimaryKey(
+        CredentialRecord.schema.name,
+        new ObjectId(rawCredentialRecord._id),
+      );
 
       instance.write(() => {
-        instance.delete(credentialRecord);
+        if (credentialRecord) instance.delete(credentialRecord);
       });
     });
   }
@@ -89,5 +94,5 @@ export class CredentialRecord extends Realm.Object<CredentialRecord> implements 
 
 export type AddCredentialRecordParams = {
   credential: Credential;
-  profileRecordId: ObjectID;
-}
+  profileRecordId: ObjectId;
+};
