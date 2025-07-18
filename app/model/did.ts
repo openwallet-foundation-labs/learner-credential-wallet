@@ -1,11 +1,11 @@
 import Realm from 'realm';
-import { ObjectID} from 'bson';
+const ObjectId = Realm.BSON.ObjectId; 
 
 import { DidKey, DidDocument } from '../types/did';
-import {db} from './DatabaseAccess';
+import { db } from './DatabaseAccess';
 
 export type DidRecordRaw = {
-  readonly _id: ObjectID;
+  readonly _id: Realm.BSON.ObjectId;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly rawDidDocument: string;
@@ -15,9 +15,8 @@ export type DidRecordRaw = {
   readonly rawKeyAgreementKey: string;
   readonly keyAgreementKey: DidKey;
 };
-
-export class DidRecord extends Realm.Object<DidRecord> implements DidRecordRaw {
-  readonly _id!: ObjectID;
+export class DidRecord extends Realm.Object implements DidRecordRaw {
+  readonly _id!: Realm.BSON.ObjectId;
   readonly createdAt!: Date;
   readonly updatedAt!: Date;
   readonly rawDidDocument!: string;
@@ -63,24 +62,36 @@ export class DidRecord extends Realm.Object<DidRecord> implements DidRecordRaw {
     };
   }
 
-  static async addDidRecord({ didDocument, verificationKey, keyAgreementKey }: AddDidRecordParams ): Promise<DidRecordRaw> {
-    const rawDidRecord: DidRecordRaw = {
-      _id: new ObjectID(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      rawDidDocument: JSON.stringify(didDocument),
-      didDocument,
-      rawVerificationKey: JSON.stringify(verificationKey),
-      verificationKey,
-      rawKeyAgreementKey: JSON.stringify(keyAgreementKey),
-      keyAgreementKey,
+  static async addDidRecord({ didDocument, verificationKey, keyAgreementKey }: AddDidRecordParams): Promise<DidRecordRaw> {
+
+    const _id = new ObjectId();
+    const createdAt = new Date();
+    const updatedAt = new Date();
+    const rawDidDocument = JSON.stringify(didDocument);
+    const rawVerificationKey = JSON.stringify(verificationKey);
+    const rawKeyAgreementKey = JSON.stringify(keyAgreementKey);
+
+    const rawDidRecordForRealm = {
+      _id,
+      createdAt,
+      updatedAt,
+      rawDidDocument,
+      rawVerificationKey,
+      rawKeyAgreementKey,
     };
 
-    return db.withInstance((instance) =>
-      instance.write(() =>
-        instance.create<DidRecord>(DidRecord.schema.name, rawDidRecord).asRaw(),
-      ),
-    );
+    try {
+      return await db.withInstance((instance) =>
+        instance.write(() => {
+          const created = instance.create<DidRecord>(DidRecord.schema.name, rawDidRecordForRealm);
+          const result = created.asRaw();
+          return result;
+        })
+      );
+    } catch (error) {
+      console.error('❌ Error creating DID record:', error);
+      throw error;
+    }
   }
 
   static getAllDidRecords(): Promise<DidRecordRaw[]> {
@@ -92,17 +103,19 @@ export class DidRecord extends Realm.Object<DidRecord> implements DidRecordRaw {
 
   static async deleteDidRecord(rawDidRecord: DidRecordRaw): Promise<void> {
     await db.withInstance((instance) => {
-      const didRecord = instance.objectForPrimaryKey(DidRecord.schema.name, new ObjectID(rawDidRecord._id));
+      const didRecord = instance.objectForPrimaryKey(DidRecord.schema.name, new ObjectId(rawDidRecord._id));
 
       instance.write(() => {
-        instance.delete(didRecord);
+        if (didRecord) {
+          instance.delete(didRecord);
+        }
       });
     });
   }
 }
 
 export type AddDidRecordParams = {
-  didDocument: DidDocument,
-  verificationKey: DidKey,
-  keyAgreementKey: DidKey,
-}
+  didDocument: DidDocument;
+  verificationKey: DidKey;
+  keyAgreementKey: DidKey;
+};

@@ -1,39 +1,40 @@
 import Realm from 'realm';
-import { ObjectID} from 'bson';
 import uuid from 'react-native-uuid';
 
-import {db} from './DatabaseAccess';
+import { db } from './DatabaseAccess';
 
 import { mintDid } from '../lib/did';
 import { UnlockedWallet } from '../types/wallet';
 import { ProfileImportReport, ProfileMetadata } from '../types/profile';
 import { parseWalletContents } from '../lib/parseWallet';
 import { HumanReadableError } from '../lib/error';
-import {CredentialRecord} from './credential';
-import {DidRecord, DidRecordRaw} from './did';
+import { CredentialRecord } from './credential';
+import { DidRecord, DidRecordRaw } from './did';
 import { CredentialRecordRaw } from '../types/credential';
+
+const ObjectId = Realm.BSON.ObjectId;
 
 const UNTITLED_PROFILE_NAME = 'Untitled Profile';
 export const INITIAL_PROFILE_NAME = 'Default';
 
 export type ProfileRecordRaw = {
-  readonly _id: ObjectID;
+  readonly _id: Realm.BSON.ObjectId;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly profileName: string;
-  readonly didRecordId: ObjectID;
-}
+  readonly didRecordId: Realm.BSON.ObjectId;
+};
 
 export type ProfileWithCredentialRecords = ProfileRecordRaw & {
   rawCredentialRecords: CredentialRecordRaw[];
-}
+};
 
-export class ProfileRecord extends Realm.Object<ProfileRecord> implements ProfileRecordRaw {
-  readonly _id!: ObjectID;
+export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
+  readonly _id!: Realm.BSON.ObjectId;
   readonly createdAt!: Date;
   readonly updatedAt!: Date;
   readonly profileName!: string;
-  readonly didRecordId!: ObjectID;
+  readonly didRecordId!: Realm.BSON.ObjectId;
 
   static schema: Realm.ObjectSchema = {
     name: 'ProfileRecord',
@@ -59,11 +60,11 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
 
   public static rawFrom({ profileName, rawDidRecord }: Required<AddProfileRecordParams>): ProfileRecordRaw {
     return {
-      _id: new ObjectID(),
+      _id: new ObjectId(),
       createdAt: new Date(),
       updatedAt: new Date(),
       profileName,
-      didRecordId: new ObjectID(rawDidRecord._id),
+      didRecordId: new ObjectId(rawDidRecord._id),
     };
   }
 
@@ -76,9 +77,11 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
     const rawProfileRecord = ProfileRecord.rawFrom({ profileName, rawDidRecord });
 
     return db.withInstance((instance) =>
-      instance.write(() =>
-        instance.create<ProfileRecord>(ProfileRecord.schema.name, rawProfileRecord).asRaw(),
-      ),
+      instance.write(() => {
+        const created = instance.create<ProfileRecord>(ProfileRecord.schema.name, rawProfileRecord);
+        const raw = created.asRaw();
+        return raw;
+      }),
     );
   }
 
@@ -100,21 +103,27 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
   public static async deleteProfileRecord(rawProfileRecord: ProfileRecordRaw): Promise<void> {
     const rawProfileRecords = await ProfileRecord.getAllProfileRecords();
     if (rawProfileRecords.length <= 1) {
-      throw new HumanReadableError('You are unable to delete this profile as your wallet must have at least one profile. If you want to delete the contents of your wallet, please select Reset Wallet from the Settings Menu.');
+      throw new HumanReadableError(
+        'You are unable to delete this profile as your wallet must have at least one profile. If you want to delete the contents of your wallet, please select Reset Wallet from the Settings Menu.',
+      );
     }
 
     await db.withInstance(async (instance) => {
-      const profileRecord = instance.objectForPrimaryKey<ProfileRecord>(ProfileRecord.schema.name, new ObjectID(rawProfileRecord._id));
+      const profileRecord = instance.objectForPrimaryKey<ProfileRecord>(ProfileRecord.schema.name, new ObjectId(rawProfileRecord._id));
       if (profileRecord == null) throw new Error('Profile not found');
 
-      const didRecord = instance.objectForPrimaryKey<DidRecord>(DidRecord.schema.name, new ObjectID(profileRecord.didRecordId));
-      const credentialRecordIds = (await CredentialRecord.getAllCredentialRecords()).filter(({ profileRecordId }) => profileRecordId.equals(rawProfileRecord._id) );
-      const credentialRecords = credentialRecordIds.map(({ _id }) => instance.objectForPrimaryKey<CredentialRecord>(CredentialRecord.schema.name, new ObjectID(_id)));
+      const didRecord = instance.objectForPrimaryKey<DidRecord>(DidRecord.schema.name, new ObjectId(profileRecord.didRecordId));
+      const credentialRecordIds = (await CredentialRecord.getAllCredentialRecords()).filter(({ profileRecordId }) =>
+        profileRecordId.equals(rawProfileRecord._id),
+      );
+      const credentialRecords = credentialRecordIds.map(({ _id }) =>
+        instance.objectForPrimaryKey<CredentialRecord>(CredentialRecord.schema.name, new ObjectId(_id)),
+      );
 
       instance.write(() => {
         instance.delete(profileRecord);
-        instance.delete(didRecord);
-        credentialRecords.forEach((record) => instance.delete(record));
+        if (didRecord) instance.delete(didRecord);
+        credentialRecords.forEach((record) => record && instance.delete(record));
       });
     });
   }
@@ -123,7 +132,9 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
     const { profileName } = rawProfileRecord;
 
     const allCredentialRecords = await CredentialRecord.getAllCredentialRecords();
-    const profileCredentialRecords = allCredentialRecords.filter(({ profileRecordId }) => profileRecordId.equals(rawProfileRecord._id));
+    const profileCredentialRecords = allCredentialRecords.filter(({ profileRecordId }) =>
+      profileRecordId.equals(rawProfileRecord._id),
+    );
     const credentials = profileCredentialRecords.map(({ credential }) => credential);
 
     const allDidRecords = await DidRecord.getAllDidRecords();
@@ -141,14 +152,9 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
       type: 'ProfileMetadata',
       data: {
         profileName,
-      }
+      },
     };
 
-    /**
-     * The Unlocked Wallet spec requires all wallet content
-     * types to be combined into a flat array.
-     * https://w3c-ccg.github.io/universal-wallet-interop-spec/#unlocked-wallet
-     */
     const contents = [
       ...credentials,
       didDocument,
@@ -158,10 +164,7 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
     ];
 
     const profile: UnlockedWallet = {
-      '@context': [
-        'https://www.w3.org/2018/credentials/v1',
-        'https://w3id.org/wallet/v1',
-      ],
+      '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
       id: 'http://example.gov/wallet/3732',
       type: 'UniversalWallet2020',
       status: 'UNLOCKED',
@@ -172,13 +175,7 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
   }
 
   public static async importProfileRecord(rawWallet: string): Promise<ProfileImportReport> {
-    const {
-      credentials,
-      didDocument,
-      verificationKey,
-      keyAgreementKey,
-      profileMetadata,
-    } = parseWalletContents(rawWallet);
+    const { credentials, didDocument, verificationKey, keyAgreementKey, profileMetadata } = parseWalletContents(rawWallet);
 
     const profileImportReport: ProfileImportReport = {
       userIdImported: false,
@@ -186,7 +183,7 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
         success: [],
         duplicate: [],
         failed: [],
-      }
+      },
     };
 
     try {
@@ -201,31 +198,27 @@ export class ProfileRecord extends Realm.Object<ProfileRecord> implements Profil
       const existingCredentials = await CredentialRecord.getAllCredentialRecords();
       const existingCredentialIds = existingCredentials.map(({ credential }) => credential.id);
 
-      await Promise.all(credentials.map(async (credential) => {
-      /*
-       * TODO - this is the same field used for the title use in other places when displaying
-       * a credential. Should that also be used here?
-       */
-        let achievement = credential.credentialSubject.hasCredential ??
-        credential.credentialSubject.achievement;
-        if (Array.isArray(achievement)) {
-          achievement = achievement[0];
-        }
-        const credentialName = achievement?.name ?? 'Unknown Credential';
-        if (existingCredentialIds.includes(credential.id)) {
-          profileImportReport.credentials.duplicate.push(credentialName);
-          return;
-        }
+      await Promise.all(
+        credentials.map(async (credential) => {
+          let achievement = credential.credentialSubject.hasCredential ?? credential.credentialSubject.achievement;
+          if (Array.isArray(achievement)) {
+            achievement = achievement[0];
+          }
+          const credentialName = achievement?.name ?? 'Unknown Credential';
+          if (existingCredentialIds.includes(credential.id)) {
+            profileImportReport.credentials.duplicate.push(credentialName);
+            return;
+          }
 
-        try {
-          await CredentialRecord.addCredentialRecord({ credential, profileRecordId });
-          profileImportReport.credentials.success.push(credentialName);
-        } catch(err) {
-          console.warn(`Unable to import credential: ${err}`);
-          profileImportReport.credentials.failed.push(credentialName);
-        }
-      }));
-
+          try {
+            await CredentialRecord.addCredentialRecord({ credential, profileRecordId });
+            profileImportReport.credentials.success.push(credentialName);
+          } catch (err) {
+            console.warn(`Unable to import credential: ${err}`);
+            profileImportReport.credentials.failed.push(credentialName);
+          }
+        }),
+      );
     } catch (err) {
       console.warn(`Unable to import profile: ${err}`);
     }

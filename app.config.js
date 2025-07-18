@@ -115,6 +115,10 @@ export default {
         }
       ],
       [
+        'expo-font',
+        'expo-secure-store'
+      ],
+      [
         'expo-build-properties',
         {
           android: {
