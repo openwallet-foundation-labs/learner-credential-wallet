@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useLayoutEffect, useState, useRef }from 'react';
 import { Text } from 'react-native-elements';
+import { AppState } from 'react-native';
 // import '@digitalcredentials/data-integrity-rn';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
@@ -9,7 +10,7 @@ import { navigationRef } from '../../navigation';
 import { makeSelectDidFromProfile, selectWithFactory } from '../../store/selectorFactories';
 import { stageCredentials } from '../../store/slices/credentialFoyer';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
-import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
+import { displayGlobalModal } from '../../lib/globalModal';
 import GlobalModalBody from '../../lib/globalModalBody';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { delay } from '../../lib/time';
@@ -22,12 +23,23 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
   const dispatch = useAppDispatch();
   const { mixins } = useDynamicStyles();
 
-  const dataLoadingPendingModalState = {
-    title: 'Retrieving Credential',
-    confirmButton: false,
-    cancelButton: false,
-    body: <GlobalModalBody message='This will only take a moment.' loading={true} />
-  };
+  const [coldStart, setColdStart] = useState(true);
+  const appState = useRef(AppState.currentState);
+   
+  useLayoutEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      //use AppState to determine if app is cold launched or not
+      if (appState.current === null || nextAppState === 'background') {
+        //if cold launch, auto-open the modal
+        setColdStart(true);
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   const dataLoadingSuccessModalState = {
     title: 'Success',
@@ -38,8 +50,8 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
   };
 
   const acceptExchange = async () => {
+    setColdStart(false);
     const rawProfileRecord = await NavigationUtil.selectProfile();
-    displayGlobalModal(dataLoadingPendingModalState);
     const didRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
     const holder = didRecord?.didDocument.authentication[0].split('#')[0] as string;
     const key = await Ed25519VerificationKey2020.from(didRecord?.verificationKey);
@@ -58,7 +70,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     const credentialFieldExists = !!credentialField;
     const credentialFieldIsArray = Array.isArray(credentialField);
     const credentialAvailable = credentialFieldExists && credentialFieldIsArray && credentialField.length > 0;
-    clearGlobalModal();
+
     if (credentialAvailable && navigationRef.isReady()) {
       const credential = credentialField[0];
       await dispatch(stageCredentials([credential]));
@@ -72,11 +84,17 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     } else {
       console.log('Credential not available.');
       displayGlobalModal(dataLoadingSuccessModalState);
-      rejectExchange();
-    }
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'CredentialNavigation',
+        params: {
+          screen: 'HomeScreen',
+        },
+      });
+    }   
   };
 
   const rejectExchange = () => {
+    coldStart && setColdStart(false);
     if (navigationRef.isReady() && navigationRef.canGoBack()) {
       navigationRef.goBack();
     } else {
@@ -91,9 +109,10 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
 
   return (
     <ConfirmModal
+      open={coldStart}
       onConfirm={acceptExchange}
       onCancel={rejectExchange}
-      onRequestClose={rejectExchange}
+      onRequestClose={() => {(!coldStart) && rejectExchange();}}
       title="Exchange Credentials Request"
       confirmText="Yes"
       cancelText="No">
