@@ -112,7 +112,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
       open={coldStart}
       onConfirm={acceptExchange}
       onCancel={rejectExchange}
-      onRequestClose={() => {(!coldStart) && rejectExchange()}}
+      onRequestClose={() => {(!coldStart) && rejectExchange();}}
       title="Exchange Credentials Request"
       confirmText="Yes"
       cancelText="No">
