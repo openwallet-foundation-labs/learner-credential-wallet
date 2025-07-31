@@ -10,7 +10,7 @@ import { navigationRef } from '../../navigation';
 import { makeSelectDidFromProfile, selectWithFactory } from '../../store/selectorFactories';
 import { stageCredentials } from '../../store/slices/credentialFoyer';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
-import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
+import { displayGlobalModal } from '../../lib/globalModal';
 import GlobalModalBody from '../../lib/globalModalBody';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { delay } from '../../lib/time';
