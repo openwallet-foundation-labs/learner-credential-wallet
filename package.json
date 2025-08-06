@@ -1,5 +1,5 @@
 {
-"private": true,
+    "private": true,
     "name": "learner-credential-wallet",
     "version": "2.2.4",
     "scripts": {
@@ -34,6 +34,8 @@
     "dependencies": {
         "@babel/runtime": "^7.27.6",
         "@craftzdog/react-native-buffer": "^6.0.5",
+        "@did.coop/did-key-ed25519": "^0.0.9",
+        "@digitalbazaar/ezcap": "^4.1.0",
         "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
         "@digitalcredentials/did-method-key": "^2.0.3",
         "@digitalcredentials/ed25519-signature-2020": "^6.0.0",
@@ -58,6 +60,7 @@
         "@react-navigation/native": "^6.0.1",
         "@react-navigation/stack": "^6.0.1",
         "@reduxjs/toolkit": "^1.6.1",
+        "@wallet.storage/fetch-client": "^1.1.2",
         "big-integer": "^1.6.49",
         "bson": "^4.7.2",
         "expo": "^52.0.0",
@@ -122,6 +125,7 @@
         "@types/jest": "^29.5.5",
         "@types/react": "~18.3.12",
         "@types/text-encoding": "^0.0.39",
+        "@types/uuid": "^10.0.0",
         "@typescript-eslint/eslint-plugin": "^6.21.0",
         "@typescript-eslint/parser": "^6.21.0",
         "babel-plugin-module-resolver": "^5.0.0",
