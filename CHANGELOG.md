@@ -1,5 +1,12 @@
 # learner-credential-wallet Changelog
 
+## 2.2.4 - build 94
+### Added
+- Verifiable Presentation Requests #697
+
+### Fixed
+- Remove need for legacy-peer-deps flag during installation #626
+
 ## 2.2.3 - build 93
 ### Added
 - Capability to Unbake Open Badge 3.0 #649
