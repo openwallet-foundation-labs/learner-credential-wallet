@@ -70,6 +70,25 @@ const selectCredentials = async (credentialRecords: CredentialRecordRaw[]): Prom
     title: 'Share Credentials',
     instructionText: 'Select credentials to share.',
     credentialFilter,
+    goBack: () => {
+      const cancelSendModalState = {
+        title: 'Cancel Send',
+        confirmButton: false,
+        cancelButton: false,
+        body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
+      };
+      displayGlobalModal(cancelSendModalState);
+      store.dispatch(clearSelectedExchangeCredentials());
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'CredentialNavigation',
+        params: {
+          screen: 'HomeScreen',
+        },
+      });
+      setTimeout(() => {
+        clearGlobalModal();
+      }, 2000);
+    },
     onSelectCredentials: (s: CredentialRecordRaw[]) => {
       const dataLoadingPendingModalState = {
         title: 'Sending Credential',
