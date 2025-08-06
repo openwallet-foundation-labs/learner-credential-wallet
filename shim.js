@@ -13,14 +13,26 @@ global.crypto = {};
 global.Buffer = Buffer;
 
 const subtle = {
-  digest: (algorithm, data)=>{
-    // @digitalcredentials/jsonld-signatures calls this fn with an object
-    // rfd-canonize calls this with string
-    // both are valid options but expo-crypto only accepts string
-    const actualAlgorithm = typeof algorithm === 'string' ? algorithm : algorithm.name;
-    return ExpoCrypto.digest(actualAlgorithm.toUpperCase(), data);
+  digest: async (algorithm, data) => {
+    const actualAlgorithm =
+      typeof algorithm === 'string' ? algorithm : algorithm.name;
+
+    // 🔥 Ensure data is a Uint8Array
+    let inputData;
+    if (typeof data === 'string') {
+      inputData = new TextEncoder().encode(data); // Convert string to Uint8Array
+    } else if (ArrayBuffer.isView(data)) {
+      inputData = new Uint8Array(data.buffer); // Convert TypedArray
+    } else if (data instanceof ArrayBuffer) {
+      inputData = new Uint8Array(data); // Convert ArrayBuffer
+    } else {
+      throw new Error(
+        'Unsupported data format passed to crypto.subtle.digest()'
+      );
+    }
+
+    return ExpoCrypto.digest(actualAlgorithm.toUpperCase(), inputData);
   },
-  // no other subtle methods appear to be needed
 };
 
 crypto.subtle = subtle;
