@@ -172,5 +172,6 @@ export enum VcQueryType {
   Example = 'QueryByExample',
   Frame = 'QueryByFrame',
   DidAuth = 'DIDAuthentication',
-  DidAuthLegacy = 'DIDAuth'
+  DidAuthLegacy = 'DIDAuth',
+  ZcapQuery = 'ZcapQuery',
 }
