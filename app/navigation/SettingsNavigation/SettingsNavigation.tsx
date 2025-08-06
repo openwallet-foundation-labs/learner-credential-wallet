@@ -22,6 +22,8 @@ import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur, useThemeCon
 import { SettingsNavigationProps } from '../';
 import { exportWallet } from '../../lib/export';
 import { registerWallet } from '../../lib/registerWallet';
+import WASScreen from '../../screens/WAS/WasScreen';
+import WasConnect from '../../screens/WAS/WasConnect';
 
 const Stack = createStackNavigator<SettingsNavigationParamList>();
 
@@ -199,6 +201,8 @@ export default function SettingsNavigation({ navigation }: SettingsNavigationPro
       <Stack.Screen name="RestoreWalletScreen" component={RestoreWalletScreen} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="DeveloperScreen" component={DeveloperScreen} />
+      <Stack.Screen name="WASScreen" component={WASScreen} />
+      <Stack.Screen name="WasConnect" component={WasConnect} />
     </Stack.Navigator>
   );
 }

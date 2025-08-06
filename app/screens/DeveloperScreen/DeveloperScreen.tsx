@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {Linking, ScrollView, Text, View} from 'react-native';
 import { Button } from 'react-native-elements';
 import { FileLogger } from 'react-native-file-logger';
 import * as RNFS from 'react-native-fs';
 import DeviceInfo from 'react-native-device-info';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { NavHeader } from '../../components';
 import dynamicStyleSheet from './DeveloperScreen.styles';
@@ -16,10 +17,22 @@ import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { revokedCredential } from '../../mock/revokedCredential';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { shareData } from '../../lib/shareData';
+import { WAS_KEYS } from '../../../app.config';
 
 export default function DeveloperScreen({ navigation }: DeveloperScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
   const dispatch = useAppDispatch();
+  const [hasWasConnection, setHasWasConnection] = useState(false);
+
+  useEffect(() => {
+    checkWasConnection();
+  }, []);
+
+  const checkWasConnection = async () => {
+    const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
+    const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+    setHasWasConnection(!!(spaceId && signerJson));
+  };
 
   const buttonStyleProps = {
     buttonStyle: mixins.buttonIcon,
@@ -84,6 +97,12 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
     await Cache.getInstance().removeAll(CacheKey.VerificationResult);
   }
 
+  function goWas() {
+    navigationRef.navigate('WASScreen' as never);
+  }
+  function goQR() {
+    navigationRef.navigate('WasConnect' as never);
+  }
 
   return (
     <>
@@ -93,6 +112,8 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
         <Button {...buttonStyleProps} title="View developer logs" onPress={viewLogs} />
         <Button {...buttonStyleProps} title="Clear developer logs" onPress={clearLogs} />
         <Button {...buttonStyleProps} title="Clear verification cache" onPress={clearVerificationCache} />
+        <Button {...buttonStyleProps} title={hasWasConnection ? 'W.A.S. Connection' : 'Connect to W.A.S'} onPress={goWas} />
+        <Button {...buttonStyleProps} title="Scan QR Code" onPress={goQR} />
         <View style={styles.spacer} />
         <Text style={styles.header}>Credentials</Text>
         <Button {...buttonStyleProps} title="Add mock credentials" onPress={addMockCredentials}/>
