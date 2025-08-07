@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { navigationRef } from '../../navigation';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
-import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
-import { WAS_KEYS } from '../../../app.config';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
 import { theme } from '../../styles';
+import { getRootSigner } from '../../lib/getRootSigner';
 
 export default function WasConnectScreen() {
   const [statusMessage, setStatusMessage] = useState('');
@@ -30,9 +28,10 @@ export default function WasConnectScreen() {
         instructionText: 'Scan QR code from Resume Author to connect your wallet.',
         onReadQRCode: async (qrText: string) => {
           try {
-            const requestParam = qrText.split('request=')[1];
+            const url = new URL(qrText);
+            const requestParam = url.searchParams.get('request');
             if (!requestParam) {
-              throw new Error('Invalid QR code format: missing request parameter');
+              throw new Error('Invalid QR code: missing request parameter');
             }
 
             const decoded = decodeURIComponent(requestParam);
@@ -42,12 +41,8 @@ export default function WasConnectScreen() {
               throw new Error('Missing request URL in QR code');
             }
 
-            const signerStr = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-            if (!signerStr) {
-              throw new Error('No signer found in storage');
-            }
-
-            const key = await Ed25519VerificationKey2020.from(JSON.parse(signerStr));
+            // Replace signer loading code with getRootSigner
+            const key = await getRootSigner();
 
             await handleVcApiExchangeComplete({
               url: requestUrl,
