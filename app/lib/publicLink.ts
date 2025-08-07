@@ -12,6 +12,7 @@ import { getStorageClient } from '../screens/WAS/WasScreen';
 import { WAS_KEYS } from '../../app.config';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS_BASE_URL, VERIFIER_PLUS_URL } from '../../app.config';
+import { getRootSigner } from './getRootSigner';
 
 let cachedSigner: Ed25519Signer | null = null;
 
@@ -54,24 +55,9 @@ export async function createPublicLinkFor(
 async function createWasPublicLinkIfAvailable(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string | null> {
-  // Check if WAS space is provisioned
-  const signerSerializedKeypair = await AsyncStorage.getItem(
-    WAS_KEYS.SIGNER_KEYPAIR
-  );
-  console.log('WAS signer serialized keypair:', signerSerializedKeypair ? 'Found' : 'Not found');
-
-  if (!signerSerializedKeypair) {
-    console.log(
-      '[publicLink.ts] WAS not provisioned (signerJsonString missing), falling back to verifierPlus'
-    );
-    return null;
-  }
-  
   try {
-    if (!cachedSigner) {
-      cachedSigner = await Ed25519Signer.fromJSON(signerSerializedKeypair);
-    }
-    const signer = cachedSigner;
+    const signer = await getRootSigner();
+
     console.log('Using signer with ID:', signer.id);
 
     // Get stored space UUID
