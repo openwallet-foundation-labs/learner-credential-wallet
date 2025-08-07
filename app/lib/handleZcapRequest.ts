@@ -4,7 +4,7 @@ import { ZcapClient } from '@digitalbazaar/ezcap';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 
 import { displayGlobalModal } from './globalModal';
-import { getRootVerificationSigner } from './getRootSigner';
+import { getRootSigner } from './getRootSigner';
 
 
 interface ZcapReq {
@@ -52,7 +52,7 @@ export default async function handleZcapRequest({
 
   const invocationTargetType = typeof invocationTarget === 'string' ? invocationTarget : invocationTarget.type;
 
-  const rootSigner = await getRootVerificationSigner();
+  const rootSigner = await getRootSigner();
 
   const parentCapability = `urn:zcap:root:${encodeURIComponent(invocationTargetType)}`;
 
