@@ -116,7 +116,7 @@ const WASScreen = () => {
 
       // Delete the space
       const response = await space.delete({
-        signer: signer,
+        signer,
       });
 
       if (!response.ok) {
