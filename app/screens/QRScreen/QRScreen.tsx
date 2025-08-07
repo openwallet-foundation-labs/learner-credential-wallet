@@ -11,7 +11,7 @@ import { useDynamicStyles } from '../../hooks';
 import {Camera, CodeType, useCameraDevice, useCameraFormat, useCodeScanner} from 'react-native-vision-camera';
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import {useAppState} from '@react-native-community/hooks';
-import {Code} from 'react-native-vision-camera/src/CodeScanner';
+import {Code} from 'react-native-vision-camera';
 import {useCameraPermissionStatus} from './useCameraPermissionStatus';
 const codeTypes: CodeType[] = ['qr'];
 export default function QRScreen({ navigation, route }: QRScreenProps)  {
@@ -139,7 +139,6 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
         style={styles.cameraStyle}
         // onError={logger.error}
         photoHdr={false}
-        orientation="portrait"
         photo
         video={false}
         audio={false}

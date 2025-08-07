@@ -60,7 +60,6 @@ export default function IssuerInfoScreen({
             const issuerEntity = entry.issuer?.federation_entity ?? {};
             const issuerImageUri = getImageUri(issuerEntity.logo_uri);
 
-            console.log('issuerImageUri', issuerImageUri);
 
             return (
               <View key={index} style={styles.registryBlock}>
