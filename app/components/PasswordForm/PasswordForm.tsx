@@ -67,14 +67,17 @@ export default function PasswordForm({ focusOnMount, onChangePassword, style, te
         onChangeText={setPassword}
         onBlur={_onInputBlur}
         inputRef={passwordRef}
+        tvParallaxProperties={undefined}
+        onTextInput={() => {}}
       />
-      <View style={styles.inputSeparator} />
       <PasswordInput
         style={textInputStyle}
         label="Confirm Password"
         value={passwordConfirm}
         onChangeText={setPasswordConfirm}
         onBlur={_onInputBlur}
+        tvParallaxProperties={undefined}
+        onTextInput={() => {}}
       />
       {errorText ? (
         <>

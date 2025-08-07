@@ -425,6 +425,8 @@ export default function PublicLinkScreen({ navigation, route }: PublicLinkScreen
                       mode="outlined"
                       onFocus={onFocusInput}
                       showSoftInputOnFocus={false}
+                      onTextInput={() => {}}
+                      tvParallaxProperties={{}}
                     />
                   </OutsidePressHandler>
                   <Button

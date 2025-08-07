@@ -75,6 +75,8 @@ export default function LoginScreen(): React.ReactElement {
         onChangeText={setPassword}
         onSubmitEditing={_unlockWallet}
         highlightError={isError}
+        tvParallaxProperties={{}} // Provide default or appropriate properties
+        onTextInput={() => {}} // Provide a no-op or appropriate handler
       />
       <ErrorDialog message={errorText} />
       <Button

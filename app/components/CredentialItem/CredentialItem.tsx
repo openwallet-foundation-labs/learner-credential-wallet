@@ -171,7 +171,6 @@ export default function CredentialItem({
   return (
     <ListItem
       hasTVPreferredFocus={undefined}
-      tvParallaxProperties={undefined}
       containerStyle={styles.listItemContainer}
       style={styles.listItemOuterContainer}
       onPress={onSelect}
