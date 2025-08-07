@@ -8,7 +8,8 @@ import * as verifierPlus from './verifierPlus';
 import { StoreCredentialResult } from './verifierPlus';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WAS_KEYS, getStorageClient } from '../screens/WAS/WasScreen';
+import { getStorageClient } from '../screens/WAS/WasScreen';
+import { WAS_KEYS } from '../../app.config';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS_BASE_URL, VERIFIER_PLUS_URL } from '../../app.config';
 
@@ -98,7 +99,9 @@ async function createWasPublicLinkIfAvailable(
     // Extract just the credential object
     const credentialJson = JSON.stringify(rawCredentialRecord.credential);
 
-    const resource = space.resource(resourceUUID);
+    const resource = space.resource('', {
+      uuid: `urn:uuid:${resourceUUID}` as `urn:uuid:${string}`
+    });
     console.log('Resource path:', resource.path);
     
     // Create the credential blob with correct content type
