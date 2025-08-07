@@ -110,13 +110,13 @@ const WASScreen = () => {
       const signer = await getRootSigner();
       const storage = getStorageClient();
       const space = storage.space({
-        signer,
+        signer: signer.signer(),
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
 
       // Delete the space
       const response = await space.delete({
-        signer,
+        signer: signer.signer(),
       });
 
       if (!response.ok) {
@@ -159,10 +159,11 @@ const WASScreen = () => {
   const checkExistingConnection = async () => {
     try {
       const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
-      const signer = await getRootSigner();
+      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
 
-      if (spaceId && signer) {
+      if (spaceId && signerJson) {
         setHasConnection(true);
+        const signer = await Ed25519Signer.fromJSON(signerJson);
         setConnectionDetails({
           spaceId: `urn:uuid:${spaceId}`,
           controllerDid: signer.id
@@ -288,11 +289,12 @@ const WASScreen = () => {
         return;
       }
   
+      
       const signer = await getRootSigner();
       const storage = getStorageClient();
   
       const space = storage.space({
-        signer,
+        signer: signer.signer(),
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
   

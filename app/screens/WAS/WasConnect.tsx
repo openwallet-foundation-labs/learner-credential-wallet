@@ -4,7 +4,7 @@ import { navigationRef } from '../../navigation';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
 import { theme } from '../../styles';
-import { getRootVerificationSigner } from '../../lib/getRootSigner';
+import { getRootSigner } from '../../lib/getRootSigner';
 
 export default function WasConnectScreen() {
   const [statusMessage, setStatusMessage] = useState('');
@@ -41,7 +41,7 @@ export default function WasConnectScreen() {
               throw new Error('Missing request URL in QR code');
             }
 
-            const key = await getRootVerificationSigner();
+            const key = await getRootSigner();
 
             await handleVcApiExchangeComplete({
               url: requestUrl,
