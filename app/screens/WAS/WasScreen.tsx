@@ -110,7 +110,7 @@ const WASScreen = () => {
       const signer = await getRootSigner();
       const storage = getStorageClient();
       const space = storage.space({
-        signer: signer.signer(),
+        signer,
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
 
