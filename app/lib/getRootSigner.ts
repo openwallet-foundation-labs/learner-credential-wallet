@@ -1,4 +1,5 @@
 import 'react-native-get-random-values';
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WAS_KEYS } from '../../app.config';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
