@@ -58,7 +58,7 @@
     "@react-navigation/native": "^6.0.1",
     "@react-navigation/stack": "^6.0.1",
     "@reduxjs/toolkit": "^1.6.1",
-    "@wallet.storage/fetch-client": "^1.1.2",
+    "@wallet.storage/fetch-client": "^1.3.0",
     "big-integer": "^1.6.49",
     "bson": "4.4.1",
     "expo": "~50.0.6",
