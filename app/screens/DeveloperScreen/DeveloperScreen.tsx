@@ -31,7 +31,7 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
   const checkWasConnection = async () => {
     const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
     const signerSerializedKeypair = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
-    setHasWasConnection(!!(spaceId && signerJson));
+    setHasWasConnection(!!(spaceId && signerSerializedKeypair));
   };
 
   const buttonStyleProps = {
