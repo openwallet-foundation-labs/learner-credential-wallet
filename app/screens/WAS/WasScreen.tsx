@@ -116,7 +116,7 @@ const WASScreen = () => {
 
       // Delete the space
       const response = await space.delete({
-        signer: signer.signer(),
+        signer: signer,
       });
 
       if (!response.ok) {
@@ -138,7 +138,7 @@ const WASScreen = () => {
       }
 
       // Clear stored items
-      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_JSON);
+      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_KEYPAIR);
       await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
 
       setStatus('success');
@@ -159,7 +159,7 @@ const WASScreen = () => {
   const checkExistingConnection = async () => {
     try {
       const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
-      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
 
       if (spaceId && signerJson) {
         setHasConnection(true);
@@ -235,7 +235,7 @@ const WASScreen = () => {
       // Store the signer for future connections
       const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
-        WAS_KEYS.SIGNER_JSON,
+        WAS_KEYS.SIGNER_KEYPAIR,
         JSON.stringify(signerJson)
       );
 
@@ -260,7 +260,7 @@ const WASScreen = () => {
       );
 
       // Clear stored items if provisioning failed
-      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_JSON);
+      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_KEYPAIR);
       await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
     }
   };
@@ -294,7 +294,7 @@ const WASScreen = () => {
       const storage = getStorageClient();
   
       const space = storage.space({
-        signer: signer.signer(),
+        signer: signer,
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
   

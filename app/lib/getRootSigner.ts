@@ -5,10 +5,10 @@ import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verifica
 
 export async function getRootSigner() {
   const rootSignerSerializedKeypair = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
-  if (!rootSignerStr) {
+  if (!rootSignerSerializedKeypair) {
     throw new Error('Root signer not found in wallet.');
   }
 
-  const key = await Ed25519VerificationKey2020.from(JSON.parse(rootSignerStr));
+  const key = await Ed25519VerificationKey2020.from(JSON.parse(rootSignerSerializedKeypair));
   return key.signer();
 }

@@ -58,7 +58,7 @@ export default async function handleZcapRequest({
 
   const zcapClient = new ZcapClient({
     SuiteClass: Ed25519Signature2020,
-    delegationSigner: rootSigner.signer()
+    delegationSigner: rootSigner
   });
 
   const delegatedZcap = await zcapClient.delegate({

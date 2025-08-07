@@ -13,7 +13,7 @@ export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://feditest.n
 export const WAS_BASE_URL = 'https://storage.dcc.did.coop';
 export const WAS_KEYS = {
   SPACE_ID: 'was_space_id',
-  SIGNER_JSON: 'was_signer_json'
+  SIGNER_KEYPAIR: 'was_signer_json'
 };
 export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10); // 10 days
 
