@@ -55,12 +55,12 @@ async function createWasPublicLinkIfAvailable(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string | null> {
   // Check if WAS space is provisioned
-  const signerJsonString = await AsyncStorage.getItem(
-    WAS_KEYS.SIGNER_JSON
+  const signerSerializedKeypair = await AsyncStorage.getItem(
+    WAS_KEYS.SIGNER_KEYPAIR
   );
-  console.log('WAS signer JSON:', signerJsonString ? 'Found' : 'Not found');
+  console.log('WAS signer serialized keypair:', signerSerializedKeypair ? 'Found' : 'Not found');
 
-  if (!signerJsonString) {
+  if (!signerSerializedKeypair) {
     console.log(
       '[publicLink.ts] WAS not provisioned (signerJsonString missing), falling back to verifierPlus'
     );
@@ -69,7 +69,7 @@ async function createWasPublicLinkIfAvailable(
   
   try {
     if (!cachedSigner) {
-      cachedSigner = await Ed25519Signer.fromJSON(signerJsonString);
+      cachedSigner = await Ed25519Signer.fromJSON(signerSerializedKeypair);
     }
     const signer = cachedSigner;
     console.log('Using signer with ID:', signer.id);
@@ -158,9 +158,9 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
       console.log('Unsharing WAS credential');
       
       if (!cachedSigner) {
-        const signerJsonString = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-        if (signerJsonString) {
-          cachedSigner = await Ed25519Signer.fromJSON(signerJsonString);
+        const signerSerializedKeypair = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
+        if (signerSerializedKeypair) {
+          cachedSigner = await Ed25519Signer.fromJSON(signerSerializedKeypair);
         }
       }
       

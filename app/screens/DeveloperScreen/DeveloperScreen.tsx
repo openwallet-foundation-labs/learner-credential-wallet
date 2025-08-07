@@ -30,7 +30,7 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
 
   const checkWasConnection = async () => {
     const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
-    const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+    const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
     setHasWasConnection(!!(spaceId && signerJson));
   };
 
