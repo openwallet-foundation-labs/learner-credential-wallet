@@ -3,7 +3,6 @@ if (typeof btoa === 'undefined') {
   // eslint-disable-next-line no-global-assign
   globalThis.btoa = (str: any) => Buffer.from(str, 'binary').toString('base64');
 }
-import 'react-native-get-random-values';
 
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
