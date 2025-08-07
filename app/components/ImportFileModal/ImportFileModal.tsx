@@ -110,6 +110,8 @@ function ImportFileModal({
           value={password}
           onChangeText={setPassword}
           style={styles.password}
+          tvParallaxProperties={{}} // Provide appropriate properties if needed
+          onTextInput={() => {}} // Provide a valid function or handler
         />
       </ConfirmModal>
     );

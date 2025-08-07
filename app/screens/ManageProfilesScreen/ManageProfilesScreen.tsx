@@ -98,6 +98,8 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
           label="Profile Name"
           mode="outlined"
           keyboardAppearance={theme.keyboardAppearance}
+          tvParallaxProperties={undefined}
+          onTextInput={() => {}}
         />
       </ConfirmModal>
       <FlatList

@@ -165,6 +165,8 @@ export default function AddScreen(): React.ReactElement {
                 label="Paste JSON or URL"
                 mode="outlined"
                 keyboardAppearance={theme.keyboardAppearance}
+                onTextInput={() => {}}
+                tvParallaxProperties={undefined}
               />
               <Button
                 title="Add"

@@ -27,8 +27,6 @@ export const LinkConfig = {
   registerWalletUrl: 'https://lcw.app/register-wallet.html',
   appWebsite: {
     home: 'https://lcw.app',
-    // FAQ page assumes #public-link,
-    //   #public-link-unshare, and #add-to-linkedin sections
     faq: 'https://lcw.app/faq.html'
   }
 };
@@ -55,11 +53,9 @@ export default {
     updates: {
       fallbackToCacheTimeout: 0
     },
-    assetBundlePatterns: [
-      '**/*'
-    ],
+    assetBundlePatterns: ['**/*'],
     ios: {
-      buildNumber: `${BUILD_NUMBER}`,
+      buildNumber: BUILD_NUMBER.toString(),
       supportsTablet: true,
       bundleIdentifier: 'edu.mit.eduwallet',
       deploymentTarget: '13.0',
@@ -70,9 +66,9 @@ export default {
       },
       associatedDomains: ['applinks:lcw.app/mobile'],
       infoPlist: {
-        'CFBundleURLTypes': [
+        CFBundleURLTypes: [
           {
-            'CFBundleURLSchemes': ['dccrequest']
+            CFBundleURLSchemes: ['dccrequest']
           }
         ]
       }
@@ -114,10 +110,8 @@ export default {
           enableCodeScanner: true
         }
       ],
-      [
-        'expo-font',
-        'expo-secure-store'
-      ],
+      ['expo-font'],
+      ['expo-secure-store'],
       [
         'expo-build-properties',
         {
@@ -125,8 +119,8 @@ export default {
             packagingOptions: {
               pickFirst: ['**/libcrypto.so']
             },
-            compileSdkVersion: 34,
-            targetSdkVersion: 34,
+            compileSdkVersion: 35,
+            targetSdkVersion: 35,
             minSdkVersion: 29,
             buildToolsVersion: '34.0.0'
           }
@@ -138,20 +132,20 @@ export default {
 
 export const KnownDidRegistries = [
   {
-    'name': 'DCC Pilot Registry',
-    'url': 'https://digitalcredentials.github.io/issuer-registry/registry.json'
+    name: 'DCC Pilot Registry',
+    url: 'https://digitalcredentials.github.io/issuer-registry/registry.json'
   },
   {
-    'name': 'DCC Sandbox Registry',
-    'url': 'https://digitalcredentials.github.io/sandbox-registry/registry.json'
+    name: 'DCC Sandbox Registry',
+    url: 'https://digitalcredentials.github.io/sandbox-registry/registry.json'
   },
   {
-    'name': 'DCC Community Registry',
-    'url': 'https://digitalcredentials.github.io/community-registry/registry.json'
+    name: 'DCC Community Registry',
+    url: 'https://digitalcredentials.github.io/community-registry/registry.json'
   },
   {
-    'name': 'DCC Registry',
-    'url': 'https://digitalcredentials.github.io/dcc-registry/registry.json'
+    name: 'DCC Registry',
+    url: 'https://digitalcredentials.github.io/dcc-registry/registry.json'
   }
 ];
 
