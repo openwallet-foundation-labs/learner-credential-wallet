@@ -10,5 +10,5 @@ export async function getRootSigner() {
   }
 
   const key = await Ed25519VerificationKey2020.from(JSON.parse(rootSignerStr));
-  return key;
+  return key.signer();
 }
