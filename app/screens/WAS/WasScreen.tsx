@@ -17,6 +17,7 @@ import { useThemeContext } from '../../hooks';
 import { removeWasPublicLink } from '../../lib/removeWasPublicLink';
 import { shareBinaryFile } from '../../lib/shareData';
 import { displayGlobalModal } from '../../lib/globalModal';
+import { getRootSigner } from '../../lib/getRootSigner';
 
 
 if (typeof globalThis.base64FromArrayBuffer !== 'function') {
@@ -106,12 +107,7 @@ const WASScreen = () => {
       }
 
       // Get the stored signer
-      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-      if (!signerJson) {
-        throw new Error('No signer found');
-      }
-
-      const signer = await Ed25519Signer.fromJSON(signerJson);
+      const signer = await getRootSigner();
       const storage = getStorageClient();
       const space = storage.space({
         signer,
@@ -163,11 +159,10 @@ const WASScreen = () => {
   const checkExistingConnection = async () => {
     try {
       const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
-      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
+      const signer = await getRootSigner();
 
-      if (spaceId && signerJson) {
+      if (spaceId && signer) {
         setHasConnection(true);
-        const signer = await Ed25519Signer.fromJSON(signerJson);
         setConnectionDetails({
           spaceId: `urn:uuid:${spaceId}`,
           controllerDid: signer.id
@@ -293,10 +288,7 @@ const WASScreen = () => {
         return;
       }
   
-      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-      if (!signerJson) throw new Error('No signer found');
-  
-      const signer = await Ed25519Signer.fromJSON(signerJson);
+      const signer = await getRootSigner();
       const storage = getStorageClient();
   
       const space = storage.space({
