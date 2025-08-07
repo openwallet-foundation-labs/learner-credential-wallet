@@ -104,6 +104,8 @@ function RenameModal({ rawProfileRecord, onRequestClose }: ActionModalProps): Re
         label="Profile Name"
         mode="outlined"
         keyboardAppearance="dark"
+        onTextInput={() => {}}
+        tvParallaxProperties={undefined}
       />
     </ConfirmModal>
   );
