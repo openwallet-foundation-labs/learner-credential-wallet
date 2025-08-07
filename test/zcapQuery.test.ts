@@ -60,8 +60,8 @@ describe('handleZcapRequest', () => {
 
     const result = await handleZcapRequest({ request });
 
-    expect(result.verifiablePresentation).toBeDefined();
-    expect(result.verifiablePresentation.verifiableCredential[0].id).toBe('urn:fake:zcap');
+    expect(result.zcap).toBeDefined();
+    expect(result.zcap.id).toBe('urn:fake:zcap');
   });
 
   it('throws if no ZcapQuery is found', async () => {
