@@ -294,7 +294,7 @@ const WASScreen = () => {
       const storage = getStorageClient();
   
       const space = storage.space({
-        signer: signer,
+        signer,
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
   
