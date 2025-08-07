@@ -4,9 +4,7 @@ import { navigationRef } from '../../navigation';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
 import { theme } from '../../styles';
-import { WAS_KEYS } from '../../../app.config';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
+import { getRootVerificationSigner } from '../../lib/getRootSigner';
 
 export default function WasConnectScreen() {
   const [statusMessage, setStatusMessage] = useState('');
@@ -43,12 +41,7 @@ export default function WasConnectScreen() {
               throw new Error('Missing request URL in QR code');
             }
 
-            const signerStr = await AsyncStorage.getItem(WAS_KEYS.SIGNER_JSON);
-            if (!signerStr) {
-              throw new Error('No signer found in storage');
-            }
-
-            const key = await Ed25519VerificationKey2020.from(JSON.parse(signerStr));
+            const key = await getRootVerificationSigner();
 
             await handleVcApiExchangeComplete({
               url: requestUrl,
