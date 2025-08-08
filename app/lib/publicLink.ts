@@ -9,9 +9,8 @@ import { StoreCredentialResult } from './verifierPlus';
 import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStorageClient } from '../screens/WAS/WasScreen';
-import { WAS_KEYS } from '../../app.config';
 import { v4 as uuidv4 } from 'uuid';
-import { WAS_BASE_URL, VERIFIER_PLUS_URL } from '../../app.config';
+import { WAS, VERIFIER_PLUS_URL } from '../../app.config';
 import { getRootSigner } from './getRootSigner';
 
 let cachedSigner: Ed25519Signer | null = null;
@@ -21,15 +20,15 @@ export async function createPublicLinkFor(
 ): Promise<string> {
   const id = credentialIdFor(rawCredentialRecord);
 
-  const wasLink = await createWasPublicLinkIfAvailable(rawCredentialRecord);
+  const wasLink = WAS.enabled ? await createWasPublicLinkIfAvailable(rawCredentialRecord) : null;
 
-  if (wasLink) {
+  if (WAS.enabled && wasLink) {
     try {
       await Cache.getInstance().store(CacheKey.PublicLinks, id, {
-        server: WAS_BASE_URL,
+        server: WAS.BASE_URL,
         url: { 
-          view: wasLink.replace(WAS_BASE_URL, ''),
-          unshare: wasLink.replace(WAS_BASE_URL, '')
+          view: wasLink.replace(WAS.BASE_URL, ''),
+          unshare: wasLink.replace(WAS.BASE_URL, '')
         },
       });
       return wasLink;
@@ -61,7 +60,7 @@ async function createWasPublicLinkIfAvailable(
     console.log('Using signer with ID:', signer.id);
 
     // Get stored space UUID
-    const storedSpaceUUID = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
+    const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
     console.log('Stored space UUID:', storedSpaceUUID);
 
     if (!storedSpaceUUID) {
@@ -115,7 +114,7 @@ async function createWasPublicLinkIfAvailable(
     }
     
     // Create the public link using the resource path
-    const publicLink = `${VERIFIER_PLUS_URL}/#verify?vc=${WAS_BASE_URL}${resource.path}`;
+    const publicLink = `${VERIFIER_PLUS_URL}/#verify?vc=${WAS.BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
 
     return publicLink; 
@@ -139,12 +138,12 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
     const publicLinks = await Cache.getInstance()
       .load(CacheKey.PublicLinks, vcId) as StoreCredentialResult;
       
-    if (publicLinks.server === WAS_BASE_URL) {
+    if (WAS.enabled && publicLinks.server === WAS.BASE_URL) {
       // This is a WAS link
       console.log('Unsharing WAS credential');
       
       if (!cachedSigner) {
-        const signerSerializedKeypair = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
+        const signerSerializedKeypair = await AsyncStorage.getItem(WAS.KEYS.SIGNER_KEYPAIR);
         if (signerSerializedKeypair) {
           cachedSigner = await Ed25519Signer.fromJSON(signerSerializedKeypair);
         }
@@ -156,7 +155,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
         const resourcePath = publicLinks.url.unshare;
         const resourceName = resourcePath.split('/').pop();
         
-        const storedSpaceUUID = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
+        const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
         if (storedSpaceUUID) {
           const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
           const storage = getStorageClient();

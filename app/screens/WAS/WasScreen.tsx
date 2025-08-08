@@ -6,7 +6,7 @@ import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import { StorageClient } from '@wallet.storage/fetch-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
-import { WAS_BASE_URL, WAS_KEYS } from '../../../app.config';
+import { WAS } from '../../../app.config';
 import { useThemeContext } from '../../hooks';
 import { removeWasPublicLink } from '../../lib/removeWasPublicLink';
 import { shareBinaryFile } from '../../lib/shareData';
@@ -18,7 +18,7 @@ let storageClientInstance: InstanceType<typeof StorageClient> | null = null;
 
 export function getStorageClient() {
   if (!storageClientInstance) {
-    storageClientInstance = new StorageClient(new URL(WAS_BASE_URL));
+    storageClientInstance = new StorageClient(new URL(WAS.BASE_URL));
   }
   return storageClientInstance;
 }
@@ -76,8 +76,8 @@ const WASScreen = () => {
       }
 
       // Clear stored items
-      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_KEYPAIR);
-      await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
+      await AsyncStorage.removeItem(WAS.KEYS.SIGNER_KEYPAIR);
+      await AsyncStorage.removeItem(WAS.KEYS.SPACE_ID);
 
       setStatus('success');
       setMessage('Space successfully deleted');
@@ -96,8 +96,8 @@ const WASScreen = () => {
 
   const checkExistingConnection = async () => {
     try {
-      const spaceId = await AsyncStorage.getItem(WAS_KEYS.SPACE_ID);
-      const signerJson = await AsyncStorage.getItem(WAS_KEYS.SIGNER_KEYPAIR);
+      const spaceId = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
+      const signerJson = await AsyncStorage.getItem(WAS.KEYS.SIGNER_KEYPAIR);
 
       if (spaceId && signerJson) {
         setHasConnection(true);
@@ -173,12 +173,12 @@ const WASScreen = () => {
       // Store the signer for future connections
       const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
-        WAS_KEYS.SIGNER_KEYPAIR,
+        WAS.KEYS.SIGNER_KEYPAIR,
         JSON.stringify(signerJson)
       );
 
       // Store the space UUID for future connections
-      await AsyncStorage.setItem(WAS_KEYS.SPACE_ID, spaceUUID);
+      await AsyncStorage.setItem(WAS.KEYS.SPACE_ID, spaceUUID);
       console.log('Stored space ID in AsyncStorage:', spaceUUID);
 
       setStatus('success');
@@ -198,8 +198,8 @@ const WASScreen = () => {
       );
 
       // Clear stored items if provisioning failed
-      await AsyncStorage.removeItem(WAS_KEYS.SIGNER_KEYPAIR);
-      await AsyncStorage.removeItem(WAS_KEYS.SPACE_ID);
+      await AsyncStorage.removeItem(WAS.KEYS.SIGNER_KEYPAIR);
+      await AsyncStorage.removeItem(WAS.KEYS.SPACE_ID);
     }
   };
 
@@ -279,7 +279,7 @@ const WASScreen = () => {
   const renderConnectionDetails = () => {
     if (!connectionDetails) return null;
 
-    const spaceUrl = `${WAS_BASE_URL}/space/${
+    const spaceUrl = `${WAS.BASE_URL}/space/${
       connectionDetails.spaceId.split('urn:uuid:')[1]
     }`;
 
@@ -295,7 +295,7 @@ const WASScreen = () => {
             Storage Provider
           </Text>
           <Text style={[styles.value, { color: theme.color.textPrimary }]}>
-            {WAS_BASE_URL}
+            {WAS.BASE_URL}
           </Text>
 
           <Text
