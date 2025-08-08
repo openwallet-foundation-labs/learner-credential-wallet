@@ -7,7 +7,14 @@ import { removeWasPublicLink } from '../app/lib/removeWasPublicLink';
 
 // Mock the WAS_BASE_URL for testing
 jest.mock('../app.config', () => ({
-  WAS_BASE_URL: 'https://test-was-server.com'
+  WAS: {
+    enabled: true,
+    BASE_URL: 'https://test-was-server.com',
+    KEYS: {
+      SPACE_ID: 'was_space_id',
+      SIGNER_KEYPAIR: 'was_signer_json'
+    }
+  }
 }));
 
 // Mock the Cache class

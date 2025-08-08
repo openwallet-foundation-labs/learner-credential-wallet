@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { WAS_BASE_URL } from '../../app.config';
+import { WAS } from '../../app.config';
 import { CacheKey, Cache } from './cache';
 
 /**
@@ -16,7 +16,7 @@ export async function removeWasPublicLink(key: string, map: Record<string, any>)
       if (mapData) {
         const data = JSON.parse(mapData);
         // Check if this is a WAS link
-        if (data.rawData?.server === WAS_BASE_URL) {
+        if (WAS.enabled && data.rawData?.server === WAS.BASE_URL) {
           console.log('Removing WAS link for key:', key);
           await Cache.getInstance().remove(CacheKey.PublicLinks, key);
           return true;
