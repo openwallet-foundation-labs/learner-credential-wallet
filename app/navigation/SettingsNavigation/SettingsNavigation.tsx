@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import DeviceInfo from 'react-native-device-info';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
-import appConfig, { LinkConfig } from '../../../app.config';
+import appConfig, { LinkConfig, WAS } from '../../../app.config';
 import walletImage from '../../assets/wallet.png';
 import dynamicStyleSheet from './SettingsNavigation.styles';
 import { NavHeader, ConfirmModal, BackupItemModal } from '../../components';
@@ -22,6 +22,8 @@ import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur, useThemeCon
 import { SettingsNavigationProps } from '../';
 import { exportWallet } from '../../lib/export';
 import { registerWallet } from '../../lib/registerWallet';
+import WASScreen from '../../screens/WAS/WasScreen';
+import WasConnect from '../../screens/WAS/WasConnect';
 
 const Stack = createStackNavigator<SettingsNavigationParamList>();
 
@@ -199,6 +201,12 @@ export default function SettingsNavigation({ navigation }: SettingsNavigationPro
       <Stack.Screen name="RestoreWalletScreen" component={RestoreWalletScreen} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="DeveloperScreen" component={DeveloperScreen} />
+      {WAS.enabled && (
+        <>
+          <Stack.Screen name="WASScreen" component={WASScreen} />
+          <Stack.Screen name="WasConnect" component={WasConnect} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }

@@ -14,6 +14,7 @@ import { clearGlobalModal, displayGlobalModal } from './globalModal';
 import { getGlobalModalBody } from './globalModalBody';
 import { delay } from './time';
 import { filterCredentialRecordsByType } from './credentialMatching';
+import handleZcapRequest from './handleZcapRequest';
 
 const MAX_INTERACTIONS = 10;
 
@@ -226,6 +227,19 @@ export async function handleVcApiExchangeComplete ({
     case VcQueryType.DidAuth:
       signed = true;
       break;
+    // TODO: Support multi-round interactions for zcaps (currently only supports a single round interaction)
+    case VcQueryType.ZcapQuery: {
+      const vp = await handleZcapRequest({
+        request: exchangeResponse.verifiablePresentationRequest
+      });
+      const interactUrl = exchangeResponse.verifiablePresentationRequest?.interact?.serviceEndpoint;
+      if (!interactUrl) {
+        throw new Error('Missing serviceEndpoint in VPR interact.');
+      }
+
+      const finalResponse = await postToExchange(interactUrl, vp);
+      return finalResponse;
+    }
     default: {
       console.log('Querying...');
       const allRecords = await CredentialRecord.getAllCredentialRecords();
