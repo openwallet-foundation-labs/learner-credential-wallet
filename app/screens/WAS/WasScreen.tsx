@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
 import { NavHeader } from '../../components';
 import { navigationRef } from '../../navigation';
-import { Ed25519Signer } from '@did.coop/did-key-ed25519';
+import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { StorageClient } from '@wallet.storage/fetch-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -101,10 +101,10 @@ const WASScreen = () => {
 
       if (spaceId && signerJson) {
         setHasConnection(true);
-        const signer = await Ed25519Signer.fromJSON(signerJson);
+        const signer = await Ed25519VerificationKey2020.from(JSON.parse(signerJson));
         setConnectionDetails({
           spaceId: `urn:uuid:${spaceId}`,
-          controllerDid: signer.id
+          controllerDid: signer.signer().id
         });
       }
     } catch (error) {
@@ -121,13 +121,12 @@ const WASScreen = () => {
       setStatus('loading');
       setMessage('Generating signer...');
 
-      // Generate a new Ed25519 signer (key pair)
-      const appDidSigner = await Ed25519Signer.generate();
-      console.log('Generated signer:', appDidSigner);
-
-      // Extract base controller DID (without the key fragment)
-      const baseDidController = appDidSigner.id.split('#')[0];
-      console.log('Controller DID:', baseDidController);
+      const key = await Ed25519VerificationKey2020.generate();
+      const fp = key.fingerprint();
+      const controllerDid = `did:key:${fp}`;
+      key.controller = controllerDid;
+      key.id = `${controllerDid}#${fp}`;
+      const signer = key.signer();
 
       setMessage('Creating space...');
 
@@ -140,17 +139,16 @@ const WASScreen = () => {
       const storage = getStorageClient();
 
       const space = storage.space({
-        signer: appDidSigner,
+        signer,
         id: spaceId as `urn:uuid:${string}`
       });
 
       const spaceObject = {
         id: spaceId,
-        controller: baseDidController
+        controller: controllerDid
       };
 
       console.log('Creating space with object:', spaceObject);
-
       const spaceObjectBlob = new Blob(
         [JSON.stringify(spaceObject)],
         { type: 'application/json' }
@@ -158,7 +156,7 @@ const WASScreen = () => {
 
       // Create the space
       const response = await space.put(spaceObjectBlob, {
-        signer: appDidSigner
+        signer
       });
 
       console.log('Space PUT response:', {
@@ -170,8 +168,8 @@ const WASScreen = () => {
         throw new Error(`Failed to initialize space. Status: ${response.status}`);
       }
 
+      const signerJson = await key.export({publicKey: true, privateKey: true});
       // Store the signer for future connections
-      const signerJson = await appDidSigner.toJSON();
       await AsyncStorage.setItem(
         WAS.KEYS.SIGNER_KEYPAIR,
         JSON.stringify(signerJson)
@@ -186,7 +184,7 @@ const WASScreen = () => {
       setHasConnection(true);
       setConnectionDetails({
         spaceId,
-        controllerDid: appDidSigner.id
+        controllerDid
       });
     } catch (error) {
       console.error('Error in wallet storage provisioning:', error);

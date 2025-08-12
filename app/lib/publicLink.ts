@@ -6,14 +6,14 @@ import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
 import { credentialIdFor, educationalOperationalCredentialFrom } from './decode';
 import * as verifierPlus from './verifierPlus';
 import { StoreCredentialResult } from './verifierPlus';
-import { Ed25519Signer } from '@did.coop/did-key-ed25519';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStorageClient } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS, VERIFIER_PLUS_URL } from '../../app.config';
 import { getRootSigner } from './getRootSigner';
+import { ISigner } from '@wallet.storage/fetch-client/types';
 
-let cachedSigner: Ed25519Signer | null = null;
+let cachedSigner: ISigner | null = null;
 
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
@@ -56,6 +56,7 @@ async function createWasPublicLinkIfAvailable(
 ): Promise<string | null> {
   try {
     const signer = await getRootSigner();
+    cachedSigner = signer;
 
     console.log('Using signer with ID:', signer.id);
 
@@ -143,10 +144,8 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
       console.log('Unsharing WAS credential');
       
       if (!cachedSigner) {
-        const signerSerializedKeypair = await AsyncStorage.getItem(WAS.KEYS.SIGNER_KEYPAIR);
-        if (signerSerializedKeypair) {
-          cachedSigner = await Ed25519Signer.fromJSON(signerSerializedKeypair);
-        }
+        const signer = await getRootSigner();
+        cachedSigner = signer;
       }
       
       if (cachedSigner) {
