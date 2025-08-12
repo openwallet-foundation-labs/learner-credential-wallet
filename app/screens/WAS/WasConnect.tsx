@@ -41,12 +41,12 @@ export default function WasConnectScreen() {
               throw new Error('Missing request URL in QR code');
             }
 
-            const key = await getRootSigner();
+            const signer = await getRootSigner();
 
             await handleVcApiExchangeComplete({
               url: requestUrl,
-              holder: key.controller,
-              suite: new Ed25519Signature2020({ key })
+              holder: signer.id,
+              suite: new Ed25519Signature2020({ signer })
             });
 
             setStatusMessage('✅ Wallet successfully connected to Resume Author!');
