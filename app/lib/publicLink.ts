@@ -11,7 +11,7 @@ import { getStorageClient } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS, VERIFIER_PLUS_URL } from '../../app.config';
 import { getRootSigner } from './getRootSigner';
-import { ISigner } from '@wallet.storage/fetch-client/types';
+import { ISigner } from '@digitalcredentials/ssi';
 
 let cachedSigner: ISigner | null = null;
 
