@@ -1,3 +1,4 @@
+import Realm from 'realm';
 import { CredentialRecord } from './credential';
 import { DidRecord, DidRecordRaw } from './did';
 import { ProfileRecord } from './profile';

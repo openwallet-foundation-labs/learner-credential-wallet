@@ -1,5 +1,12 @@
 import Realm from 'realm';
+import Crypto from 'react-native-quick-crypto';
 const ObjectId = Realm.BSON.ObjectId; 
+
+// Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
+let __OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);
+function generateObjectIdHex(): string {
+  return Crypto.randomBytes(12).toString('hex');
+}
 
 import { DidKey, DidDocument } from '../types/did';
 import { db } from './DatabaseAccess';
@@ -62,9 +69,10 @@ export class DidRecord extends Realm.Object implements DidRecordRaw {
     };
   }
 
-  static async addDidRecord({ didDocument, verificationKey, keyAgreementKey }: AddDidRecordParams): Promise<DidRecordRaw> {
+// removed duplicate generator block; using generateObjectIdHex above
 
-    const _id = new ObjectId();
+  static async addDidRecord({ didDocument, verificationKey, keyAgreementKey }: AddDidRecordParams): Promise<DidRecordRaw> {
+    const _id = new ObjectId(generateObjectIdHex());
     const createdAt = new Date();
     const updatedAt = new Date();
     const rawDidDocument = JSON.stringify(didDocument);
