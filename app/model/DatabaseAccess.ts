@@ -110,6 +110,7 @@ class DatabaseAccess {
       await DatabaseAccess.salt(),
       PBKDF2_ITERATIONS,
       32,
+      'sha512',
     );
     // each byte is 2 hex characters, reaching the necessary 64 characters
     // @ts-ignore

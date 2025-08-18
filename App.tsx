@@ -11,6 +11,8 @@ import { ThemeProvider } from './app/components';
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',
+  'Support for defaultProps will be removed from function components',
+  'Support for defaultProps will be removed from function components in a future major release. Use Javascript default parameters instead',
 ]);
 
 export default function App(): React.ReactElement | null {

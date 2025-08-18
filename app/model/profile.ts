@@ -1,4 +1,5 @@
 import Realm from 'realm';
+import Crypto from 'react-native-quick-crypto';
 import uuid from 'react-native-uuid';
 
 import { db } from './DatabaseAccess';
@@ -13,6 +14,12 @@ import { DidRecord, DidRecordRaw } from './did';
 import { CredentialRecordRaw } from '../types/credential';
 
 const ObjectId = Realm.BSON.ObjectId;
+
+// Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
+let __PROFILE_OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);
+function generateProfileObjectIdHex(): string {
+  return Crypto.randomBytes(12).toString('hex');
+}
 
 const UNTITLED_PROFILE_NAME = 'Untitled Profile';
 export const INITIAL_PROFILE_NAME = 'Default';
@@ -60,7 +67,7 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
 
   public static rawFrom({ profileName, rawDidRecord }: Required<AddProfileRecordParams>): ProfileRecordRaw {
     return {
-      _id: new ObjectId(),
+      _id: new ObjectId(generateProfileObjectIdHex()),
       createdAt: new Date(),
       updatedAt: new Date(),
       profileName,
