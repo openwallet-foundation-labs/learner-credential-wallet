@@ -17,7 +17,7 @@ const subtle = {
     const actualAlgorithm =
       typeof algorithm === 'string' ? algorithm : algorithm.name;
 
-    // 🔥 Ensure data is a Uint8Array
+    // Ensure data is a Uint8Array
     let inputData;
     if (typeof data === 'string') {
       inputData = new TextEncoder().encode(data); // Convert string to Uint8Array

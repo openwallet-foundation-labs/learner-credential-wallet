@@ -57,9 +57,9 @@ export default function WasConnectScreen() {
               navigationRef.goBack();
             }
           } catch (error) {
-            console.error('❌ Connection failed:', error);
+            console.error('Connection failed:', error);
             const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            setStatusMessage(`❌ Failed to connect wallet: ${errorMessage}`);
+            setStatusMessage(`Failed to connect wallet: ${errorMessage}`);
             setStatusType('error');
 
             if (navigationRef.isReady()) {
