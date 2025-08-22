@@ -97,14 +97,14 @@ const WASScreen = () => {
   const checkExistingConnection = async () => {
     try {
       const spaceId = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
-      const signerJson = await AsyncStorage.getItem(WAS.KEYS.SIGNER_KEYPAIR);
+      const keyPairJson = await AsyncStorage.getItem(WAS.KEYS.SIGNER_KEYPAIR);
 
-      if (spaceId && signerJson) {
+      if (spaceId && keyPairJson) {
         setHasConnection(true);
-        const signer = await Ed25519VerificationKey2020.from(JSON.parse(signerJson));
+        const keyPair = await Ed25519VerificationKey2020.from(JSON.parse(keyPairJson));
         setConnectionDetails({
           spaceId: `urn:uuid:${spaceId}`,
-          controllerDid: signer.signer().id
+          controllerDid: keyPair.signer().id
         });
       }
     } catch (error) {
@@ -246,6 +246,7 @@ const WASScreen = () => {
       if (!blob) throw new Error('Failed to get blob from response');
 
       const fileName = `was-space-${connectionDetails.spaceId.split('urn:uuid:')[1]}.tar`;
+      console.log('🚀 ~ fileName:', fileName);
   
       const reader = new FileReader();
   
