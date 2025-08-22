@@ -205,9 +205,9 @@ const WASScreen = () => {
     try {
       setStatus('loading');
       setMessage('Exporting space...');
-  
+
       if (!connectionDetails) throw new Error('No connection details found');
-  
+
       const confirmed = await displayGlobalModal({
         title: 'Export Space',
         confirmText: 'Export',
@@ -218,38 +218,38 @@ const WASScreen = () => {
           </Text>
         )
       });
-  
+
       if (!confirmed) {
         setStatus('idle');
         setMessage('');
         return;
       }
-  
-      
+
+
       const signer = await getRootSigner();
       const storage = getStorageClient();
-  
+
       const space = storage.space({
         signer,
         id: connectionDetails.spaceId as `urn:uuid:${string}`,
       });
-  
+
       const response = await space.get({
         headers: {
           Accept: 'application/x-tar'
         }
       });
-  
+
       if (!response.ok) throw new Error(`Failed to export space. Status: ${response.status}`);
-  
+
       const blob = await response.blob?.();
       if (!blob) throw new Error('Failed to get blob from response');
 
       const fileName = `was-space-${connectionDetails.spaceId.split('urn:uuid:')[1]}.tar`;
-      console.log('🚀 ~ fileName:', fileName);
-  
+      console.log('fileName:', fileName);
+
       const reader = new FileReader();
-  
+
       const base64 = await new Promise<string>((resolve, reject) => {
         reader.onloadend = () => {
           const dataUrl = reader.result as string;
@@ -259,13 +259,13 @@ const WASScreen = () => {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       });
-  
+
       try {
         await shareBinaryFile(fileName, base64, 'application/x-tar');
       } catch (err) {
         await shareBinaryFile(fileName, base64, 'application/x-tar');
       }
-  
+
       setStatus('success');
       setMessage('Space exported and ready to share!');
     } catch (err) {
