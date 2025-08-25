@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
-import appConfig from '../../../app.config';
+import appConfig, {FEATURE_FLAGS} from '../../../app.config';
 import { initialize, pollWalletState, selectWalletState } from '../../store/slices/wallet';
 import { LoadingIndicator, SafeScreenView, AccessibleView, PasswordForm } from '../../components';
 import walletImage from '../../assets/wallet.png';
@@ -23,6 +23,7 @@ import type {
 
 import { DetailsScreen } from '../../screens';
 import { useSelector } from 'react-redux';
+import { v4 as uuidv4 } from 'uuid';
 
 const Stack = createStackNavigator<SetupNavigationParamList>();
 
@@ -36,7 +37,7 @@ export default function SetupNavigation(): React.ReactElement {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
       <Stack.Screen name="StartStep" component={StartStep} />
-      <Stack.Screen name="PasswordStep" component={PasswordStep} />
+      {FEATURE_FLAGS.passwordProtect && <Stack.Screen name="PasswordStep" component={PasswordStep} />}
       <Stack.Screen name="CreateStep" component={CreateStep} options={{ cardStyleInterpolator: forFade }} />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
     </Stack.Navigator>
@@ -67,7 +68,15 @@ function StartStep({ navigation }: StartStepProps) {
           containerStyle={mixins.buttonContainer}
           titleStyle={mixins.buttonTitle}
           title="Quick Setup"
-          onPress={() => navigation.navigate('PasswordStep')}
+          onPress={() => {
+            if (FEATURE_FLAGS.passwordProtect) {
+              navigation.navigate('PasswordStep');
+            } else {
+              const generatedPassword = uuidv4();
+              console.log('generatedPassword', generatedPassword);
+              navigation.navigate('CreateStep', { password: generatedPassword, enableBiometrics: false });
+            }
+          }}
         />
       </View>
     </SafeScreenView>

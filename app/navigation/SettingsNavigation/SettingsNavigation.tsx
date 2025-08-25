@@ -6,7 +6,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import DeviceInfo from 'react-native-device-info';
 import { TouchableOpacity } from 'react-native-gesture-handler';
 
-import appConfig, { LinkConfig, WAS } from '../../../app.config';
+import appConfig, { FEATURE_FLAGS, WAS, LinkConfig } from '../../../app.config';
 import walletImage from '../../assets/wallet.png';
 import dynamicStyleSheet from './SettingsNavigation.styles';
 import { NavHeader, ConfirmModal, BackupItemModal } from '../../components';
@@ -121,7 +121,7 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
         <SettingsItem title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
         <SettingsItem title="Reset wallet" onPress={() => setResetModalOpen(true)} />
         <SettingsItem title="About" onPress={() => navigation.navigate('About')} />
-        <SettingsItem title="Sign out" onPress={lockWallet} />
+        {FEATURE_FLAGS.passwordProtect && <SettingsItem title="Sign out" onPress={lockWallet} />}
       </ScrollView>
       <ConfirmModal
         open={resetModalOpen}

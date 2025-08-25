@@ -22,7 +22,8 @@ export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10); // 
 
 // Feature Flags section
 export const FEATURE_FLAGS = {
-    // exampleFlag: true
+  // exampleFlag: true
+  passwordProtect: true
 };
 
 // Display date format for VCs (expiration, date issued, etc)
