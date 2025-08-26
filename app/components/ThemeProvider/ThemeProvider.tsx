@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useSelector } from 'react-redux';
+import { useColorScheme } from 'react-native';
 
 import type { ThemeProviderProps } from './ThemeProvider.d';
 import { useAppDispatch } from '../../hooks';
@@ -10,6 +11,14 @@ import { findThemeBy } from '../../styles/theme/themeName';
 export default function ThemeProvider({ children }: ThemeProviderProps): React.ReactElement {
   const dispatch = useAppDispatch();
   const { themeName } = useSelector(selectWalletState);
+  const colorScheme = useColorScheme();
+
+  useEffect(() => {
+    if (themeName === null && colorScheme !== null) {
+      const osThemeName = colorScheme === 'dark' ? themes.darkTheme.name : themes.lightTheme.name;
+      dispatch(updateThemeName(osThemeName));
+    }
+  }, [themeName, colorScheme, dispatch]);
 
   const theme = useMemo(() => findThemeBy(themeName) || defaultTheme, [themeName]);
   const isDarkTheme = useMemo(() => theme === themes.darkTheme, [theme]);
