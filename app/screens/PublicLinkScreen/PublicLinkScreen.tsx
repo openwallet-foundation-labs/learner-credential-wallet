@@ -763,6 +763,7 @@ export default function PublicLinkScreen({
                     buttonStyle={mixins.buttonIcon}
                     containerStyle={mixins.buttonIconContainer}
                     titleStyle={mixins.buttonIconTitle}
+                    iconRight
                     onPress={onSendCredential}
                     icon={
                       <MaterialIcons
