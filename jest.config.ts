@@ -2,11 +2,13 @@ import type { Config } from 'jest';
 
 const packagesToTransformWithBabel = [
   '@react-native',
-  '@digitalcredentials/http-client',
-  'expo-secure-store',
-  'expo-modules-core', 
-  'react-native-fs',
   'react-native',
+  'expo-secure-store',
+  'expo-modules-core',
+  'react-native-fs',
+  '@digitalcredentials/http-client',
+  'realm',
+  '@realm', // <-- critical for @realm/fetch
 ];
 
 const transformIgnorePatterns = [
@@ -22,7 +24,7 @@ const config: Config = {
   moduleNameMapper: {
     '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
-  setupFiles: ['<rootDir>/jest.setup.js'], // needed for mocks
+  setupFiles: ['<rootDir>/jest.setup.js'],
 };
 
 export default config;
