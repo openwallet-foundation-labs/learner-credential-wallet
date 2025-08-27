@@ -50,7 +50,7 @@ See [Installing on Linux](install-linux.md) on setting up the project on Linux.
 
 ### Setup of the LCW App
 1. Clone this repository or `git pull`
-2. In root of project, run `npm i` or `npm install` to install the React Native dependencies.
+2. In root of project, run `npm install` to install the React Native dependencies.
    * (Optionally, if you use the `asdf` version manager run `asdf install` to install - more info in asdf section below)
 3. Run `npm run prebuild:ios` and `npm run prebuild:android` to set up the `ios` and `android` folders. This step uses [Expo prebuild](https://docs.expo.dev/workflow/prebuild/).
 
