@@ -5,6 +5,7 @@ import { navigationRef } from '../../navigation';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { StorageClient } from '@wallet.storage/fetch-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import FileReader from 'react-native-filereader';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS } from '../../../app.config';
 import { useThemeContext } from '../../hooks';
