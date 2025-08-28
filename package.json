@@ -34,12 +34,12 @@
     "dependencies": {
         "@babel/runtime": "^7.27.6",
         "@craftzdog/react-native-buffer": "^6.0.5",
-        "@digitalbazaar/ezcap": "^4.1.0",
         "@digitalcredentials/data-integrity": "^2.5.1-beta.1",
         "@digitalcredentials/did-method-key": "^2.0.3",
         "@digitalcredentials/ed25519-signature-2020": "^6.0.0",
         "@digitalcredentials/ed25519-verification-key-2020": "5.0.0-beta.2",
         "@digitalcredentials/eddsa-rdfc-2022-cryptosuite": "^1.2.1-beta.6",
+        "@digitalcredentials/ezcap": "^5.0.0",
         "@digitalcredentials/issuer-registry-client": "^3.0.0",
         "@digitalcredentials/security-document-loader": "^6.0.0",
         "@digitalcredentials/ssi": "^3.0.5",
