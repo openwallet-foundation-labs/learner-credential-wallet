@@ -1,6 +1,6 @@
 import { ZCAP_EXPIRES } from '../../app.config';
 // @ts-ignore
-import { ZcapClient } from '@digitalbazaar/ezcap';
+import { ZcapClient } from '@digitalcredentials/ezcap';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 
 import { displayGlobalModal } from './globalModal';

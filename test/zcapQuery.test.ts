@@ -31,7 +31,7 @@ jest.mock('@digitalcredentials/ed25519-verification-key-2020', () => ({
   }
 }));
 
-jest.mock('@digitalbazaar/ezcap', () => ({
+jest.mock('@digitalcredentials/ezcap', () => ({
   ZcapClient: class {
     constructor() {}
     async delegate() {
