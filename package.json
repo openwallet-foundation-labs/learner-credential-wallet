@@ -98,6 +98,7 @@
         "react-native-keyboard-aware-scroll-view": "^0.9.4",
         "react-native-keychain": "^8.1.1",
         "react-native-markdown-display": "^7.0.0-alpha.2",
+        "react-native-nitro-modules": "^0.29.0",
         "react-native-outside-press": "^1.1.0",
         "react-native-paper": "^4.12.3",
         "react-native-qrcode-svg": "^6.1.2",
