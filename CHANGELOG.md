@@ -1,5 +1,20 @@
 # learner-credential-wallet Changelog
 
+## 2.2.5 - build 95
+### Added
+- [EPIC] Wallet attached storage #668
+- Feature Flag: Wallet attached storage #669
+- Consent screens for wallet attached storage #667
+- Feature Flag: Password prompt at wallet setup #572
+- Update Android API level to 35 #788
+- Upgrade to Expo SDK 52 #776
+- Updated age rating questions on Apple store for LCW #797
+
+### Fixed
+- Creating public links on w.a.s. branch is broken #799
+- Tarballs are empty when exporting w.a.s. space #800
+- BUG: iOS - Creating public links is broken when sharing a credential #801
+
 ## 2.2.4 - build 94
 ### Added
 - Verifiable Presentation Requests #697
