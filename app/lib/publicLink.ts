@@ -26,7 +26,7 @@ export async function createPublicLinkFor(
     try {
       await Cache.getInstance().store(CacheKey.PublicLinks, id, {
         server: WAS.BASE_URL,
-        url: { 
+        url: {
           view: wasLink.replace(WAS.BASE_URL, ''),
           unshare: wasLink.replace(WAS.BASE_URL, '')
         },
@@ -37,7 +37,7 @@ export async function createPublicLinkFor(
       // Fall through to verifierPlus
     }
   }
-  
+
   // Fall back to verifierPlus
   console.log('[publicLink.ts] Using verifierPlus to create public link');
   const links = await verifierPlus.postCredential(rawCredentialRecord);
@@ -70,18 +70,18 @@ async function createWasPublicLinkIfAvailable(
     }
 
     const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
-    
+
     const storage = getStorageClient();
-    
-    const space = storage.space({ 
-      signer, 
+
+    const space = storage.space({
+      signer,
       id: spaceId
     });
     console.log('Using space:', space.path);
-    
+
     const resourceUUID = uuidv4();
     console.log('Resource UUID:', resourceUUID);
-    
+
     // Extract just the credential object
     const credentialJson = JSON.stringify(rawCredentialRecord.credential);
 
@@ -89,18 +89,18 @@ async function createWasPublicLinkIfAvailable(
       uuid: `urn:uuid:${resourceUUID}` as `urn:uuid:${string}`
     });
     console.log('Resource path:', resource.path);
-    
+
     // Create the credential blob with correct content type
     const credentialBlob = new Blob([credentialJson], {
       type: 'application/json'
     });
     console.log('Storing credential in WAS with signer:', signer.id);
-    
+
     // Manually create HTTP signature authorization for the resource PUT request
-    const response = await resource.put(credentialBlob, { 
+    const response = await resource.put(credentialBlob, {
       signer,
     });
-    
+
     console.log('WAS storage response:', {
       status: response.status,
       ok: response.ok
@@ -113,13 +113,18 @@ async function createWasPublicLinkIfAvailable(
       );
       return null;
     }
-    
+
     // Create the public link using the resource path
     const publicLink = `${VERIFIER_PLUS_URL}/#verify?vc=${WAS.BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
 
-    return publicLink; 
+    return publicLink;
   } catch (error) {
+    if (error instanceof Error &&
+        error.message === 'Root signer not found in wallet.') {
+      console.log('Now connected to WAS, so root signer not found.')
+      return null;
+    }
     console.error('[publicLink.ts] Error in createWasPublicLinkIfAvailable:', error);
     if (error instanceof Error) {
       console.error('Error details:', {
@@ -138,29 +143,29 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
   try {
     const publicLinks = await Cache.getInstance()
       .load(CacheKey.PublicLinks, vcId) as StoreCredentialResult;
-      
+
     if (WAS.enabled && publicLinks.server === WAS.BASE_URL) {
       // This is a WAS link
       console.log('Unsharing WAS credential');
-      
+
       if (!cachedSigner) {
         const signer = await getRootSigner();
         cachedSigner = signer;
       }
-      
+
       if (cachedSigner) {
         const signer = cachedSigner;
-        
+
         const resourcePath = publicLinks.url.unshare;
         const resourceName = resourcePath.split('/').pop();
-        
+
         const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
         if (storedSpaceUUID) {
           const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
           const storage = getStorageClient();
-          const space = storage.space({ 
-            signer, 
-            id: spaceId 
+          const space = storage.space({
+            signer,
+            id: spaceId
           });
           const resource = space.resource(resourceName);
           await resource.delete({ signer });
