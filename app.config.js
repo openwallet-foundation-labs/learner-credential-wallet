@@ -22,8 +22,9 @@ export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10); // 
 
 // Feature Flags section
 export const FEATURE_FLAGS = {
-  // exampleFlag: true
-  passwordProtect: false
+  // true - original LCW behavior (require password at setup)
+  // false - no password required
+  passwordProtect: true
 };
 
 // Display date format for VCs (expiration, date issued, etc)
