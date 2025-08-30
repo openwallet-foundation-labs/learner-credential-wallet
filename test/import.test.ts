@@ -14,19 +14,7 @@ import * as RNFS from 'react-native-fs';
 import { ProfileRecord } from '../app/model/profile';
 import { Platform } from 'react-native';
 
-jest.mock('react-native-document-picker', () => ({
-  pickSingle: jest.fn(),
-  types: {
-    allFiles: '*/*',
-  },
-}));
-
-jest.mock('react-native-fs', () => ({
-  readFile: jest.fn(),
-  exists: jest.fn().mockResolvedValue(true),
-  copyFile: jest.fn().mockResolvedValue(undefined),
-  TemporaryDirectoryPath: '/tmp',
-}));
+// React Native mocks are now in jest.setup.js
 
 jest.mock('../app/model/profile', () => ({
   ProfileRecord: {
@@ -34,9 +22,7 @@ jest.mock('../app/model/profile', () => ({
   },
 }));
 
-jest.mock('react-native/Libraries/Utilities/Platform', () => ({
-  OS: 'android',
-}));
+// Platform mock is now handled in jest.setup.js
 
 describe('Utility Functions', () => {
   describe('isPngFile', () => {
@@ -75,16 +61,22 @@ describe('Utility Functions', () => {
   });
 
   describe('pickAndReadFile', () => {
-    const originalPlatform = Platform.OS;
+    const originalPlatform = Platform?.OS || 'android';
 
     afterEach(() => {
       Object.defineProperty(Platform, 'OS', {
         value: originalPlatform,
+        writable: true,
+        configurable: true,
       });
     });
 
     it('should pick and read a content:// file on Android', async () => {
-      Object.defineProperty(Platform, 'OS', { value: 'android' });
+      Object.defineProperty(Platform, 'OS', { 
+        value: 'android',
+        writable: true,
+        configurable: true,
+      });
 
       (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
         uri: 'content://some/file.json',
@@ -103,6 +95,8 @@ describe('Utility Functions', () => {
     it('should pick and read a file on Android', async () => {
       Object.defineProperty(Platform, 'OS', {
         value: 'android',
+        writable: true,
+        configurable: true,
       });
 
       const fakeUri = 'file://test.json';
@@ -123,6 +117,8 @@ describe('Utility Functions', () => {
     it('should pick and read a file on iOS', async () => {
       Object.defineProperty(Platform, 'OS', {
         value: 'ios',
+        writable: true,
+        configurable: true,
       });
 
       const fakeUri = 'file://test.json';

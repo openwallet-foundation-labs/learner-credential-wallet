@@ -66,7 +66,7 @@ export default function PasswordForm({ focusOnMount, onChangePassword, style, te
         value={password}
         onChangeText={setPassword}
         onBlur={_onInputBlur}
-        inputRef={passwordRef}
+        inputRef={passwordRef as any}
         tvParallaxProperties={undefined}
         onTextInput={() => {}}
       />

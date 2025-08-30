@@ -15,6 +15,9 @@ declare module '@digitalcredentials/ed25519-verification-key-2020';
 declare module '@digitalcredentials/data-integrity';
 declare module '@digitalcredentials/eddsa-rdfc-2022-cryptosuite'; 
 declare module '@digitalcredentials/lru-memoize';
+declare module '@digitalcredentials/security-document-loader' {
+  export function securityLoader(options?: any): any;
+}
 declare module 'jsonld-document-loader';
 declare module '@interop/did-web-resolver';
 declare module 'json-canonicalize';
@@ -24,6 +27,19 @@ declare module 'react-native-keychain';
 declare module 'react-native-receive-sharing-intent';
 declare module 'validator';
 declare module '@microsoft/msrcrypto';
+declare module 'react-native-base64' {
+  export function decode(input: string): string;
+  export function encode(input: string): string;
+  const base64: {
+    decode: typeof decode;
+    encode: typeof encode;
+  };
+  export default base64;
+}
 
 declare module '*.png';
 declare module '*.json';
+
+declare global {
+  var __DEV__: boolean;
+}

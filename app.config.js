@@ -117,7 +117,11 @@ export default {
                         compileSdkVersion: 35,
                         targetSdkVersion: 35,
                         minSdkVersion: 29,
-                        buildToolsVersion: '34.0.0'
+                        buildToolsVersion: '34.0.0',
+                        newArchEnabled: false
+                    },
+                    ios: {
+                        newArchEnabled: false
                     }
                 }
             ]

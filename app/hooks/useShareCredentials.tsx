@@ -4,7 +4,7 @@ import { Button } from 'react-native-elements';
 import { LoadingIndicatorDots } from '../components';
 import { errorMessageMatches } from '../lib/error';
 import { clearGlobalModal, displayGlobalModal } from '../lib/globalModal';
-import { createUnsignedPresentation, sharePresentation } from '../lib/present';
+import { createUnsignedPresentation } from '../lib/present';
 import { navigationRef } from '../navigation';
 import { useDynamicStyles } from './useDynamicStyles';
 import { CredentialRecordRaw } from '../types/credential';
@@ -64,7 +64,8 @@ export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => P
     const credentials = rawCredentialRecords.map(({ credential }) => credential);
     const presentation = createUnsignedPresentation(credentials);
 
-    await sharePresentation(presentation);
+    // TODO: Implement presentation sharing
+    console.log('Presentation created:', presentation);
   }
 
   return async (rawCredentialRecords: CredentialRecordRaw[]) => {
