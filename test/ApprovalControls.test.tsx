@@ -170,11 +170,7 @@ describe('ApprovalControls', () => {
     });
 
     it('should use message override when provided', () => {
-      const pendingCredential = new PendingCredential(
-        mockCredential,
-        ApprovalStatus.Rejected,
-        ApprovalMessage.Duplicate
-      );
+      const pendingCredential = new PendingCredential(mockCredential, ApprovalStatus.Rejected, ApprovalMessage.Duplicate);
       const { getByText } = renderComponent(pendingCredential);
 
       expect(getByText(ApprovalMessage.Duplicate)).toBeTruthy();

@@ -18,7 +18,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
   describe('PendingCredential class functionality', () => {
     it('should create pending credential with default values', () => {
       const pendingCredential = new PendingCredential(mockCredential);
-      
+
       expect(pendingCredential.credential).toBe(mockCredential);
       expect(pendingCredential.status).toBe(ApprovalStatus.Pending);
       expect(pendingCredential.id).toBeDefined();
@@ -27,21 +27,14 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     });
 
     it('should create pending credential with duplicate status', () => {
-      const pendingCredential = new PendingCredential(
-        mockCredential, 
-        ApprovalStatus.PendingDuplicate
-      );
-      
+      const pendingCredential = new PendingCredential(mockCredential, ApprovalStatus.PendingDuplicate);
+
       expect(pendingCredential.status).toBe(ApprovalStatus.PendingDuplicate);
     });
 
     it('should create pending credential with message override', () => {
-      const pendingCredential = new PendingCredential(
-        mockCredential,
-        ApprovalStatus.Rejected,
-        ApprovalMessage.Duplicate
-      );
-      
+      const pendingCredential = new PendingCredential(mockCredential, ApprovalStatus.Rejected, ApprovalMessage.Duplicate);
+
       expect(pendingCredential.messageOverride).toBe(ApprovalMessage.Duplicate);
     });
   });
@@ -50,7 +43,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     it('should detect duplicates using content hash', () => {
       const existingHashes = ['hash_mock1', 'hash_other'];
       const newCredentialHash = credentialContentHash(mockCredential);
-      
+
       const isDuplicate = existingHashes.includes(newCredentialHash);
       expect(isDuplicate).toBe(true);
     });
@@ -58,7 +51,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     it('should not detect duplicates for different credentials', () => {
       const existingHashes = ['hash_mock1'];
       const newCredentialHash = credentialContentHash(mockCredential2);
-      
+
       const isDuplicate = existingHashes.includes(newCredentialHash);
       expect(isDuplicate).toBe(false);
     });
@@ -66,7 +59,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     it('should handle profile-specific duplicate detection', () => {
       const profileId1 = new ObjectID();
       const profileId2 = new ObjectID();
-      
+
       const allCredentials = [
         { credential: mockCredential, profileRecordId: profileId1 },
         { credential: mockCredential2, profileRecordId: profileId2 },
@@ -79,7 +72,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
       );
 
       // Get hashes for profile 1
-      const profile1Hashes = profile1Credentials.map(({ credential }) => 
+      const profile1Hashes = profile1Credentials.map(({ credential }) =>
         credentialContentHash(credential)
       );
 
@@ -94,7 +87,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     it('should allow same credential in different profiles', () => {
       const profileId1 = new ObjectID();
       const profileId2 = new ObjectID();
-      
+
       const allCredentials = [
         { credential: mockCredential, profileRecordId: profileId1 },
       ];
@@ -104,7 +97,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
         profileRecordId.equals(profileId2)
       );
 
-      const profile2Hashes = profile2Credentials.map(({ credential }) => 
+      const profile2Hashes = profile2Credentials.map(({ credential }) =>
         credentialContentHash(credential)
       );
 
@@ -139,7 +132,7 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     it('should handle null and undefined credentials', () => {
       const hash1 = credentialContentHash(null as any);
       const hash2 = credentialContentHash(undefined as any);
-      
+
       expect(hash1).toBe('hash_unknown');
       expect(hash2).toBe('hash_unknown');
     });
@@ -147,14 +140,14 @@ describe('Duplicate Handling - Core Logic Tests', () => {
     it('should handle empty credential arrays', () => {
       const credentials: any[] = [];
       const hashes = credentials.map(credential => credentialContentHash(credential));
-      
+
       expect(hashes).toHaveLength(0);
     });
 
     it('should generate unique IDs for different instances', () => {
       const credential1 = new PendingCredential(mockCredential);
       const credential2 = new PendingCredential(mockCredential);
-      
+
       expect(credential1.id).not.toBe(credential2.id);
     });
   });
