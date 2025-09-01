@@ -1,5 +1,6 @@
 import { JSONPath } from 'jsonpath-plus';
 import { CredentialRecordRaw, VcQueryType } from '../types/credential';
+import { IQueryByExample } from './vcApi';
 
 // Check if credential record matches QueryByExample VPR
 export function credentialMatchesVprExampleQuery (
@@ -50,32 +51,19 @@ function extendPath (path: string, extension: string): string {
 
 // Filter credential records by type
 export function filterCredentialRecordsByType (
-  allRecords: CredentialRecordRaw[], query: { type: VcQueryType; credentialQuery?: any }
+  allRecords: CredentialRecordRaw[], query: IQueryByExample
 ): CredentialRecordRaw[] {
   let matchedCredentialRecords: CredentialRecordRaw[];
-  switch (query.type) {
-  case VcQueryType.Example: {
-    const example = query.credentialQuery?.example;
-    if (!example) {
-      // This is an error with the exchanger, as the request is malformed
-      console.log('"example" field missing in QueryByExample.');
-      return [];
-    }
-    const credentialRecordMatches = allRecords.map(
-      (c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c));
-    matchedCredentialRecords = allRecords.filter(
-      (c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
-    console.log('Resulting matches:', matchedCredentialRecords.length);
-    break;
+  const example = query.credentialQuery?.example;
+  if (!example) {
+    // This is an error with the exchanger, as the request is malformed
+    console.log('"example" field missing in QueryByExample.');
+    return [];
   }
-  case VcQueryType.Frame:
-  case VcQueryType.DidAuth:
-  case VcQueryType.DidAuthLegacy:
-    matchedCredentialRecords = [];
-    break;
-  default:
-    matchedCredentialRecords = [];
-    break;
-  }
+  const credentialRecordMatches = allRecords.map(
+    (c: CredentialRecordRaw) => credentialMatchesVprExampleQuery(example, c));
+  matchedCredentialRecords = allRecords.filter(
+    (c: CredentialRecordRaw, i: number) => credentialRecordMatches[i]);
+  console.log('Resulting matches:', matchedCredentialRecords.length);
   return matchedCredentialRecords;
 }
