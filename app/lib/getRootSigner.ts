@@ -2,8 +2,9 @@ import 'react-native-get-random-values';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { WAS } from '../../app.config';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
+import { ISigner } from '@digitalcredentials/ssi';
 
-export async function getRootSigner() {
+export async function getRootSigner(): Promise<ISigner> {
   if (!WAS.enabled) {
     throw new Error('WAS is not enabled.');
   }
