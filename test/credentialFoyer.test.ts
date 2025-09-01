@@ -118,7 +118,7 @@ describe('credentialFoyer slice', () => {
 
   describe('acceptPendingCredentials', () => {
     let mockAddCredential: jest.Mock;
-    
+
     beforeEach(() => {
       // Mock the addCredential action
       mockAddCredential = jest.fn(() => ({ type: 'credential/addCredential' }));
@@ -129,7 +129,7 @@ describe('credentialFoyer slice', () => {
 
     it('should skip duplicate credentials and mark them as rejected', async () => {
       const duplicateCredential = new PendingCredential(mockCredential, ApprovalStatus.PendingDuplicate);
-      
+
       // Stage the duplicate credential first
       store.dispatch({
         type: 'credentialFoyer/stageCredentialsForProfile/fulfilled',
@@ -139,13 +139,13 @@ describe('credentialFoyer slice', () => {
       // Mock the dispatch to simulate the behavior
       const mockDispatch = jest.fn();
       const mockGetState = jest.fn(() => store.getState());
-      
+
       // Manually call the thunk function
       const thunk = acceptPendingCredentials({
         pendingCredentials: [duplicateCredential],
         profileRecordId: mockProfileId,
       });
-      
+
       await thunk(mockDispatch, mockGetState, undefined);
 
       // Check that setCredentialApproval was called with correct parameters
@@ -162,7 +162,7 @@ describe('credentialFoyer slice', () => {
 
     it('should accept non-duplicate credentials', async () => {
       const normalCredential = new PendingCredential(mockCredential, ApprovalStatus.Pending);
-      
+
       // Stage the normal credential first
       store.dispatch({
         type: 'credentialFoyer/stageCredentialsForProfile/fulfilled',
@@ -172,13 +172,13 @@ describe('credentialFoyer slice', () => {
       // Mock the dispatch to simulate the behavior
       const mockDispatch = jest.fn();
       const mockGetState = jest.fn(() => store.getState());
-      
+
       // Manually call the thunk function
       const thunk = acceptPendingCredentials({
         pendingCredentials: [normalCredential],
         profileRecordId: mockProfileId,
       });
-      
+
       await thunk(mockDispatch, mockGetState, undefined);
 
       // Check that setCredentialApproval was called with accepted status
@@ -212,7 +212,7 @@ describe('credentialFoyer slice', () => {
   describe('setCredentialApproval', () => {
     it('should update credential approval status', () => {
       const pendingCredential = new PendingCredential(mockCredential);
-      
+
       // Stage the credential first
       store.dispatch({
         type: 'credentialFoyer/stageCredentials/fulfilled',
@@ -245,11 +245,7 @@ describe('credentialFoyer slice', () => {
     });
 
     it('should create a pending credential with message override', () => {
-      const pendingCredential = new PendingCredential(
-        mockCredential,
-        ApprovalStatus.Rejected,
-        ApprovalMessage.Duplicate
-      );
+      const pendingCredential = new PendingCredential(mockCredential, ApprovalStatus.Rejected, ApprovalMessage.Duplicate);
       expect(pendingCredential.messageOverride).toBe(ApprovalMessage.Duplicate);
     });
   });

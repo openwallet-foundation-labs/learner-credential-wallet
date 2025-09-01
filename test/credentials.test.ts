@@ -1,17 +1,17 @@
 // Mock external dependencies
+import { IQueryByExample } from '../app/lib/vcApi';
+
 jest.mock('@digitalcredentials/security-document-loader');
 jest.mock('@digitalcredentials/ed25519-signature-2020');
 jest.mock('@digitalcredentials/vc');
 
-import { getCredentialStatusChecker } from '../app/lib/credentialStatus';
+// import { getCredentialStatusChecker } from '../app/lib/credentialStatus';
 import { rawVcRecords, mockCredential } from '../app/mock/credential';
-import { credentialMatchesVprExampleQuery, filterCredentialRecordsByType } from '../app/lib/credentialMatching';
-
-import { VcQueryType } from '../app/types/credential';
+import { filterCredentialRecordsByType } from '../app/lib/credentialMatching';
 
 // Sample query for type filtering
 const query = {
-  type: VcQueryType.Example,
+  type: 'QueryByExample',
   credentialQuery: {
     reason: 'Please present your Verifiable Credential to complete the verification process.',
     example: {
@@ -19,7 +19,7 @@ const query = {
       type: ['VerifiableCredential'],
     },
   },
-};
+} as IQueryByExample;
 
 describe('Credential Matching and Verification', () => {
   describe('Querying', () => {

@@ -1,22 +1,12 @@
-import { getStateFromPath, LinkingOptions, NavigationState, PartialState } from '@react-navigation/native';
+import { NavigationState, PartialState } from '@react-navigation/native';
 import { Linking } from 'react-native';
-import qs from 'query-string';
 
 import { navigationRef } from '../navigation/navigationRef';
-import type { RootNavigationParamsList } from '../navigation/RootNavigation/RootNavigation.d';
-import { ChapiCredentialRequest } from '../types/chapi';
-import { credentialRequestFromChapiUrl } from './decode';
 import { encodeQueryParams } from './encode';
-import { onShareIntent } from './shareIntent';
 
 import { LinkConfig } from '../../app.config';
-import { getChapiCredentialRequest } from './credentialRequest';
+import { parseWalletApiMessage, parseWalletApiUrl, WalletApiMessage } from './vcApi';
 
-/**
- * In order to support OAuth redirects, the Android intent filter was set
- * specific to the scheme `dccrequest` and path `request`. If new paths are
- * added here, they must also be added to `android/app/src/main/AndroidManifest.xml`.
- */
 const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol
   .concat(LinkConfig.schemes.universalAppLink);
 const DEEP_LINK_PATHS: DeepLinkPaths = {
@@ -40,83 +30,82 @@ const DEEP_LINK_PATHS: DeepLinkPaths = {
   })
 };
 
-function checkForSharingIntent(url: string): void {
-  if (url.includes('ReceiveSharingIntent')) {
-    onShareIntent();
+/**
+ * @see https://reactnavigation.org/docs/navigation-container/#linking
+ */
+export const deepLinkConfig = {
+  prefixes: DEEP_LINK_SCHEMES,
+  /**
+   * Gets called when user activates a deep link from the outside,
+   * while app is running in background.
+   *
+   * @see https://reactnavigation.org/docs/navigation-container/?config=static#linkingsubscribe
+   * @param listener
+   */
+  subscribe: (listener: (url: string) => void) => {
+    const onReceiveURL = ({ url }: { url: string }) => {
+      console.log('deepLink "subscribe" event for url:', url);
+      if (url.includes('request=')) {
+        redirectRequestRoute(url);
+      }
+      return listener(encodeQueryParams(url));
+    };
+
+    const subscription = Linking.addEventListener('url', onReceiveURL);
+    return () => subscription.remove();
+  },
+  getInitialURL: async () => {
+    const url = await Linking.getInitialURL();
+    if (url !== null) {
+      await new Promise((res) => setTimeout(res, 100));
+      return encodeQueryParams(url);
+    }
+  },
+  getStateFromPath: (url: string) => {
+    console.log('deepLink "getStateFromPath" event for path:', url);
+    const messageObject = parseWalletApiUrl({ url });
+    if (messageObject === undefined) {
+      console.log('[redirectRequestRoute] No wallet api message found in url.');
+      return;
+    }
+    const message = parseWalletApiMessage({ messageObject });
+    if (message === undefined) {
+      console.log('[redirectRequestRoute] Wallet api message not recognized.');
+      return;
+    }
+    const stateForExchangeCredentials =
+      (message: WalletApiMessage) => deepLinkNavigate('ExchangeCredentialsNavigation', {
+        screen: 'ExchangeCredentials',
+        params: { message }
+      });
+    return stateForExchangeCredentials(message);
   }
-}
-
-export const deepLinkConfig = deepLinkConfigFor({
-  schemes: DEEP_LINK_SCHEMES,
-  paths: DEEP_LINK_PATHS,
-  onDeepLink: checkForSharingIntent,
-});
-
-/* =========== Start Deep Link Boilerplate ================ */
-
-function transformDeepLink(url: string): string {
-  return encodeQueryParams(url);
-}
-
-const redirectRequestRoute = (url: string) => {
-  const request = credentialRequestFromChapiUrl(url);
-  navigationRef.navigate('ExchangeCredentialsNavigation', {
-    screen: 'ExchangeCredentials',
-    params: { request }
-  });
 };
 
-function deepLinkConfigFor({ schemes, paths, onDeepLink }: DeepLinkConfigOptions): LinkingOptions<RootNavigationParamsList> {
-  return {
-    prefixes: schemes,
-    subscribe: (listener: (url: string) => void) => {
-      const onReceiveURL = ({ url }: { url: string }) => {
-        if (url.includes('request=')) {
-          redirectRequestRoute(url);
-        }
-        onDeepLink?.(url);
-        return listener(transformDeepLink(url));
-      };
-
-      const subscription = Linking.addEventListener('url', onReceiveURL);
-      return () => subscription.remove();
-    },
-    getInitialURL: async () => {
-      const url = await Linking.getInitialURL();
-      if (url !== null) {
-        await new Promise((res) => setTimeout(res, 100));
-        onDeepLink?.(url);
-        return transformDeepLink(url);
-      }
-    },
-    getStateFromPath: (path) => {
-      const { url, query } = qs.parseUrl(path);
-      if (url.includes('ReceiveSharingIntent')) {
-        return getStateFromPath(path);
-      } else if ('request' in query) {
-        const request = getChapiCredentialRequest(query);
-
-        const stateForExchangeCredentials = (request: ChapiCredentialRequest) => deepLinkNavigate('ExchangeCredentialsNavigation', {
-          screen: 'ExchangeCredentials',
-          params: { request }
-        });
-        return stateForExchangeCredentials(request);
-      }
-      const state = paths[url](query);
-
-      return state;
-    }
-  };
-}
+/**
+ * Processes incoming deep link from Linking 'subscribe' event.
+ * @param url
+ */
+const redirectRequestRoute = (url: string) => {
+  const messageObject = parseWalletApiUrl({ url });
+  if (messageObject === undefined) {
+    console.log('[redirectRequestRoute] No wallet api message found in url.');
+    return;
+  }
+  const message = parseWalletApiMessage({ messageObject });
+  if (message === undefined) {
+    console.log('[redirectRequestRoute] Wallet api message not recognized.');
+    return;
+  }
+  navigationRef.navigate('ExchangeCredentialsNavigation', {
+    screen: 'ExchangeCredentials',
+    params: { message }
+  });
+};
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type DeepLinkPaths = Record<string, (params: any) => any>;
 type ResultState = PartialState<NavigationState>;
-type DeepLinkConfigOptions = {
-  schemes: Array<string>;
-  paths: DeepLinkPaths;
-  onDeepLink?: (url: string) => void;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const deepLinkNavigate: typeof navigationRef.navigate = (...args: any[]): ResultState => {
@@ -131,5 +120,3 @@ const deepLinkNavigate: typeof navigationRef.navigate = (...args: any[]): Result
 
   return stateFor(args[0] as string, args[1] as Record<string, unknown>);
 };
-
-/* =========== End Deep Link Boilerplate ================ */

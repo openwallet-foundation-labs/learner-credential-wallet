@@ -18,7 +18,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
   describe('PendingCredential class functionality', () => {
     it('should create pending credential with default values', () => {
       const pendingCredential = new PendingCredential(mockCredential);
-      
+
       expect(pendingCredential.credential).toBe(mockCredential);
       expect(pendingCredential.status).toBe(ApprovalStatus.Pending);
       expect(pendingCredential.id).toBeDefined();
@@ -27,28 +27,21 @@ describe('Credential Foyer - Duplicate Handling', () => {
     });
 
     it('should create pending credential with custom status', () => {
-      const pendingCredential = new PendingCredential(
-        mockCredential, 
-        ApprovalStatus.PendingDuplicate
-      );
-      
+      const pendingCredential = new PendingCredential(mockCredential, ApprovalStatus.PendingDuplicate);
+
       expect(pendingCredential.status).toBe(ApprovalStatus.PendingDuplicate);
     });
 
     it('should create pending credential with message override', () => {
-      const pendingCredential = new PendingCredential(
-        mockCredential,
-        ApprovalStatus.Rejected,
-        ApprovalMessage.Duplicate
-      );
-      
+      const pendingCredential = new PendingCredential(mockCredential, ApprovalStatus.Rejected, ApprovalMessage.Duplicate);
+
       expect(pendingCredential.messageOverride).toBe(ApprovalMessage.Duplicate);
     });
 
     it('should generate unique IDs for different instances', () => {
       const credential1 = new PendingCredential(mockCredential);
       const credential2 = new PendingCredential(mockCredential);
-      
+
       expect(credential1.id).not.toBe(credential2.id);
     });
   });
@@ -79,7 +72,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
     it('should use content hash for duplicate detection', () => {
       const hash1 = credentialContentHash(mockCredential);
       const hash2 = credentialContentHash(mockCredential2);
-      
+
       expect(hash1).toBe('hash_mock1');
       expect(hash2).toBe('hash_mock2');
       expect(hash1).not.toBe(hash2);
@@ -88,7 +81,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
     it('should detect duplicates based on hash comparison', () => {
       const existingHashes = ['hash_mock1', 'hash_other'];
       const newCredentialHash = credentialContentHash(mockCredential);
-      
+
       const isDuplicate = existingHashes.includes(newCredentialHash);
       expect(isDuplicate).toBe(true);
     });
@@ -96,7 +89,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
     it('should not detect duplicates for different credentials', () => {
       const existingHashes = ['hash_mock1'];
       const newCredentialHash = credentialContentHash(mockCredential2);
-      
+
       const isDuplicate = existingHashes.includes(newCredentialHash);
       expect(isDuplicate).toBe(false);
     });
@@ -118,7 +111,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
       );
 
       expect(profile1Credentials).toHaveLength(2);
-      expect(profile1Credentials.every(({ profileRecordId }) => 
+      expect(profile1Credentials.every(({ profileRecordId }) =>
         profileRecordId.equals(profileId1)
       )).toBe(true);
     });
@@ -129,7 +122,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
         { credential: mockCredential2, profileRecordId: profileId1 },
       ];
 
-      const hashes = profileCredentials.map(({ credential }) => 
+      const hashes = profileCredentials.map(({ credential }) =>
         credentialContentHash(credential)
       );
 
@@ -139,7 +132,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
 
     it('should handle empty profile credentials', () => {
       const profileCredentials: any[] = [];
-      const hashes = profileCredentials.map(({ credential }) => 
+      const hashes = profileCredentials.map(({ credential }) =>
         credentialContentHash(credential)
       );
 
@@ -161,7 +154,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
     it('should handle ObjectID string conversion', () => {
       const id = new ObjectID();
       const hexString = id.toHexString();
-      
+
       expect(typeof hexString).toBe('string');
       expect(hexString).toHaveLength(24);
     });
@@ -171,7 +164,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
     it('should handle credential with same content but different objects', () => {
       const credential1 = { ...mockCredential };
       const credential2 = { ...mockCredential };
-      
+
       // Different object references but same content
       expect(credential1).not.toBe(credential2);
       expect(credential1).toEqual(credential2);
@@ -180,7 +173,7 @@ describe('Credential Foyer - Duplicate Handling', () => {
     it('should handle null and undefined credentials', () => {
       const hash1 = credentialContentHash(null as any);
       const hash2 = credentialContentHash(undefined as any);
-      
+
       expect(hash1).toBe('hash_unknown');
       expect(hash2).toBe('hash_unknown');
     });
