@@ -3,10 +3,10 @@ import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {canonicalize as jcsCanonicalize} from 'json-canonicalize';
 
 import { CredentialRecord, CredentialRecordRaw } from '../../model';
-import type { Credential } from '../../types/credential';
 import { RootState } from '..';
 import { addCredential } from './credential';
 import { ObjectID } from 'bson';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 export enum ApprovalStatus {
   Pending,
@@ -27,11 +27,11 @@ export enum ApprovalMessage {
 export class PendingCredential {
   id: string = uuid.v4() as string;
   status: ApprovalStatus;
-  credential: Credential;
+  credential: IVerifiableCredential;
   messageOverride?: ApprovalMessage;
 
   constructor(
-    credential: Credential,
+    credential: IVerifiableCredential,
     status: ApprovalStatus = ApprovalStatus.Pending,
     messageOverride?: ApprovalMessage,
   ) {
@@ -56,8 +56,8 @@ const initialState: CredentialFoyerState = {
   selectedExchangeCredentials: []
 };
 
-function comparableStringFor(credential: Credential): string {
-  const rawCredential = { ...credential } as Record<string, unknown>;
+function comparableStringFor(credential: IVerifiableCredential): string {
+  const rawCredential = JSON.parse(JSON.stringify(credential));
 
   delete rawCredential.issuanceDate;
   delete rawCredential.validFrom;
@@ -66,7 +66,7 @@ function comparableStringFor(credential: Credential): string {
   return JSON.stringify(jcsCanonicalize(rawCredential));
 }
 
-const stageCredentials = createAsyncThunk('credentialFoyer/stageCredentials', async (credentials: Credential[]) => {
+const stageCredentials = createAsyncThunk('credentialFoyer/stageCredentials', async (credentials: IVerifiableCredential[]) => {
   const existingCredentialRecords = await CredentialRecord.getAllCredentialRecords();
   const existingCredentialStrings = existingCredentialRecords.map(({ credential }) => comparableStringFor(credential));
 

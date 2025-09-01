@@ -1,4 +1,3 @@
-// import '@digitalcredentials/data-integrity-rn';
 import { ProfileRecordRaw } from '../model';
 import { selectWithFactory } from '../store/selectorFactories';
 import { makeSelectDidFromProfile } from '../store/selectorFactories/makeSelectDidFromProfile';
@@ -9,6 +8,7 @@ import store from '../store';
 import { stageCredentials } from '../store/slices/credentialFoyer';
 import { Credential } from '../types/credential';
 import { extractCredentialsFrom } from './verifiableObject';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 type VerifiablePresentationRequestService = {
   type: string;
@@ -26,7 +26,7 @@ export type DidAuthRequestParams = {
   domain: string;
 };
 
-export async function performDidAuthRequest(params: DidAuthRequestParams, rawProfileRecord: ProfileRecordRaw): Promise<Credential[]> {
+export async function performDidAuthRequest(params: DidAuthRequestParams, rawProfileRecord: ProfileRecordRaw): Promise<IVerifiableCredential[]> {
   const didRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
   const { challenge, domain, interact } = params;
 
