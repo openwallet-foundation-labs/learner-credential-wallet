@@ -27,9 +27,11 @@ export type ChapiCredentialRequestParams = {
   request: string;
 }
 
-export type ChapiCredentialRequest = {
-  readonly credentialRequestOrigin: string;
-  readonly protocols: {
+export type VcApiCredentialRequest = {
+  readonly credentialRequestOrigin?: string;
+  readonly verifiablePresentationRequest?: any;
+  readonly issueRequest?: any;
+  readonly protocols?: {
     readonly OID4VCI?: string;
     readonly OID4VP?: string;
     readonly vcapi?: string;
