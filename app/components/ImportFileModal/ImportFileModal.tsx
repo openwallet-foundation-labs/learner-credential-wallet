@@ -35,7 +35,7 @@ function ImportFileModal({
   const [reportDetails, setReportDetails] = useState<ReportDetails>();
   const [errorMessage, setErrorMessage] = useState<string>();
 
-  const onSubmitPassword = useRef<SubmitPasswordCallback>();
+  const onSubmitPassword = useRef<SubmitPasswordCallback | undefined>(undefined);
   const reportSummary = reportDetails ? Object.keys(reportDetails).join('\n') : '';
 
   useImperativeHandle(ref, () => ({

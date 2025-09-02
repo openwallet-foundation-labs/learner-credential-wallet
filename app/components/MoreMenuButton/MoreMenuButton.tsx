@@ -73,5 +73,5 @@ type ElementWithOnPress = ElementType & {
 }
 
 function hasOnPressProp(child: unknown): child is ElementWithOnPress {
-  return (child as ReactElement).props.onPress !== undefined;
+  return React.isValidElement(child) && (child as ReactElement<{ onPress?: () => void }>).props.onPress !== undefined;
 }

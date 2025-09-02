@@ -5,18 +5,19 @@
 const env = process.env;
 
 const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 95;
-const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.2.5';
+const VERSION_NUMBER = env.APP_VERSION_NUMBER || "2.2.5";
 
 // Used by the 'Create Public Link' functionality
-export const VERIFIER_PLUS_URL = env['VERIFIER_PLUS_URL'] || 'https://verifierplus.org';
+export const VERIFIER_PLUS_URL =
+  env["VERIFIER_PLUS_URL"] || "https://verifierplus.org";
 
 export const WAS = {
   enabled: true,
-  BASE_URL: 'https://storage.dcc.did.coop',
+  BASE_URL: "https://storage.dcc.did.coop",
   KEYS: {
-    SPACE_ID: 'was_space_id',
-    SIGNER_KEYPAIR: 'was_signer_json'
-  }
+    SPACE_ID: "was_space_id",
+    SIGNER_KEYPAIR: "was_signer_json",
+  },
 };
 export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10); // 10 days
 
@@ -24,23 +25,27 @@ export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10); // 
 export const FEATURE_FLAGS = {
   // true - original LCW behavior (require password at setup)
   // false - no password required
-  passwordProtect: true
+  passwordProtect: true,
 };
 
 // Display date format for VCs (expiration, date issued, etc)
-export const DATE_FORMAT = 'MMM D, YYYY';
+export const DATE_FORMAT = "MMM D, YYYY";
 
 // Deep Link / Universal App Link configuration
 export const LinkConfig = {
-    schemes: {
-        customProtocol: ['dccrequest://', 'org.dcconsortium://', 'https://lcw.app/request'],
-        universalAppLink: 'https://lcw.app/mobile'
-    },
-    registerWalletUrl: 'https://lcw.app/register-wallet.html',
-    appWebsite: {
-        home: 'https://lcw.app',
-        faq: 'https://lcw.app/faq.html'
-    }
+  schemes: {
+    customProtocol: [
+      "dccrequest://",
+      "org.dcconsortium://",
+      "https://lcw.app/request",
+    ],
+    universalAppLink: "https://lcw.app/mobile",
+  },
+  registerWalletUrl: "https://lcw.app/register-wallet.html",
+  appWebsite: {
+    home: "https://lcw.app",
+    faq: "https://lcw.app/faq.html",
+  },
 };
 
 /**
@@ -48,114 +53,122 @@ export const LinkConfig = {
  * @see https://docs.expo.dev/versions/latest/config/app/
  */
 export default {
-    displayName: 'Learner Credential Wallet',
-    expo: {
-        runtimeVersion: VERSION_NUMBER,
-        version: VERSION_NUMBER,
-        name: 'Learner Credential Wallet',
-        slug: 'learner-credential-wallet',
-        orientation: 'portrait',
-        icon: './app/assets/icon.png',
-        backgroundColor: '#1F2937',
-        splash: {
-            image: './app/assets/splash.png',
-            resizeMode: 'contain',
-            backgroundColor: '#1F2937'
-        },
-        updates: {
-            fallbackToCacheTimeout: 0
-        },
-        assetBundlePatterns: ['**/*'],
-        ios: {
-            buildNumber: BUILD_NUMBER.toString(),
-            supportsTablet: true,
-            bundleIdentifier: 'edu.mit.eduwallet',
-            deploymentTarget: '13.0',
-            entitlements: {
-                'com.apple.security.application-groups': [
-                    'group.edu.mit.eduwallet'
-                ]
+  displayName: "Learner Credential Wallet",
+  expo: {
+    runtimeVersion: VERSION_NUMBER,
+    version: VERSION_NUMBER,
+    name: "Learner Credential Wallet",
+    slug: "learner-credential-wallet",
+    orientation: "portrait",
+    icon: "./app/assets/icon.png",
+    backgroundColor: "#1F2937",
+    splash: {
+      image: "./app/assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#1F2937",
+    },
+    updates: {
+      fallbackToCacheTimeout: 0,
+    },
+    assetBundlePatterns: ["**/*"],
+    ios: {
+      buildNumber: BUILD_NUMBER.toString(),
+      supportsTablet: true,
+      bundleIdentifier: "edu.mit.eduwallet",
+      deploymentTarget: "15.0",
+      entitlements: {
+        "com.apple.security.application-groups": ["group.edu.mit.eduwallet"],
+      },
+      associatedDomains: ["applinks:lcw.app/mobile"],
+      infoPlist: {
+        CFBundleURLTypes: [
+          {
+            CFBundleURLSchemes: ["dccrequest"],
+          },
+        ],
+      },
+    },
+    android: {
+      versionCode: BUILD_NUMBER,
+      adaptiveIcon: {
+        foregroundImage: "./app/assets/adaptive-icon.png",
+        backgroundColor: "#1F2937",
+      },
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: false,
+          data: [
+            {
+              scheme: "dccrequest",
+              host: "request",
             },
-            associatedDomains: ['applinks:lcw.app/mobile'],
-            infoPlist: {
-                CFBundleURLTypes: [{
-                    CFBundleURLSchemes: ['dccrequest']
-                }]
-            }
-        },
-        android: {
-            versionCode: BUILD_NUMBER,
-            adaptiveIcon: {
-                foregroundImage: './app/assets/adaptive-icon.png',
-                backgroundColor: '#1F2937'
+            {
+              scheme: "dccrequest",
+              host: "present",
             },
-            intentFilters: [{
-                action: 'VIEW',
-                autoVerify: false,
-                data: [{
-                        scheme: 'dccrequest',
-                        host: 'request'
-                    },
-                    {
-                        scheme: 'dccrequest',
-                        host: 'present'
-                    }
-                ],
-                category: ['BROWSABLE', 'DEFAULT']
-            }],
-            package: 'app.lcw'
+          ],
+          category: ["BROWSABLE", "DEFAULT"],
         },
-        web: {
-            favicon: './app/assets/favicon.png'
+      ],
+      package: "app.lcw",
+    },
+    web: {
+      favicon: "./app/assets/favicon.png",
+    },
+    plugins: [
+      [
+        "react-native-vision-camera",
+        {
+          cameraPermissionText:
+            "$(PRODUCT_NAME) needs access to your Camera to scan QR codes.",
+          enableMicrophonePermission: false,
+          enableCodeScanner: true,
         },
-        plugins: [
-            [
-                'react-native-vision-camera',
-                {
-                    cameraPermissionText: '$(PRODUCT_NAME) needs access to your Camera to scan QR codes.',
-                    enableMicrophonePermission: false,
-                    enableCodeScanner: true
-                }
-            ],
-            ['expo-font'],
-            ['expo-secure-store'],
-            [
-                'expo-build-properties',
-                {
-                    android: {
-                        packagingOptions: {
-                            pickFirst: ['**/libcrypto.so']
-                        },
-                        compileSdkVersion: 35,
-                        targetSdkVersion: 35,
-                        minSdkVersion: 29,
-                        buildToolsVersion: '34.0.0'
-                    }
-                }
-            ]
-        ]
-    }
+      ],
+      ["expo-font"],
+      ["expo-secure-store"],
+      [
+        "expo-build-properties",
+        {
+          ios: {
+            newArchEnabled: false,
+          },
+          android: {
+            packagingOptions: {
+              pickFirst: ["**/libcrypto.so"],
+            },
+            compileSdkVersion: 35,
+            targetSdkVersion: 35,
+            minSdkVersion: 29,
+            buildToolsVersion: "34.0.0",
+          },
+        },
+      ],
+    ],
+  },
 };
 
-export const KnownDidRegistries = [{
-        name: 'DCC Pilot Registry',
-        url: 'https://digitalcredentials.github.io/issuer-registry/registry.json'
-    },
-    {
-        name: 'DCC Sandbox Registry',
-        url: 'https://digitalcredentials.github.io/sandbox-registry/registry.json'
-    },
-    {
-        name: 'DCC Community Registry',
-        url: 'https://digitalcredentials.github.io/community-registry/registry.json'
-    },
-    {
-        name: 'DCC Registry',
-        url: 'https://digitalcredentials.github.io/dcc-registry/registry.json'
-    }
+export const KnownDidRegistries = [
+  {
+    name: "DCC Pilot Registry",
+    url: "https://digitalcredentials.github.io/issuer-registry/registry.json",
+  },
+  {
+    name: "DCC Sandbox Registry",
+    url: "https://digitalcredentials.github.io/sandbox-registry/registry.json",
+  },
+  {
+    name: "DCC Community Registry",
+    url: "https://digitalcredentials.github.io/community-registry/registry.json",
+  },
+  {
+    name: "DCC Registry",
+    url: "https://digitalcredentials.github.io/dcc-registry/registry.json",
+  },
 ];
 
 export const CANCEL_PICKER_MESSAGES = [
-    'user canceled the document picker',
-    'User canceled document picker'
+  "user canceled the document picker",
+  "User canceled document picker",
 ];

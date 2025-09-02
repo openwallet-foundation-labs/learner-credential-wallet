@@ -75,7 +75,7 @@ describe('Utility Functions', () => {
   });
 
   describe('pickAndReadFile', () => {
-    const originalPlatform = Platform.OS;
+    const originalPlatform = Platform?.OS || 'ios';
 
     afterEach(() => {
       Object.defineProperty(Platform, 'OS', {
