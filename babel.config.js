@@ -2,17 +2,17 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: [['babel-preset-expo', { jsxRuntime: 'automatic' }]],
+    presets: [["babel-preset-expo", { jsxRuntime: "automatic" }]],
     plugins: [
       [
-        'module-resolver',
+        "module-resolver",
         {
           alias: {
-            'crypto': 'react-native-quick-crypto',
-            'stream': 'stream-browserify',
-            'buffer': '@craftzdog/react-native-buffer',
+            crypto: "./crypto-polyfill.js",
+            stream: "stream-browserify",
+            buffer: "@craftzdog/react-native-buffer",
             // TODO use Url from expo? https://docs.expo.dev/versions/unversioned/sdk/url/
-            'whatwg-url': 'react-native-url-polyfill',
+            "whatwg-url": "react-native-url-polyfill",
           },
         },
       ],

@@ -1,5 +1,5 @@
 import Realm from 'realm';
-import Crypto from 'react-native-quick-crypto';
+import { createHash, randomBytes } from 'crypto';
 
 import { Credential, CredentialRecordEntry, CredentialRecordRaw } from '../types/credential';
 import { db } from './DatabaseAccess';
@@ -9,7 +9,7 @@ type ObjectId = Realm.BSON.ObjectId;
 
 // Use native RNG for ObjectId to avoid crypto.getRandomValues path
 function generateCredentialObjectIdHex(): string {
-  return Crypto.randomBytes(12).toString('hex');
+  return randomBytes(12).toString('hex');
 }
 export class CredentialRecord extends Realm.Object implements CredentialRecordRaw {
   readonly _id!: ObjectId;

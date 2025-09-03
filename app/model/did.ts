@@ -1,11 +1,11 @@
 import Realm from 'realm';
-import Crypto from 'react-native-quick-crypto';
+import { createHash, randomBytes } from 'crypto';
 const ObjectId = Realm.BSON.ObjectId; 
 
 // Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
 let __OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);
 function generateObjectIdHex(): string {
-  return Crypto.randomBytes(12).toString('hex');
+  return randomBytes(12).toString('hex');
 }
 
 import { DidKey, DidDocument } from '../types/did';

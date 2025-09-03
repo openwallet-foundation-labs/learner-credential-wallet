@@ -8,12 +8,10 @@ import { QRScreenProps } from './QRScreen.d';
 import dynamicStyleSheet from './QRScreen.styles';
 import { errorMessageFrom } from '../../lib/error';
 import { useDynamicStyles } from '../../hooks';
-import {Camera, CodeType, useCameraDevice, useCameraFormat, useCodeScanner} from 'react-native-vision-camera';
+import QRCodeScanner from 'react-native-qrcode-scanner';
 import {useFocusEffect, useIsFocused} from '@react-navigation/native';
 import {useAppState} from '@react-native-community/hooks';
-import {Code} from 'react-native-vision-camera';
 import {useCameraPermissionStatus} from './useCameraPermissionStatus';
-const codeTypes: CodeType[] = ['qr'];
 export default function QRScreen({ navigation, route }: QRScreenProps)  {
   const { styles } = useDynamicStyles(dynamicStyleSheet);
   const { onReadQRCode, instructionText } = route.params;
@@ -54,9 +52,8 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
     }, []),
   );
 
-  async function onRead(codes: Code[]) {
-    const code = codes[0];
-    if (!code || !code.value) {
+  async function onRead(e: any) {
+    if (!e || !e.data) {
       return;
     }
     if (!isActivated.current) {
@@ -64,11 +61,10 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
     }
     deactivate();
     try {
-      await onReadQRCode(code.value);
+      await onReadQRCode(e.data);
     } catch (err) {
       setErrorMessage(errorMessageFrom(err));
     }
-
   }
 
   function onRequestModalClose() {
@@ -106,24 +102,13 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
   //   );
   // }
 
-  const codeScanner = useCodeScanner({
-    codeTypes: codeTypes,
-    onCodeScanned: onRead,
-  });
-
-  const device = useCameraDevice('back');
-
-  const format = useCameraFormat(device, [
-    {photoResolution: {width: 1920, height: 1080}},
-    {videoResolution: {width: 1920, height: 1080}},
-  ]);
   const isFocused = useIsFocused();
   const appState = useAppState();
   const isActive = isFocused && appState === 'active';
 
-  if (!device) {
+  if (status === 'denied') {
     return null;
-    // TODO should return <NoCameraView />;
+    // TODO should return <NoCameraPermissionView />;
   }
 
 
@@ -131,17 +116,12 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
     <View style={styles.scannerBody}>
       <NavHeader title="QR Code Scanner" goBack={navigation.goBack} />
       <Instructions />
-      <Camera
-        isActive={isActive}
-        device={device}
-        format={format}
-        codeScanner={codeScanner}
-        style={styles.cameraStyle}
-        // onError={logger.error}
-        photoHdr={false}
-        photo
-        video={false}
-        audio={false}
+      <QRCodeScanner
+        onRead={isActive ? onRead : () => {}}
+        cameraStyle={styles.cameraStyle}
+        showMarker={false}
+        reactivate={false}
+        reactivateTimeout={5000}
       />
       <View style={stylez.rectangleContainer}>
         <View

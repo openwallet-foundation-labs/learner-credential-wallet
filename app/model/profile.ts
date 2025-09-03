@@ -1,5 +1,5 @@
 import Realm from 'realm';
-import Crypto from 'react-native-quick-crypto';
+import { createHash, randomBytes } from 'crypto';
 import uuid from 'react-native-uuid';
 
 import { db } from './DatabaseAccess';
@@ -18,7 +18,7 @@ const ObjectId = Realm.BSON.ObjectId;
 // Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
 let __PROFILE_OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);
 function generateProfileObjectIdHex(): string {
-  return Crypto.randomBytes(12).toString('hex');
+  return randomBytes(12).toString('hex');
 }
 
 const UNTITLED_PROFILE_NAME = 'Untitled Profile';

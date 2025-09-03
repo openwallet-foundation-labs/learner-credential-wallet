@@ -59,6 +59,7 @@ export default {
     version: VERSION_NUMBER,
     name: "Learner Credential Wallet",
     slug: "learner-credential-wallet",
+    scheme: "exp+learner-credential-wallet",
     orientation: "portrait",
     icon: "./app/assets/icon.png",
     backgroundColor: "#1F2937",
@@ -75,7 +76,7 @@ export default {
       buildNumber: BUILD_NUMBER.toString(),
       supportsTablet: true,
       bundleIdentifier: "edu.mit.eduwallet",
-      deploymentTarget: "15.0",
+      deploymentTarget: "13.0",
       entitlements: {
         "com.apple.security.application-groups": ["group.edu.mit.eduwallet"],
       },
@@ -112,18 +113,23 @@ export default {
         },
       ],
       package: "app.lcw",
+      permissions: [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+      ],
     },
     web: {
       favicon: "./app/assets/favicon.png",
     },
     plugins: [
       [
-        "react-native-vision-camera",
+        "react-native-permissions",
         {
-          cameraPermissionText:
-            "$(PRODUCT_NAME) needs access to your Camera to scan QR codes.",
-          enableMicrophonePermission: false,
-          enableCodeScanner: true,
+          iosPermissions: ["ios.permission.CAMERA"],
+          androidPermissions: [
+            "android.permission.CAMERA",
+            "android.permission.READ_EXTERNAL_STORAGE",
+          ],
         },
       ],
       ["expo-font"],
@@ -138,6 +144,7 @@ export default {
             packagingOptions: {
               pickFirst: ["**/libcrypto.so"],
             },
+            newArchEnabled: false,
             compileSdkVersion: 35,
             targetSdkVersion: 35,
             minSdkVersion: 29,

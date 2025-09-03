@@ -16,6 +16,11 @@ config.resolver.unstable_enablePackageExports = true;
 // 👇 Order matters: "react-native" first, then fallbacks
 config.resolver.unstable_conditionNames = ["react-native", "require"];
 
+// Alias crypto to use our polyfill
+config.resolver.alias = {
+  crypto: require.resolve("./crypto-polyfill.js"),
+};
+
 // Add support for Realm binary files
 config.resolver.assetExts.push("realm");
 

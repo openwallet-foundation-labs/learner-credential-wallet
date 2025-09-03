@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { ScrollView, Image, Linking, AccessibilityInfo, Switch } from 'react-native';
-import { Text, ListItem } from 'react-native-elements';
+import { ScrollView, Image, Linking, AccessibilityInfo, Switch, View, Text } from 'react-native';
+import { ListItem } from 'react-native-elements';
 import { useSelector } from 'react-redux';
 import { createStackNavigator } from '@react-navigation/stack';
 import DeviceInfo from 'react-native-device-info';
@@ -38,19 +38,22 @@ function SettingsItem({ title, onPress, rightComponent, disabled }: SettingsItem
   );
 
   return (
-    <ListItem
-      containerStyle={styles.listItemContainer}
+    <TouchableOpacity
+      style={[
+        styles.listItemContainer,
+        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
+        disabled && styles.listItemContainerDisabled
+      ]}
       onPress={onPress}
       disabled={disabled}
-      disabledStyle={styles.listItemContainerDisabled}
     >
-      <ListItem.Content>
-        <ListItem.Title style={styles.listItemTitle}>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.listItemTitle}>
           {title}
-        </ListItem.Title>
-      </ListItem.Content>
+        </Text>
+      </View>
       {_rightComponent}
-    </ListItem>
+    </TouchableOpacity>
   );
 }
 
@@ -113,15 +116,15 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
     <>
       <NavHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.settingsContainer}>
-        <SettingsItem title="Use biometrics to unlock" onPress={onToggleBiometrics} rightComponent={biometricSwitch} disabled={!isBiometricsSupported} />
-        <SettingsItem title="Dark mode" onPress={toggleTheme} rightComponent={themeSwitch} />
-        <SettingsItem title="Manage profiles" onPress={() => navigation.navigate('ManageProfilesScreen')} />
-        <SettingsItem title="Register wallet" onPress={registerWallet} />
-        <SettingsItem title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
-        <SettingsItem title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
-        <SettingsItem title="Reset wallet" onPress={() => setResetModalOpen(true)} />
-        <SettingsItem title="About" onPress={() => navigation.navigate('About')} />
-        {FEATURE_FLAGS.passwordProtect && <SettingsItem title="Sign out" onPress={lockWallet} />}
+        <SettingsItem key="biometrics" title="Use biometrics to unlock" onPress={onToggleBiometrics} rightComponent={biometricSwitch} disabled={!isBiometricsSupported} />
+        <SettingsItem key="darkmode" title="Dark mode" onPress={toggleTheme} rightComponent={themeSwitch} />
+        <SettingsItem key="profiles" title="Manage profiles" onPress={() => navigation.navigate('ManageProfilesScreen')} />
+        <SettingsItem key="register" title="Register wallet" onPress={registerWallet} />
+        <SettingsItem key="restore" title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
+        <SettingsItem key="backup" title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
+        <SettingsItem key="reset" title="Reset wallet" onPress={() => setResetModalOpen(true)} />
+        <SettingsItem key="about" title="About" onPress={() => navigation.navigate('About')} />
+        {FEATURE_FLAGS.passwordProtect && <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />}
       </ScrollView>
       <ConfirmModal
         open={resetModalOpen}

@@ -54,9 +54,11 @@ describe('Utility Functions', () => {
 
   describe('readFile', () => {
     it('should return parsed embedded JSON from PNG file', async () => {
-      const pngHeader = 'iVBORw0KGgo=';
+      // Create proper fake PNG data with embedded JSON
+      const pngMagicBytes = '\x89PNG\r\n\x1a\n'; // PNG magic bytes
       const embeddedJson = JSON.stringify({ openbadgecredential: { name: 'Test' } });
-      const fakeContent = pngHeader + btoa(`randomtextopenbadgecredential${embeddedJson}`);
+      const pngWithEmbeddedData = pngMagicBytes + `randomtextopenbadgecredential${embeddedJson}`;
+      const fakeContent = Buffer.from(pngWithEmbeddedData, 'binary').toString('base64');
 
       (RNFS.readFile as jest.Mock).mockResolvedValueOnce(fakeContent);
 
@@ -75,16 +77,15 @@ describe('Utility Functions', () => {
   });
 
   describe('pickAndReadFile', () => {
-    const originalPlatform = Platform?.OS || 'ios';
-
-    afterEach(() => {
-      Object.defineProperty(Platform, 'OS', {
-        value: originalPlatform,
-      });
+    beforeEach(() => {
+      // Reset all mocks before each test
+      jest.clearAllMocks();
     });
 
     it('should pick and read a content:// file on Android', async () => {
-      Object.defineProperty(Platform, 'OS', { value: 'android' });
+      // Mock Platform.OS for this test
+      const mockPlatform = require('react-native').Platform;
+      mockPlatform.OS = 'android';
 
       (DocumentPicker.pickSingle as jest.Mock).mockResolvedValueOnce({
         uri: 'content://some/file.json',
@@ -101,9 +102,9 @@ describe('Utility Functions', () => {
     });
 
     it('should pick and read a file on Android', async () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'android',
-      });
+      // Mock Platform.OS for this test
+      const mockPlatform = require('react-native').Platform;
+      mockPlatform.OS = 'android';
 
       const fakeUri = 'file://test.json';
 
@@ -121,9 +122,9 @@ describe('Utility Functions', () => {
     });
 
     it('should pick and read a file on iOS', async () => {
-      Object.defineProperty(Platform, 'OS', {
-        value: 'ios',
-      });
+      // Mock Platform.OS for this test
+      const mockPlatform = require('react-native').Platform;
+      mockPlatform.OS = 'ios';
 
       const fakeUri = 'file://test.json';
 

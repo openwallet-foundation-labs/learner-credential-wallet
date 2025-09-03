@@ -1,5 +1,5 @@
 import React from 'react';
-import { ListItem } from 'react-native-elements';
+import { TouchableOpacity, View, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import dynamicStyleSheet from './MenuItem.styles';
@@ -10,8 +10,11 @@ export default function MenuItem({ icon, title, onPress }: MenuItemProps): React
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
 
   return (
-    <ListItem
-      containerStyle={styles.menuItemContainer}
+    <TouchableOpacity
+      style={[
+        styles.menuItemContainer,
+        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 }
+      ]}
       onPress={onPress}
     >
       { icon && (
@@ -21,9 +24,9 @@ export default function MenuItem({ icon, title, onPress }: MenuItemProps): React
           color={theme.color.iconInactive}
         />
       )}
-      <ListItem.Content>
-        <ListItem.Title style={styles.menuItemTitle}>{title}</ListItem.Title>
-      </ListItem.Content>
-    </ListItem>
+      <View style={{ flex: 1, marginLeft: icon ? 12 : 0 }}>
+        <Text style={styles.menuItemTitle}>{title}</Text>
+      </View>
+    </TouchableOpacity>
   );
 }
