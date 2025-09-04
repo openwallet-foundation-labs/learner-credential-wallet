@@ -85,7 +85,7 @@ async function createWasPublicLinkIfAvailable(
     // Extract just the credential object
     const credentialJson = JSON.stringify(rawCredentialRecord.credential);
 
-    const resource = space.resource('', {
+    const resource = space.resource(resourceUUID, {
       uuid: `urn:uuid:${resourceUUID}` as `urn:uuid:${string}`
     });
     console.log('Resource path:', resource.path);
