@@ -123,13 +123,12 @@ export default {
     },
     plugins: [
       [
-        "react-native-permissions",
+        "react-native-vision-camera",
         {
-          iosPermissions: ["ios.permission.CAMERA"],
-          androidPermissions: [
-            "android.permission.CAMERA",
-            "android.permission.READ_EXTERNAL_STORAGE",
-          ],
+          cameraPermissionText:
+            "$(PRODUCT_NAME) needs access to your Camera to scan QR codes.",
+          enableMicrophonePermission: false,
+          enableCodeScanner: true,
         },
       ],
       ["expo-font"],
