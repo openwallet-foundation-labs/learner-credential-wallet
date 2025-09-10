@@ -31,7 +31,7 @@ export function issuerRenderInfoWithVerification(
       issuerName: federationEntity.organization_name ?? '',
       issuerUrl: federationEntity.homepage_uri ?? '',
       issuerId: typeof issuer === 'string' ? null : issuer?.id ?? '',
-      issuerImage: federationEntity.logo_uri ?? '',
+      issuerImage: typeof issuer === 'object' ? imageSourceFrom(issuer.image) : null,
     };
   }
 
@@ -41,7 +41,7 @@ export function issuerRenderInfoWithVerification(
     issuerName: fallback.issuerName ?? '',
     issuerUrl: fallback.issuerUrl ?? '',
     issuerId: fallback.issuerId ?? '',
-    issuerImage: fallback.issuerImage ?? '',
+    issuerImage: matchingIssuer?.issuer?.federation_entity?.logo_uri ?? '',
   };
 }
 
