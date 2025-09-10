@@ -27,8 +27,8 @@ export async function createPublicLinkFor(
       await Cache.getInstance().store(CacheKey.PublicLinks, id, {
         server: WAS.BASE_URL,
         url: {
-          view: wasLink.replace(WAS.BASE_URL, ''),
-          unshare: wasLink.replace(WAS.BASE_URL, '')
+          view: wasLink,
+          unshare: wasLink
         },
       });
       return wasLink;
@@ -85,7 +85,7 @@ async function createWasPublicLinkIfAvailable(
     // Extract just the credential object
     const credentialJson = JSON.stringify(rawCredentialRecord.credential);
 
-    const resource = space.resource('', {
+    const resource = space.resource(resourceUUID, {
       uuid: `urn:uuid:${resourceUUID}` as `urn:uuid:${string}`
     });
     console.log('Resource path:', resource.path);
@@ -149,8 +149,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
       console.log('Unsharing WAS credential');
 
       if (!cachedSigner) {
-        const signer = await getRootSigner();
-        cachedSigner = signer;
+        cachedSigner = await getRootSigner();
       }
 
       if (cachedSigner) {
@@ -188,7 +187,7 @@ export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw
   try {
     const publicLinks = await Cache.getInstance()
       .load(CacheKey.PublicLinks, id) as StoreCredentialResult;
-    return `${publicLinks.server}${publicLinks.url.view}`;
+    return `${publicLinks.url.view}`;
   } catch (err) {
     if ((err as Error).name === 'NotFoundError') return null;
     throw err;

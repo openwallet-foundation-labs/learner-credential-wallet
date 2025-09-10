@@ -145,7 +145,8 @@ export function educationalOperationalCredentialFrom(credentialSubject: Subject)
 export function credentialIdFor(rawCredentialRecord: CredentialRecordRaw): string {
   const { credential } = rawCredentialRecord;
   const eoc = educationalOperationalCredentialFrom(credential.credentialSubject);
-  const id = credential.id || credential.credentialSubject.id || eoc?.id;
+  const achievement = credential.credentialSubject?.achievement;
+  const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || credential.credentialSubject.id || eoc?.id;
 
   if (!id) {
     throw new Error('Credential ID could not be resolved.');
