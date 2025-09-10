@@ -1,7 +1,7 @@
 {
   "private": true,
   "name": "learner-credential-wallet",
-  "version": "2.2.4",
+  "version": "2.2.5",
   "scripts": {
     "start": "npx expo start --dev-client -c",
     "android": "expo run:android",
