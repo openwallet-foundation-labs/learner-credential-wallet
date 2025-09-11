@@ -10,6 +10,7 @@
     "lint:fix": "eslint --fix ./app ./App.tsx && npm run compile",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest",
     "test:coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --coverage",
+    "coverage:open": "open coverage/lcov-report/index.html",
     "compile": "tsc --noEmit -p tsconfig.json && echo ✓ Passed TS compile check",
     "postinstall": "npx patch-package",
     "fix-deps": "npx expo install --check",
