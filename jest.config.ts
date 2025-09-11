@@ -25,6 +25,15 @@ const config: Config = {
     '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
   setupFiles: ['<rootDir>/jest.setup.js'],
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  collectCoverageFrom: [
+    'app/**/*.{js,jsx,ts,tsx}',
+    '!app/**/*.d.ts',
+    '!app/**/*.test.{js,jsx,ts,tsx}',
+    '!app/**/*.spec.{js,jsx,ts,tsx}',
+  ],
 };
 
 export default config;
