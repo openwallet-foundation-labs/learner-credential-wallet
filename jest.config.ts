@@ -6,7 +6,9 @@ const packagesToTransformWithBabel = [
   'expo-secure-store',
   'expo-modules-core',
   'react-native-fs',
-  '@digitalcredentials/http-client',
+  'base58-universal',
+  'base64url-universal',
+  '@digitalcredentials/*',
   'realm',
   '@realm', // <-- critical for @realm/fetch
 ];
