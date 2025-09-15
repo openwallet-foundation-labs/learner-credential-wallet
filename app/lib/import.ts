@@ -63,7 +63,8 @@ export async function readFile(uri: string): Promise<string> {
 
     if (isPngFile(base64Data)) {
       // Decode base64 to UTF-8 string for embedded JSON extraction
-      const decodedString = base64.decode(base64Data);
+      const arrayBuffer = base64ToArrayBuffer(base64Data);
+      const decodedString = new TextDecoder('utf-8').decode(arrayBuffer);
 
       // Search for the OpenBadge JSON inside PNG
       const keyword = 'openbadgecredential';
