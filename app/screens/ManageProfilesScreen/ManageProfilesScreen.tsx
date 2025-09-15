@@ -20,7 +20,7 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
   const dispatch = useAppDispatch();
 
   const rawProfileRecords = useSelectorFactory(makeSelectProfilesWithCredentials);
-  const flatListData = useMemo(() => [...rawProfileRecords].reverse(), [rawProfileRecords]);
+  const flatListData = useMemo(() => [...rawProfileRecords], [rawProfileRecords]);
 
   async function onPressCreate() {
     if (profileName !== '' ) {
@@ -103,8 +103,7 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
         />
       </ConfirmModal>
       <FlatList
-        inverted
-        ListFooterComponent={ListHeader}
+        ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.container}
         data={flatListData}
         renderItem={({ item }) =>
