@@ -28,7 +28,7 @@ export default function ApproveCredentialsScreen({ navigation, route }: ApproveC
   );
 
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  const showAcceptAllButton = pendingCredentials.length > 0;
+  const showAcceptAllButton = pendingCredentials.length > 1;
 
   async function goToHome() {
     await dispatch(clearFoyer());
