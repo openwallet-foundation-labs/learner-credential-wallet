@@ -22,7 +22,7 @@ export default function ProfileSelectionScreen({ navigation, route }: ProfileSel
     goBack = navigation.goBack,
   } = route.params || {};
 
-  const flatListData = useMemo(() => [...rawProfileRecords].reverse(), [rawProfileRecords]);
+  const flatListData = useMemo(() => [...rawProfileRecords], [rawProfileRecords]);
 
   useEffect(() => {
     console.log('Profile records:', rawProfileRecords);
@@ -43,8 +43,7 @@ export default function ProfileSelectionScreen({ navigation, route }: ProfileSel
     <>
       <NavHeader title="Choose Profile" goBack={goBack} />
       <FlatList
-        inverted
-        ListFooterComponent={ListHeader}
+        ListHeaderComponent={ListHeader}
         style={styles.container}
         data={flatListData}
         renderItem={({ item }) =>
