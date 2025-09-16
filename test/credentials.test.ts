@@ -1,6 +1,7 @@
-import { securityLoader } from '@digitalcredentials/security-document-loader';
-import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
-import * as vc from '@digitalcredentials/vc';
+// Mock external dependencies
+jest.mock('@digitalcredentials/security-document-loader');
+jest.mock('@digitalcredentials/ed25519-signature-2020');
+jest.mock('@digitalcredentials/vc');
 
 import { getCredentialStatusChecker } from '../app/lib/credentialStatus';
 import { rawVcRecords, mockCredential } from '../app/mock/credential';
