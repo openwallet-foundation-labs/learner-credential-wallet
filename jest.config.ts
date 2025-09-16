@@ -11,6 +11,9 @@ const packagesToTransformWithBabel = [
   '@digitalcredentials/*',
   'realm',
   '@realm', // <-- critical for @realm/fetch
+  'react-redux',
+  '@reduxjs/toolkit',
+  '@testing-library/react-native'
 ];
 
 const transformIgnorePatterns = [
