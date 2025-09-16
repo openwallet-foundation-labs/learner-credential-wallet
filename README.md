@@ -30,6 +30,19 @@ or to apply for jobs with employers—in an interoperable manner.
 The Digital Credentials Consortium is working with a number of colleges and 
 universities to [pilot test](https://lcw.app/pilot.html) the wallet.
 
+## Contributing:
+Please refer to CONTRIBUTING.md for information on how to contribute to this project.
+
+## Community
+Developers are welcome to open issues and PR's on this repository (for more information on how to contribute, please refer to CONTRIBUTING.md). The Learner Credential Wallet is one project out of many at the [Digital Credentials Consortium](https://digitalcredentials.mit.edu/). The DCC sends out regular updates on all the software we produce. If you would like to sign up for our software-specific mailing list, you can do so by going [here](You can sign up here:
+https://mailman.mit.edu/mailman/listinfo/dcc-software-support).
+
+The archive of DCC software updates is hosted [here](https://mailman.mit.edu/pipermail/dcc-software-support/).
+
+Additionally, we hold a monthly Technical Office Hours meeting on the third Thursday of every month, from 9:30-10:30am EST. You can register for these office hours [here](https://mit.zoom.us/meeting/register/a2DmLpFjSIeXXYVTX7Uabg#/registration).
+
+Please note, being part of the OpenWallet Foundation, we expect all interactions to adhere to the [Antitrust Policy](https://wiki.hyperledger.org/download/attachments/29034696/Antitrustnotice.png?version=1&modificationDate=1581695654000&api=v2) and [Code of Conduct][code-of-conduct].
+
 
 ## Development Setup
 
