@@ -90,7 +90,7 @@
     "handlebars": "^4.7.8",
     "html-entities": "^2.3.2",
     "json-canonicalize": "^1.0.4",
-    "jsonpath-plus": "^7.2.0",
+    "jsonpath-plus": "^10.3.0",
     "moment": "^2.29.1",
     "postinstall-postinstall": "^2.1.0",
     "query-string": "^7.1.0",
