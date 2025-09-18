@@ -112,8 +112,7 @@ export default function AddScreen(): React.ReactElement {
       <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
         <View style={styles.container}>
           <Text style={styles.paragraph}>
-          To add credentials, follow an approved link from an issuer (most often a
-          University) or use the options below.
+         To add a credential, follow an approved link from an issuer or use the options below.
           </Text>
           <Button
             title="Scan QR code"
