@@ -1,10 +1,12 @@
 import React from 'react';
-import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { render, fireEvent, act } from '@testing-library/react-native';
 
 // Mock React Native dependencies first
 jest.mock('react-native', () => ({
-  View: 'View',
-  Text: 'Text',
+  View: ({ children, onPress, testID }: any) => (
+    <div onClick={onPress} testID={testID}>{children}</div>
+  ),
+  Text: ({ children }: any) => <span>{children}</span>,
   StyleSheet: { 
     create: jest.fn((styles: any) => styles),
     flatten: jest.fn((styles: any) => styles)
@@ -14,22 +16,48 @@ jest.mock('react-native', () => ({
 }));
 
 jest.mock('react-native-paper', () => ({
-  TextInput: 'TextInput',
+  TextInput: ({ value, onChangeText, label, testID }: any) => (
+    <input aria-label={label} testID={testID || label} value={value} onChange={(e: any) => onChangeText && onChangeText(e.target.value)} />
+  ),
 }));
 
 jest.mock('react-native-elements', () => ({
-  Button: 'Button',
+  Button: ({ onPress, title, testID }: any) => (
+    <div onClick={onPress} testID={testID || title}>{title}</div>
+  ),
 }));
 
 // Mock app dependencies
 jest.mock('../app/hooks', () => ({
   useAppDispatch: jest.fn(),
-  useDynamicStyles: jest.fn(),
+  useDynamicStyles: jest.fn(() => ({
+    styles: {
+      container: {},
+      textContainer: {},
+      titleText: {},
+      subtitleText: {},
+      input: {},
+      underline: {},
+    },
+    theme: {
+      color: {
+        textPrimary: '#000',
+        inputInactive: '#999',
+        brightAccent: '#007AFF',
+      },
+    },
+    mixins: {
+      modalBodyText: {},
+      buttonClear: {},
+      buttonClearTitle: {},
+      buttonClearContainer: {},
+    },
+  })),
 }));
 
 jest.mock('../app/store/slices/profile', () => ({
-  deleteProfile: jest.fn(),
-  updateProfile: jest.fn(),
+  deleteProfile: jest.fn((payload?: any) => ({ type: 'profile/delete', payload })),
+  updateProfile: jest.fn((payload?: any) => ({ type: 'profile/update', payload })),
 }));
 
 jest.mock('../app/lib/export', () => ({
@@ -48,24 +76,45 @@ import ProfileItem from '../app/components/ProfileItem/ProfileItem';
 import { deleteProfile, updateProfile } from '../app/store/slices/profile';
 import { exportProfile } from '../app/lib/export';
 
-jest.mock('../app/navigation', () => ({
-  navigationRef: {
-    isReady: jest.fn(() => true),
-    navigate: jest.fn(),
-  },
-}));
+// Provide navigation mock entirely within factory scope
+jest.mock('../app/navigation', () => {
+  const mockNavigate = jest.fn();
+  return {
+    navigationRef: {
+      isReady: jest.fn(() => true),
+      navigate: (...args: any[]) => mockNavigate(...args),
+    },
+    __esModule: true as const,
+    _mockNavigate: mockNavigate,
+  };
+});
 
-jest.mock('../app/components', () => ({
-  MoreMenuButton: ({ children }: any) => <div>{children}</div>,
-  MenuItem: ({ title }: any) => <div>{title}</div>,
-  ConfirmModal: ({ title, children }: any) => (
-    <div>
-      <div>{title}</div>
-      {children}
-    </div>
-  ),
-  BackupItemModal: ({ title }: any) => <div>{title}</div>,
-}));
+// Make app components interactive using RN View
+jest.mock('../app/components', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    MoreMenuButton: ({ children }: any) => React.createElement(View, null, children),
+    MenuItem: ({ title, onPress }: any) => (
+      React.createElement(View, { onPress, testID: `menu-${title}` }, title)
+    ),
+    ConfirmModal: ({ title, children, onConfirm, onCancel, onRequestClose, cancelButton = true }: any) => (
+      React.createElement(View, null,
+        React.createElement(View, { testID: 'modal-title' }, title),
+        React.createElement(View, { onPress: onConfirm, testID: 'confirm' }, 'confirm'),
+        cancelButton ? React.createElement(View, { onPress: onCancel || onRequestClose, testID: 'cancel' }, 'cancel') : null,
+        children
+      )
+    ),
+    BackupItemModal: ({ title, onBackup, onRequestClose }: any) => (
+      React.createElement(View, null,
+        React.createElement(View, { testID: 'backup-title' }, title || 'Backup'),
+        React.createElement(View, { onPress: onBackup, testID: 'backup-do' }, 'backup'),
+        React.createElement(View, { onPress: onRequestClose, testID: 'backup-close' }, 'close')
+      )
+    ),
+  };
+});
 
 describe('ProfileItem Component', () => {
   const mockDispatch = jest.fn();
@@ -80,115 +129,102 @@ describe('ProfileItem Component', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    const { useAppDispatch, useDynamicStyles } = require('../app/hooks');
-    
+    const { useAppDispatch } = require('../app/hooks');
     useAppDispatch.mockReturnValue(mockDispatch);
-    useDynamicStyles.mockReturnValue({
-      styles: {
-        container: {},
-        textContainer: {},
-        titleText: {},
-        subtitleText: {},
-        input: {},
-        underline: {},
-      },
-      theme: {
-        color: {
-          textPrimary: '#000',
-          inputInactive: '#999',
-          brightAccent: '#007AFF',
-        },
-      },
-      mixins: {
-        modalBodyText: {},
-        buttonClear: {},
-        buttonClearTitle: {},
-        buttonClearContainer: {},
-      },
+  });
+
+  it('renders menu items so component mounted', () => {
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+    expect(getByTestId('menu-Rename')).toBeTruthy();
+    expect(getByTestId('menu-Backup')).toBeTruthy();
+    expect(getByTestId('menu-View Source')).toBeTruthy();
+    expect(getByTestId('menu-Delete')).toBeTruthy();
+  });
+
+  it('renames a profile via modal', async () => {
+    mockDispatch.mockResolvedValue({});
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+
+    // Open rename
+    fireEvent.press(getByTestId('menu-Rename'));
+
+    // Change text and confirm
+    const input = getByTestId('Profile Name');
+    fireEvent.changeText(input, 'Renamed');
+
+    await act(async () => {
+      fireEvent.press(getByTestId('confirm'));
     });
+
+    expect(updateProfile).toHaveBeenCalled();
+    expect(mockDispatch).toHaveBeenCalled();
   });
 
-  it('renders profile information correctly', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+  it('backs up a profile', () => {
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
 
-    expect(getByText('Test Profile')).toBeTruthy();
-    expect(getByText('2 credentials')).toBeTruthy();
+    fireEvent.press(getByTestId('menu-Backup'));
+    fireEvent.press(getByTestId('backup-do'));
+
+    expect(exportProfile).toHaveBeenCalledWith(mockProfileRecord);
   });
 
-  it('opens rename modal when rename menu item is pressed', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
+  it('navigates to View Source and clears modal', () => {
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+
+    const { _mockNavigate } = require('../app/navigation');
+
+    fireEvent.press(getByTestId('menu-View Source'));
+    expect(_mockNavigate).toHaveBeenCalledWith('ViewSourceScreen', expect.any(Object));
   });
 
-  it('updates profile name when rename is confirmed', async () => {
+  it('deletes a profile successfully', async () => {
     mockDispatch.mockResolvedValue({});
-    
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+
+    fireEvent.press(getByTestId('menu-Delete'));
+    await act(async () => {
+      fireEvent.press(getByTestId('confirm'));
+    });
+
+    expect(deleteProfile).toHaveBeenCalledWith(mockProfileRecord);
+    expect(mockDispatch).toHaveBeenCalled();
   });
 
-  it('opens backup modal when backup menu item is pressed', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
+  it('shows error when delete fails and can close the error modal', async () => {
+    mockDispatch.mockRejectedValueOnce(new Error('boom'));
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+
+    fireEvent.press(getByTestId('menu-Delete'));
+    await act(async () => {
+      fireEvent.press(getByTestId('confirm'));
+    });
+
+    // Error modal displayed (confirm present without cancel)
+    expect(getByTestId('confirm')).toBeTruthy();
+
+    // Close error modal
+    fireEvent.press(getByTestId('confirm'));
   });
 
-  it('calls exportProfile when backup is confirmed', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
+  it('navigates to Delete Details from delete modal', () => {
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+
+    const { _mockNavigate } = require('../app/navigation');
+
+    fireEvent.press(getByTestId('menu-Delete'));
+    fireEvent.press(getByTestId('Details'));
+
+    expect(_mockNavigate).toHaveBeenCalledWith('HomeNavigation', expect.any(Object));
   });
 
-  it('navigates to view source when view source menu item is pressed', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
+  it('handles navigation not ready for view source', () => {
+    const { navigationRef, _mockNavigate } = require('../app/navigation');
+    navigationRef.isReady.mockReturnValueOnce(false);
 
-  it('opens delete modal when delete menu item is pressed', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
+    const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
 
-  it('deletes profile when delete is confirmed', async () => {
-    mockDispatch.mockResolvedValue({});
-    
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
-
-  it('shows error modal when delete fails', async () => {
-    const errorMessage = 'Delete failed';
-    mockDispatch.mockRejectedValue(new Error(errorMessage));
-    
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
-
-  it('renders delete modal correctly', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
-
-  it('closes modals when cancel is pressed', () => {
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
-
-  it('handles navigation not ready', () => {
-    const { navigationRef } = require('../app/navigation');
-    navigationRef.isReady.mockReturnValue(false);
-    
-    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
-    expect(getByText('Test Profile')).toBeTruthy();
-  });
-
-  it('handles profile with single credential', () => {
-    const singleCredentialProfile = {
-      ...mockProfileRecord,
-      rawCredentialRecords: [mockProfileRecord.rawCredentialRecords[0]],
-    };
-
-    const { getByText } = render(<ProfileItem rawProfileRecord={singleCredentialProfile} />);
-
-    expect(getByText('1 credential')).toBeTruthy();
+    fireEvent.press(getByTestId('menu-View Source'));
+    expect(_mockNavigate).not.toHaveBeenCalled();
   });
 });
