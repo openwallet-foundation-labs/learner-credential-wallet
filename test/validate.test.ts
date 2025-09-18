@@ -55,7 +55,7 @@ describe('validate', () => {
 
   describe('verifyCredential', () => {
     it('should verify credential successfully', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       const mockResult = {
         verified: true,
         log: [{ id: 'test', valid: true }],
@@ -70,7 +70,7 @@ describe('validate', () => {
     });
 
     it('should handle credential with error in results', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       const mockResult = {
         verified: true,
         log: [{ id: 'test', valid: true }],
@@ -84,11 +84,11 @@ describe('validate', () => {
       
       const result = await verifyCredential(mockCredential);
       
-      expect(result.results[0].log).toEqual([{ id: 'error', valid: false }]);
+      expect((result as any).results[0].log).toEqual([{ id: 'error', valid: false }]);
     });
 
     it('should handle missing log in response', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       const mockResult = { verified: true };
       
       (verifierCore.verifyCredential as jest.Mock).mockResolvedValue(mockResult);
@@ -97,7 +97,7 @@ describe('validate', () => {
     });
 
     it('should create results when missing', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       const mockResult = {
         verified: true,
         log: [{ id: 'test', valid: true }]
@@ -107,12 +107,12 @@ describe('validate', () => {
       
       const result = await verifyCredential(mockCredential);
       
-      expect(result.results).toHaveLength(1);
-      expect(result.results[0].verified).toBe(true);
+      expect((result as any).results).toHaveLength(1);
+      expect((result as any).results[0].verified).toBe(true);
     });
 
     it('should handle revocation status not found', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       const mockResult = {
         verified: false,
         log: [
@@ -127,11 +127,11 @@ describe('validate', () => {
       const result = await verifyCredential(mockCredential);
       
       expect(result.verified).toBe(true);
-      expect(result.log).toHaveLength(1);
+      expect((result as any).log).toHaveLength(1);
     });
 
     it('should handle revocation status error', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       const mockResult = {
         verified: false,
         log: [
@@ -145,15 +145,15 @@ describe('validate', () => {
       
       const result = await verifyCredential(mockCredential);
       
-      expect(result.hasStatusError).toBe(true);
-      expect(result.results[0].log).toContainEqual({
+      expect((result as any).hasStatusError).toBe(true);
+      expect((result as any).results[0].log).toContainEqual({
         id: 'revocation_status',
         valid: false
       });
     });
 
     it('should throw error on verification exception', async () => {
-      const mockCredential = { type: 'VerifiableCredential' } as Credential;
+      const mockCredential = { type: 'VerifiableCredential' } as unknown as Credential;
       
       (verifierCore.verifyCredential as jest.Mock).mockRejectedValue(new Error('Network error'));
       

@@ -36,7 +36,7 @@ describe('dynamicStyles', () => {
 
   describe('createDynamicStyleSheet', () => {
     it('should create dynamic stylesheet with theme and mixins', () => {
-      const styleResolver = (dynamicStyles: DynamicStyles) => ({
+      const styleResolver = (dynamicStyles: any) => ({
         container: {
           backgroundColor: dynamicStyles.theme.color.primary,
           ...dynamicStyles.mixins.button
@@ -49,7 +49,7 @@ describe('dynamicStyles', () => {
       });
 
       const dynamicStyleSheet = createDynamicStyleSheet(styleResolver);
-      const styles = dynamicStyleSheet(mockDynamicStyles);
+      const styles: any = dynamicStyleSheet(mockDynamicStyles);
 
       expect(StyleSheet.create).toHaveBeenCalledWith({
         container: {
@@ -89,7 +89,7 @@ describe('dynamicStyles', () => {
     });
 
     it('should handle complex nested styles', () => {
-      const complexStyleResolver = (dynamicStyles: DynamicStyles) => ({
+      const complexStyleResolver = (dynamicStyles: any) => ({
         card: {
           backgroundColor: dynamicStyles.theme.color.primary,
           padding: 20
@@ -105,7 +105,7 @@ describe('dynamicStyles', () => {
       });
 
       const dynamicStyleSheet = createDynamicStyleSheet(complexStyleResolver);
-      const styles = dynamicStyleSheet(mockDynamicStyles);
+      const styles: any = dynamicStyleSheet(mockDynamicStyles);
 
       expect(styles).toHaveProperty('card');
       expect(styles).toHaveProperty('cardTitle');

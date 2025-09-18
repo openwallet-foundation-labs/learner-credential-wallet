@@ -3,10 +3,8 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 
 // Mock React Native dependencies first
 jest.mock('react-native', () => ({
-  View: ({ children, onPress, testID }: any) => (
-    <div onClick={onPress} testID={testID}>{children}</div>
-  ),
-  Text: ({ children }: any) => <span>{children}</span>,
+  View: 'View',
+  Text: 'Text',
   StyleSheet: { 
     create: jest.fn((styles: any) => styles),
     flatten: jest.fn((styles: any) => styles)
@@ -15,17 +13,25 @@ jest.mock('react-native', () => ({
   Platform: { OS: 'ios', select: jest.fn((obj: any) => obj.ios) },
 }));
 
-jest.mock('react-native-paper', () => ({
-  TextInput: ({ value, onChangeText, label, testID }: any) => (
-    <input aria-label={label} testID={testID || label} value={value} onChange={(e: any) => onChangeText && onChangeText(e.target.value)} />
-  ),
-}));
+jest.mock('react-native-paper', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    TextInput: ({ value, onChangeText, label, testID }: any) => (
+      React.createElement(View, { testID: testID || label, value, onChangeText })
+    ),
+  };
+});
 
-jest.mock('react-native-elements', () => ({
-  Button: ({ onPress, title, testID }: any) => (
-    <div onClick={onPress} testID={testID || title}>{title}</div>
-  ),
-}));
+jest.mock('react-native-elements', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    Button: ({ onPress, title, testID }: any) => (
+      React.createElement(View, { onPress, testID: testID || title }, title)
+    ),
+  };
+});
 
 // Mock app dependencies
 jest.mock('../app/hooks', () => ({
