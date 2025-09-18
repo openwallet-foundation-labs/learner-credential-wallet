@@ -18,7 +18,11 @@ export class Cache {
   }
 
   async load(key: string, id: string): Promise<unknown> {
-    return this.storage.load({ key, id }) || {};
+    try {
+      return await this.storage.load({ key, id }) || {};
+    } catch {
+      return {};
+    }
   }
 
   async store(key: string, id: string, data: unknown, expires: number | null = null ): Promise<void> {

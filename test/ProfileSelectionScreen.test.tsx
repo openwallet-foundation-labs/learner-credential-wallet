@@ -1,25 +1,45 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 
-// Mock React Native dependencies
-jest.mock('react-native', () => ({
-  FlatList: 'FlatList',
-  Text: 'Text',
-  View: 'View',
-  StyleSheet: { 
-    create: jest.fn((styles: any) => styles),
-    flatten: jest.fn((styles: any) => styles)
-  },
-  Dimensions: { get: jest.fn(() => ({ width: 375, height: 667 })) },
-  Platform: { OS: 'ios', select: jest.fn((obj: any) => obj.ios) },
-}));
+// Mock React Native dependencies with a functional FlatList
+jest.mock('react-native', () => {
+  const React = require('react');
+  const View = 'View';
+  const Text = 'Text';
+  const FlatList = ({ ListHeaderComponent, data, renderItem, style }: any) => (
+    React.createElement('View', { style },
+      ListHeaderComponent || null,
+      Array.isArray(data) ? data.map((item: any, index: number) => (
+        React.createElement('View', { key: String(index) }, renderItem({ item, index }))
+      )) : null
+    )
+  );
+  return {
+    FlatList,
+    Text,
+    View,
+    StyleSheet: { 
+      create: jest.fn((styles: any) => styles),
+      flatten: jest.fn((styles: any) => styles)
+    },
+    Dimensions: { get: jest.fn(() => ({ width: 375, height: 667 })) },
+    Platform: { OS: 'ios', select: jest.fn((obj: any) => obj.ios) },
+  };
+});
 
-jest.mock('react-native-elements', () => ({
-  Button: 'Button',
-  ListItem: {
-    Chevron: 'Chevron'
-  }
-}));
+// Make Button interactive so we can simulate presses (RN-style)
+jest.mock('react-native-elements', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return {
+    Button: ({ onPress, title }: any) => (
+      React.createElement(View, { onPress, testID: `button-${title}` }, title)
+    ),
+    ListItem: {
+      Chevron: 'Chevron'
+    }
+  };
+});
 
 jest.mock('react-redux', () => ({
   useSelector: jest.fn(),
@@ -94,12 +114,21 @@ describe('ProfileSelectionScreen', () => {
     expect(UNSAFE_root).toBeTruthy();
   });
 
+  it('pressing a profile button calls onSelectProfile', () => {
+    const { getByTestId } = render(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    );
+
+    const profileBtn = getByTestId('button-Profile 1');
+    fireEvent.press(profileBtn);
+    expect(mockOnSelectProfile).toHaveBeenCalledWith(mockProfiles[0]);
+  });
+
   it('calls navigation.goBack when nav header back is pressed', () => {
     const { UNSAFE_root } = render(
       <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
     );
     expect(UNSAFE_root).toBeTruthy();
-    // Test passes since component renders
   });
 
   it('handles empty profile list', () => {
@@ -172,7 +201,6 @@ describe('ProfileSelectionScreen', () => {
       <ProfileSelectionScreen navigation={mockNavigation} route={routeWithCustomGoBack} />
     );
     expect(UNSAFE_root).toBeTruthy();
-    // Test passes since component renders
   });
 
   it('uses navigation goBack when no custom function provided', () => {
@@ -181,15 +209,6 @@ describe('ProfileSelectionScreen', () => {
     const goBackFunction = routeParams.goBack || navigationGoBack;
     goBackFunction();
     expect(mockGoBack).toHaveBeenCalled();
-  });
-
-  it('handles profile selection callback', () => {
-    const selectedProfile = mockProfiles[1];
-    const onProfilePress = () => {
-      mockOnSelectProfile(selectedProfile);
-    };
-    onProfilePress();
-    expect(mockOnSelectProfile).toHaveBeenCalledWith(selectedProfile);
   });
 
   it('formats profile list data correctly', () => {
@@ -215,38 +234,5 @@ describe('ProfileSelectionScreen', () => {
       <ProfileSelectionScreen navigation={mockNavigation} route={emptyRoute} />
     );
     expect(UNSAFE_root).toBeTruthy();
-  });
-
-  it('handles multiple profile selection scenarios', () => {
-    const testScenarios: Array<{ profiles: any[]; shouldAutoSelect: boolean }> = [
-      { profiles: [], shouldAutoSelect: false },
-      { profiles: [mockProfiles[0]], shouldAutoSelect: true },
-      { profiles: mockProfiles, shouldAutoSelect: false }
-    ];
-    
-    testScenarios.forEach(({ profiles, shouldAutoSelect }) => {
-      const mockCallback = jest.fn();
-      
-      if (profiles.length === 1) {
-        mockCallback(profiles[0]);
-      }
-      
-      if (shouldAutoSelect) {
-        expect(mockCallback).toHaveBeenCalled();
-      } else {
-        expect(mockCallback).not.toHaveBeenCalled();
-      }
-      
-      mockCallback.mockClear();
-    });
-  });
-
-  it('handles theme configuration', () => {
-    const { useDynamicStyles } = require('../app/hooks');
-    const mockTheme = useDynamicStyles();
-    
-    expect(mockTheme.theme?.color).toHaveProperty('textSecondary', '#666');
-    expect(mockTheme.mixins).toHaveProperty('paragraphText');
-    expect(mockTheme.mixins).toHaveProperty('buttonIcon');
   });
 });
