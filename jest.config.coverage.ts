@@ -9,9 +9,6 @@ const packagesToTransformWithBabel = [
   '@digitalcredentials/http-client',
   'realm',
   '@realm', // <-- critical for @realm/fetch
-  'react-redux',
-  '@reduxjs/toolkit',
-  '@testing-library/react-native'
 ];
 
 const transformIgnorePatterns = [
@@ -28,7 +25,15 @@ const config: Config = {
     '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js',
   },
   setupFiles: ['<rootDir>/jest.setup.js'],
-  // Coverage disabled for default test runs - use jest.config.coverage.ts for coverage
+  collectCoverage: true,
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  collectCoverageFrom: [
+    'app/**/*.{js,jsx,ts,tsx}',
+    '!app/**/*.d.ts',
+    '!app/**/*.test.{js,jsx,ts,tsx}',
+    '!app/**/*.spec.{js,jsx,ts,tsx}',
+  ],
 };
 
 export default config;
