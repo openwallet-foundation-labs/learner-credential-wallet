@@ -1,17 +1,5 @@
-import {
-  isPngFile,
-  readFile,
-  pickAndReadFile,
-  importProfileFrom,
-  importWalletFrom,
-  importWalletOrProfileFrom,
-  aggregateCredentialReports,
-  credentialReportDetailsFrom,
-} from '../app/lib/import';
-
 import DocumentPicker from 'react-native-document-picker';
 import * as RNFS from 'react-native-fs';
-import { ProfileRecord } from '../app/model/profile';
 import { Platform } from 'react-native';
 
 jest.mock('react-native-document-picker', () => ({
@@ -28,15 +16,46 @@ jest.mock('react-native-fs', () => ({
   TemporaryDirectoryPath: '/tmp',
 }));
 
-jest.mock('../app/model/profile', () => ({
+jest.mock('react-native-securerandom', () => ({
+  generateSecureRandom: jest.fn(),
+}));
+
+jest.mock('react-native-keychain', () => ({
+  setInternetCredentials: jest.fn(),
+  getInternetCredentials: jest.fn(),
+  resetInternetCredentials: jest.fn(),
+}));
+
+const mockImportProfileRecord = jest.fn();
+
+// Mock the entire model module
+jest.mock('../app/model', () => ({
   ProfileRecord: {
-    importProfileRecord: jest.fn(),
+    importProfileRecord: mockImportProfileRecord,
+  },
+}));
+
+jest.mock('react-native', () => ({
+  Platform: {
+    OS: 'android',
   },
 }));
 
 jest.mock('react-native/Libraries/Utilities/Platform', () => ({
   OS: 'android',
 }));
+
+// Import after mocking
+const {
+  isPngFile,
+  readFile,
+  pickAndReadFile,
+  importProfileFrom,
+  importWalletFrom,
+  importWalletOrProfileFrom,
+  aggregateCredentialReports,
+  credentialReportDetailsFrom,
+} = require('../app/lib/import');
 
 describe('Utility Functions', () => {
   describe('isPngFile', () => {
@@ -162,7 +181,7 @@ describe('Utility Functions', () => {
 
   describe('importProfileFrom', () => {
     it('should process profile import', async () => {
-      (ProfileRecord.importProfileRecord as jest.Mock).mockResolvedValueOnce({
+      mockImportProfileRecord.mockResolvedValueOnce({
         userIdImported: true,
         credentials: {
           success: ['a'],
@@ -179,7 +198,7 @@ describe('Utility Functions', () => {
 
   describe('importWalletFrom', () => {
     it('should process wallet import with multiple records', async () => {
-      (ProfileRecord.importProfileRecord as jest.Mock)
+      mockImportProfileRecord
         .mockResolvedValueOnce({
           userIdImported: true,
           credentials: { success: ['1'], duplicate: [], failed: [] },
@@ -199,18 +218,18 @@ describe('Utility Functions', () => {
 
   describe('importWalletOrProfileFrom', () => {
     it('should call wallet import for an array', async () => {
-      const spy = jest.spyOn(ProfileRecord, 'importProfileRecord').mockResolvedValue({
+      mockImportProfileRecord.mockResolvedValue({
         userIdImported: true,
         credentials: { success: ['x'], duplicate: [], failed: [] },
       });
 
       const result = await importWalletOrProfileFrom(JSON.stringify([{}]));
       expect(result).toHaveProperty('1 item successfully imported');
-      expect(spy).toHaveBeenCalled();
+      expect(mockImportProfileRecord).toHaveBeenCalled();
     });
 
     it('should call profile import for an object', async () => {
-      const spy = jest.spyOn(ProfileRecord, 'importProfileRecord').mockResolvedValue({
+      mockImportProfileRecord.mockResolvedValue({
         userIdImported: true,
         credentials: { success: [], duplicate: ['a'], failed: ['b'] },
       });

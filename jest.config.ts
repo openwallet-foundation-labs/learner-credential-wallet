@@ -9,6 +9,9 @@ const packagesToTransformWithBabel = [
   '@digitalcredentials/http-client',
   'realm',
   '@realm', // <-- critical for @realm/fetch
+  'react-redux',
+  '@reduxjs/toolkit',
+  '@testing-library/react-native'
 ];
 
 const transformIgnorePatterns = [

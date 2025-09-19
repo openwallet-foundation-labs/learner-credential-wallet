@@ -137,6 +137,84 @@ A custom display can be created for different credentials, to do so:
 
 
 ## Accessibility
+
+The Learner Credential Wallet is designed to be accessible to all users, including those with disabilities. We follow WCAG 2.1 AA guidelines and have conducted comprehensive accessibility testing.
+
+### Enabling Accessibility Features
+
+#### iOS
+1. Open **Settings** > **Accessibility**
+2. Enable relevant features:
+   - **VoiceOver**: Screen reader for blind and low-vision users
+   - **Voice Control**: Navigate using voice commands
+   - **Switch Control**: Use external switches for navigation
+   - **Zoom**: Magnify screen content
+   - **Display & Text Size**: Adjust text size, contrast, and reduce motion
+
+#### Android
+1. Open **Settings** > **Accessibility**
+2. Enable relevant features:
+   - **TalkBack**: Screen reader service
+   - **Voice Access**: Voice control navigation
+   - **Switch Access**: External switch navigation
+   - **Magnification**: Screen magnification
+   - **High contrast text** and **Large text**: Visual accessibility options
+
+### Accessibility Features in LCW
+
+- **Screen Reader Support**: All UI elements include proper labels and descriptions
+- **Keyboard Navigation**: Full app functionality available via external keyboards
+- **High Contrast**: Supports system-wide high contrast modes
+- **Large Text**: Respects system font size preferences
+- **Voice Control**: Compatible with voice navigation systems
+- **Reduced Motion**: Honors system preferences for reduced animations
+
+### Testing Accessibility
+
+#### For Developers
+
+**iOS Accessibility Testing:**
+1. Run app on iOS simulator
+2. Open **Xcode** > **Developer Tools** > **Accessibility Inspector**
+3. Select your simulator from the target dropdown
+4. Use the inspection tool to verify accessibility labels and roles
+5. Run audit to identify accessibility issues
+
+**Android Accessibility Testing:**
+1. Run app on Android emulator
+2. Open **Android Studio** > **Tools** > **Layout Inspector**
+3. Select your running app process
+4. Inspect accessibility properties in the Properties panel
+5. Enable **TalkBack** in emulator settings to test screen reader functionality
+
+#### Manual Testing
+1. **Screen Reader Testing**:
+   - iOS: Enable VoiceOver in Settings
+   - Android: Enable TalkBack in Settings
+   - Navigate through the app using swipe gestures
+
+2. **Keyboard Navigation**:
+   - Connect external keyboard
+   - Use Tab/Shift+Tab to navigate
+   - Ensure all interactive elements are reachable
+
+3. **Visual Testing**:
+   - Test with large text sizes (up to 200%)
+   - Verify high contrast mode compatibility
+   - Check color contrast ratios meet WCAG standards
+
+### Development Guidelines
+
+When contributing to the project, ensure accessibility by:
+
+- Adding `accessibilityLabel` to all interactive elements
+- Using `accessibilityHint` for complex interactions
+- Setting appropriate `accessibilityRole` values
+- Testing with screen readers during development
+- Maintaining minimum color contrast ratios (4.5:1 for normal text)
+
+### Accessibility Conformance
+
 We have conducted a Voluntary Product Accessibility Test, please review the
 [Learner Credential Wallet Accessibility Conformance Report, December 2021](https://github.com/digitalcredentials/learner-credential-wallet/blob/769bacbc2bfed381a20e2927f2c32a18a6faacbb/docs/Learner%20Credential%20Wallet%20VPAT2.4Rev508-December%202021.pdf)
 
