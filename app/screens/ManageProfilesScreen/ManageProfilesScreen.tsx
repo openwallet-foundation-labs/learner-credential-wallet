@@ -103,12 +103,15 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
         />
       </ConfirmModal>
       <FlatList
+        style={styles.list}
         ListHeaderComponent={ListHeader}
-        contentContainerStyle={styles.container}
+        contentContainerStyle={styles.contentContainer}
         data={flatListData}
-        renderItem={({ item }) =>
+        renderItem={({ item }) => (
           <ProfileItem rawProfileRecord={item} />
-        }
+        )}
+        keyExtractor={(item) => item._id.toHexString?.() ?? String(item._id)}
+        showsVerticalScrollIndicator={false}
       />
     </>
   );
