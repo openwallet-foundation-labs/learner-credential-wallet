@@ -13,6 +13,7 @@ import { HomeScreenProps, RenderItemProps } from './HomeScreen.d';
 import { CredentialRecordRaw } from '../../model';
 import { useAppDispatch, useDynamicStyles, useShareCredentials } from '../../hooks';
 import { deleteCredential, selectRawCredentialRecords } from '../../store/slices/credential';
+import { VERIFIER_PLUS_URL } from '../../../app.config';
 
 
 export default function HomeScreen({ navigation }: HomeScreenProps): React.ReactElement {
@@ -22,6 +23,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
   const [itemToDelete, setItemToDelete] = useState<CredentialRecordRaw|null>(null);
   const dispatch = useAppDispatch();
   const share = useShareCredentials();
+  
+  // Check if VERIFIER_PLUS_URL is configured for sharing functionality
+  const isVerifierConfigured = VERIFIER_PLUS_URL && VERIFIER_PLUS_URL.trim().length > 0;
 
   const itemToDeleteName = itemToDelete?.credential.credentialSubject.hasCredential?.name ?? '';
 
@@ -34,7 +38,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
         
         <View>
           <Swipeable
-            renderLeftActions={() => (
+            renderLeftActions={isVerifierConfigured ? () => (
               <TouchableOpacity onPress={() => share([item])} style={[mixins.buttonIconContainer, styles.noShadow]}>
                 <View style={[styles.swipeButton, mixins.buttonPrimary]}>
                   <MaterialIcons
@@ -45,7 +49,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
                 </View>
               </TouchableOpacity>
 
-            )}
+            ) : undefined}
             renderRightActions={() => (
               <TouchableOpacity onPress={() => setItemToDelete(item)} style={[mixins.buttonIconContainer, styles.noShadow]}>
                 <View style={[styles.swipeButton, mixins.buttonError]}>

@@ -14,6 +14,7 @@ import {
   AddNavigation,
 } from '../../navigation';
 import { useDynamicStyles } from '../../hooks';
+import { VERIFIER_PLUS_URL } from '../../../app.config';
 
 const Tab = createBottomTabNavigator<HomeNavigationParamList>();
 
@@ -21,6 +22,9 @@ const labelSuffix = Platform.OS === 'ios' ? ', tab' : '';
 
 export default function HomeNavigation(): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
+  
+  // Check if VERIFIER_PLUS_URL is configured for sharing functionality
+  const isVerifierConfigured = VERIFIER_PLUS_URL && VERIFIER_PLUS_URL.trim().length > 0;
 
   return (
     <Tab.Navigator
@@ -36,22 +40,24 @@ export default function HomeNavigation(): React.ReactElement {
       <Tab.Screen name="CredentialNavigation" component={CredentialNavigation} options={{
         title: 'My Wallet',
         tabBarIcon: HomeTabIcon,
-        tabBarAccessibilityLabel: `My Wallet, (1 of 4)${labelSuffix}`,
+        tabBarAccessibilityLabel: isVerifierConfigured ? `My Wallet, (1 of 4)${labelSuffix}` : `My Wallet, (1 of 3)${labelSuffix}`,
       }}/>
-      <Tab.Screen name="ShareNavigation" component={ShareNavigation} options={{
-        title: 'Share',
-        tabBarIcon: ShareTabIcon,
-        tabBarAccessibilityLabel: `Share, (2 of 4)${labelSuffix}`,
-      }}/>
+      {isVerifierConfigured && (
+        <Tab.Screen name="ShareNavigation" component={ShareNavigation} options={{
+          title: 'Share',
+          tabBarIcon: ShareTabIcon,
+          tabBarAccessibilityLabel: `Share, (2 of 4)${labelSuffix}`,
+        }}/>
+      )}
       <Tab.Screen name="AddNavigation" component={AddNavigation} options={{
         title: 'Add',
         tabBarIcon: AddTabIcon,
-        tabBarAccessibilityLabel: `Add, (3 of 4)${labelSuffix}`,
+        tabBarAccessibilityLabel: isVerifierConfigured ? `Add, (3 of 4)${labelSuffix}` : `Add, (2 of 3)${labelSuffix}`,
       }}/>
       <Tab.Screen name="SettingsNavigation" component={SettingsNavigation} options={{
         title: 'Settings',
         tabBarIcon: SettingsTabIcon,
-        tabBarAccessibilityLabel: `Settings, (4 of 4)${labelSuffix}`,
+        tabBarAccessibilityLabel: isVerifierConfigured ? `Settings, (4 of 4)${labelSuffix}` : `Settings, (3 of 3)${labelSuffix}`,
       }}/>
     </Tab.Navigator>
   );

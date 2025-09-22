@@ -14,12 +14,16 @@ import { useSelectorFactory } from '../../hooks/useSelectorFactory';
 import { PublicLinkScreenMode } from '../../screens';
 import { credentialItemPropsFor } from '../../lib/credentialDisplay';
 import { useVerifyCredential } from '../../hooks';
+import { VERIFIER_PLUS_URL } from '../../../app.config';
 
 export default function CredentialScreen({ navigation, route }: CredentialScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
   const dispatch = useAppDispatch();
   const [menuIsOpen, setMenuIsOpen] = useState(false);
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  
+  // Check if VERIFIER_PLUS_URL is configured for sharing functionality  
+  const isVerifierConfigured = VERIFIER_PLUS_URL && VERIFIER_PLUS_URL.trim().length > 0;
 
   const { rawCredentialRecord, noShishKabob = false } = route.params;
   const { title } = credentialItemPropsFor(rawCredentialRecord.credential);
@@ -116,7 +120,7 @@ export default function CredentialScreen({ navigation, route }: CredentialScreen
       <View style={styles.outerContainer}>
         {menuIsOpen ? (
           <View style={styles.menuContainer} accessibilityViewIsModal={true}>
-            <MenuItem icon="share" title="Share" onPress={onPressShare} />
+            {isVerifierConfigured && <MenuItem icon="share" title="Share" onPress={onPressShare} />}
             <MenuItem icon="info-outline" title="View Source" onPress={onPressDebug} />
             <MenuItem icon="delete" title="Delete" onPress={onPressDelete} />
           </View>
