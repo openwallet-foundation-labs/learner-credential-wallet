@@ -357,7 +357,7 @@ export default function PublicLinkScreen({
           <Text style={mixins.modalBodyText}>
             Creating a public link will allow anyone with the link to view the
             credential. The link will automatically expire 1 year after
-            creation.
+            creation. A public link expiration date is not the same as the expiration date for your credential.
           </Text>
           <Button
             buttonStyle={mixins.buttonClear}

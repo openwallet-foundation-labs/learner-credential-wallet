@@ -153,7 +153,7 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
         confirmText: 'Create Link',
         body: (
           <>
-            <Text style={mixins.modalBodyText}>Creating a public link will allow anyone with the link to view the credential. The link will automatically expire 1 year after creation.</Text>
+            <Text style={mixins.modalBodyText}>Creating a public link will allow anyone with the link to view the credential. The link will automatically expire 1 year after creation. A public link expiration date is not the same as the expiration date for your credential.</Text>
             <Button
               buttonStyle={mixins.buttonClear}
               titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
