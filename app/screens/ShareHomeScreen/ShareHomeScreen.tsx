@@ -172,7 +172,7 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
   }
 
   async function scanShareRequestQRCode() {
-    const text = await NavigationUtil.scanQRCode({ instructionText: 'Scan a share QR code to continue.' });
+    const text = await NavigationUtil.scanQRCode({ instructionText: 'Scan a shared QR code to continue.' });
     const params = queryParamsFrom(text);
 
     if (!isShareRequestParams(params)) {
@@ -226,21 +226,6 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
         <Text style={styles.paragraph}>
             Allows sending one or more credentials as a JSON file
         </Text>
-        <Button
-          title="Scan a shared QR code"
-          buttonStyle={mixins.buttonIcon}
-          containerStyle={[mixins.buttonIconContainer, styles.sendButton]}
-          titleStyle={mixins.buttonIconTitle}
-          onPress={scanShareRequestQRCode}
-          iconRight
-          icon={
-            <MaterialIcons
-              name="qr-code-scanner"
-              size={theme.iconSize}
-              color={theme.color.textSecondary}
-            />
-          }
-        />
       </ScrollView>
     </>
   );
