@@ -1,5 +1,5 @@
 import Realm from 'realm';
-import { createHash, randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 import uuid from 'react-native-uuid';
 
 import { db } from './DatabaseAccess';
@@ -14,6 +14,7 @@ import { CredentialRecord } from './credential';
 import { DidRecord, DidRecordRaw } from './did';
 import { CredentialRecordRaw } from '../types/credential';
 import { credentialContentHash } from '../lib/credentialHash';
+import { getSubject } from '../lib/credentialDisplay/shared';
 
 const ObjectId = Realm.BSON.ObjectId;
 
@@ -91,7 +92,7 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
     // Check for duplicate profile names (case-insensitive)
     const existingProfiles = await ProfileRecord.getAllProfileRecords();
     const isDuplicate = existingProfiles.some(profile => isProfileNameDuplicate(profile.profileName, profileName));
-    
+
     if (isDuplicate) {
       throw new HumanReadableError(`A profile with the name "${profileName}" already exists. Please choose a different name.`);
     }
@@ -235,17 +236,17 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
 
     try {
       const { profileName = UNTITLED_PROFILE_NAME } = profileMetadata?.data ?? {};
-      
+
       // Check if profile with same name already exists (case-insensitive)
       const existingProfiles = await ProfileRecord.getAllProfileRecords();
       const existingProfile = existingProfiles.find(profile => isProfileNameDuplicate(profile.profileName, profileName));
-      
+
       if (existingProfile) {
         // Skip profile creation but still process credentials for existing profile
         const profileRecordId = existingProfile._id;
         profileImportReport.userIdImported = false; // Profile already exists
         profileImportReport.profileDuplicate = true;
-        
+
         const existingCredentials = await CredentialRecord.getAllCredentialRecords();
         const profileCredentialHashes = existingCredentials
           .filter(({ profileRecordId: credProfileId }) => credProfileId.equals(profileRecordId))
@@ -268,7 +269,7 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
             }
           }),
         );
-        
+
         return profileImportReport;
       }
 

@@ -70,6 +70,8 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
       throw new HumanReadableError('Issue/signing requests not supported yet.');
     }
 
+    console.log('[acceptExchange] Processing message:', JSON.stringify(message, null, 2));
+
     const { credentialRequestOrigin } = message;
     console.log('[acceptExchange] credentialRequestOrigin (self-asserted):',
       credentialRequestOrigin);
@@ -84,7 +86,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
       }
       // Start the exchange - initial POST {}
       const initialResponse = await await sendToExchanger({ exchangeUrl, payload: {} });
-      console.log('Initial exchange response:',
+      console.log(`Initial exchange response from "${exchangeUrl}":`,
         JSON.stringify(initialResponse, null, 2));
       requestOrOffer = initialResponse;
     } else {
