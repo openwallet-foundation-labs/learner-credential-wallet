@@ -14,7 +14,7 @@ export enum ApprovalStatus {
   PendingDuplicate,
   Accepted,
   Rejected,
-  Errored,
+  Errored
 }
 
 export enum ApprovalMessage {
@@ -57,6 +57,7 @@ const initialState: CredentialFoyerState = {
   selectedExchangeCredentials: []
 };
 
+// TODO: Why are we excluding validFrom and issuanceDate from the comparison?
 function comparableStringFor(credential: IVerifiableCredential): string {
   const rawCredential = JSON.parse(JSON.stringify(credential));
 

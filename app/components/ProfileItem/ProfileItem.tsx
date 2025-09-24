@@ -17,6 +17,7 @@ import { errorMessageFrom } from '../../lib/error';
 import { fmtCredentialCount } from '../../lib/text';
 import { getCredentialName } from '../../lib/credentialName';
 
+
 enum ActiveModal {
   Rename,
   Delete,
@@ -179,10 +180,11 @@ function DeleteModal({ rawProfileRecord, onRequestClose }: ActionModalProps): Re
             header: 'Delete Profile Details',
             details: {
               [`${rawProfileRecord.rawCredentialRecords.length} total credential`]:
-              rawProfileRecord.rawCredentialRecords.map(({ credential }) => getCredentialName(credential)),
-            },
-          },
-        },
+              rawProfileRecord.rawCredentialRecords.map(
+                ({ credential }) => getCredentialName(credential))
+            }
+          }
+        }
       });
 
       onRequestClose();

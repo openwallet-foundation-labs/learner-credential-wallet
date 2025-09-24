@@ -3,7 +3,7 @@ import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { DidRecordRaw } from '../model';
-import { Credential, CredentialRecordRaw, VcQueryType } from '../types/credential';
+import { CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';
 import { filterCredentialRecordsByType } from './credentialMatching';
 import { HumanReadableError } from './error';
