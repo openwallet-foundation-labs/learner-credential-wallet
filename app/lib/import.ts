@@ -179,7 +179,16 @@ export function aggregateCredentialReports(reports: CredentialImportReport[]): C
 
 export async function importProfileFrom(data: string): Promise<ReportDetails> {
   const profileImportReport = await ProfileRecord.importProfileRecord(data);
-  const userIdStatusText = `User ID ${profileImportReport.userIdImported ? 'successfully imported' : 'failed to import'}`;
+  
+  let userIdStatusText: string;
+  if (profileImportReport.profileDuplicate) {
+    userIdStatusText = 'Profile already exists (skipped)';
+  } else if (profileImportReport.userIdImported) {
+    userIdStatusText = 'User ID successfully imported';
+  } else {
+    userIdStatusText = 'User ID failed to import';
+  }
+  
   const reportDetails = {
     [userIdStatusText]: [],
     ...credentialReportDetailsFrom(profileImportReport.credentials),
@@ -198,7 +207,30 @@ export async function importWalletFrom(data: string): Promise<ReportDetails> {
 
   const credentialReports = reports.map(({ credentials }) => credentials);
   const totalCredentialsReport = aggregateCredentialReports(credentialReports);
-  const reportDetails = credentialReportDetailsFrom(totalCredentialsReport);
+  
+  // Count profile import results
+  const profilesImported = reports.filter(r => r.userIdImported).length;
+  const profilesDuplicate = reports.filter(r => r.profileDuplicate).length;
+  const profilesFailed = reports.length - profilesImported - profilesDuplicate;
+  
+  const reportDetails: ReportDetails = {
+    ...credentialReportDetailsFrom(totalCredentialsReport),
+  };
+  
+  if (profilesImported > 0) {
+    const plural = profilesImported !== 1 ? 's' : '';
+    reportDetails[`${profilesImported} profile${plural} successfully imported`] = [];
+  }
+  
+  if (profilesDuplicate > 0) {
+    const plural = profilesDuplicate !== 1 ? 's' : '';
+    reportDetails[`${profilesDuplicate} duplicate profile${plural} skipped`] = [];
+  }
+  
+  if (profilesFailed > 0) {
+    const plural = profilesFailed !== 1 ? 's' : '';
+    reportDetails[`${profilesFailed} profile${plural} failed to import`] = [];
+  }
 
   return reportDetails;
 }
