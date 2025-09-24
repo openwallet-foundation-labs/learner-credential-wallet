@@ -17,25 +17,23 @@ The app has been compiled for iOS and Android and allows users to add and share 
 ## Goals
 This learner credential wallet includes the features and technical requirements 
 ultimately enabling individuals to curate and present their learning and 
-employment records to others—for example, as applicants to educational programs 
+employment records to others — for example, as applicants to educational programs 
 or to apply for jobs with employers—in an interoperable manner. 
 
+## Features
 * Receive digital credentials from standards compliant issuers via link or QR code
 * Store credentials on their mobile device
 * Keep credential access safe with strong encryption best practices
 * Create and share a presentation that collates any number of credentials in their wallet
 * Backup and restore their wallet
 
-## Pilot
-The Digital Credentials Consortium is working with a number of colleges and 
-universities to [pilot test](https://lcw.app/pilot.html) the wallet.
 
-## Contributing:
-Please refer to CONTRIBUTING.md for information on how to contribute to this project.
+## Contributing
+Developers are welcome to open issues and PR's on this repository.  Please refer to [CONTRIBUTING.md](https://github.com/openwallet-foundation-labs/learner-credential-wallet/blob/main/CONTRIBUTING.md) for information on how to contribute to this project.
+
 
 ## Community
-Developers are welcome to open issues and PR's on this repository (for more information on how to contribute, please refer to CONTRIBUTING.md). The Learner Credential Wallet is one project out of many at the [Digital Credentials Consortium](https://digitalcredentials.mit.edu/). The DCC sends out regular updates on all the software we produce. If you would like to sign up for our software-specific mailing list, you can do so by going [here](You can sign up here:
-https://mailman.mit.edu/mailman/listinfo/dcc-software-support).
+The Learner Credential Wallet is one project out of many at the [Digital Credentials Consortium](https://digitalcredentials.mit.edu/). The DCC sends out regular updates on all the software we produce. If you would like to sign up for our software-specific mailing list, you can do so by going [here](https://mailman.mit.edu/mailman/listinfo/dcc-software-support).
 
 The archive of DCC software updates is hosted [here](https://mailman.mit.edu/pipermail/dcc-software-support/).
 
@@ -43,13 +41,18 @@ Additionally, we hold a monthly Technical Office Hours meeting on the third Thur
 
 Please note, being part of the OpenWallet Foundation, we expect all interactions to adhere to the [Antitrust Policy](https://wiki.hyperledger.org/download/attachments/29034696/Antitrustnotice.png?version=1&modificationDate=1581695654000&api=v2) and [Code of Conduct][code-of-conduct].
 
+### Pilot
+The Digital Credentials Consortium is working with a number of colleges and 
+universities to [pilot test](https://lcw.app/pilot.html) the wallet.
 
-## Development Setup
 
-### Dependencies
+# Development Setup
+
+## Installation
 
 **If you encounter any issues, visit the [Troubleshooting Page](https://github.com/digitalcredentials/learner-credential-wallet/wiki/Troubleshooting)**
 
+### Dependencies
 Prerequisites:
 * [Java](https://www.java.com/en/download/manual.jsp)
 * [nvm](https://collabnix.com/how-to-install-and-configure-nvm-on-mac-os/) or [asdf](https://asdf-vm.com/guide/getting-started.html#getting-started)
@@ -79,26 +82,23 @@ See [Installing on Linux](install-linux.md) on setting up the project on Linux.
   * Note: You might need to hit the play button in Android Studio for it to fully register which device to set to be used from the command line.
 3) In another terminal yarn `yarn ios`
 
-### Environment
+
+## Environment
 
 This project uses **TypeScript and React Native with [Expo](https://docs.expo.dev/)**. It would be best to use an 
-editor that can hook into the TypeScript language server (VSCode does this with 
-Intellisense, Vim does it with CoC). We also use eslint to catch common mistakes 
-and formatting errors. Most editors should support dynamic linting support while 
-editing. If your editor does not, you can manually lint by running `npm run lint` 
-in the project root.
+editor that can hook into the TypeScript language server (VSCode does this with Intellisense, Vim does it with CoC). We also use eslint to catch common mistakes and formatting errors. Most editors should support dynamic linting support while editing. If your editor does not, you can manually lint by running `npm run lint` in the project root.
 
-This project also uses **environment variables**, which are loaded and used in
-`app.config.js`. These values can be overridden, but development values should not 
-be committed to the repository.
+This project also uses **environment variables**, which are loaded and used in `app.config.js`. These values can be overridden, but development values should not be committed to the repository.
 
-### Project Structure
+
+## Project Structure
 
 ```
 ├── app
 │   ├── assets ← Image assets 
 │   ├── components ← React components
 │   ├── hooks ← This is where custom hooks are defined (usually wraps lib methods)
+│   ├── init ← Logger and registry setup
 │   ├── lib ← Location for utility methods
 │   ├── mock ← Location for mock data, usually used for testing
 │   ├── model ← Database access objects and connections
@@ -110,15 +110,25 @@ be committed to the repository.
 │   └── types ← General place for defining types (usually DCC types for Credential, Presentation, etc...)
 ├── android ← Auto-generated android build folder, can still be manually edited if needed
 └── ios ← Same as android, except it also uses Cocoapods for dependency management
+└── patches ← Patches created for software maintenance
+└── test ← Where tests are kept, can run `npm run test` and `npm run coverage:open` for coverage stats
 ```
 
-#### Configuration
+## Configuration
 
 Overridable configuration is in [`app.config.js`](./app.config.js)
 
+### If forking this project to customize your own version of the LCW, please note the following: 
+
+* Setting up your own storage server is **strongly** encouraged. This storage server takes the role of verifying credentials added to the LCW. The `VERIFIER_INSTANCE_URL` can be updated in `app.config.js` as mentioned in the Environment section above.
+
+* The bundle identifier for your customized project will need to be updated in `ios` and `android` directories for Apple and Google app stores, respectively, if deploying to production.  The display name in `app.config.js`, as well names under the `expo` section will need to be checked before deploying to app stores.
+   - iOS: For iOS, check your target value inside your Podfile
+   - Android: For Android, check that the rootProject.name in your `android/settings.gradle` is up-to-date.
+
 ### Issuing new credential
 
-[Instructions for issuing a credential](https://github.com/digitalcredentials/docs/edit/main/credential/issue_credential.md). 
+Instructions for issuing a credential are [here](https://github.com/digitalcredentials/docs/blob/main/credential/issue_credential.md). 
 
 ### Adding new credential display
 
@@ -221,6 +231,9 @@ We have conducted a Voluntary Product Accessibility Test, please review the
 For more information on accessibility please visit the 
 [MIT Accessibilty](https://accessibility.mit.edu) page.
 
+
+# LCW App - general info
+
 ## Privacy Policy 
 This Privacy Policy explains how Learner Credential Wallet collects, uses, and 
 processes personal information about our learners.
@@ -250,7 +263,7 @@ Initial development was also supported by the Massachusetts Institute of
 Technology. Continued development is supported by members of the Digital 
 Credentials Consortium.
 
-### License
+## License
 
 [MIT License](https://github.com/digitalcredentials/learner-credential-wallet/blob/main/LICENSE) Copyright (c) 2024 Massachusetts Institute of Technology
 
