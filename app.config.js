@@ -8,8 +8,10 @@ const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 95;
 const VERSION_NUMBER = env.APP_VERSION_NUMBER || "2.2.5";
 
 // Used by the 'Create Public Link' functionality
-export const VERIFIER_PLUS_URL =
-  env["VERIFIER_PLUS_URL"] || "https://verifierplus.org";
+// If you have forked the LCW and are creating your own wallet app version, 
+// please supply your own verifier instance below
+export const VERIFIER_INSTANCE_URL =
+  env["VERIFIER_INSTANCE_URL"] || "https://verifierplus.org";
 
 export const WAS = {
   enabled: true,
