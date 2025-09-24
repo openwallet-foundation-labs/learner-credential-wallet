@@ -62,25 +62,25 @@ export const deepLinkConfig = {
       return encodeQueryParams(url);
     }
   },
-  getStateFromPath: (url: string) => {
-    console.log('deepLink "getStateFromPath" event for path:', url);
-    const messageObject = parseWalletApiUrl({ url });
-    if (messageObject === undefined) {
-      console.log('[redirectRequestRoute] No wallet api message found in url.');
-      return;
-    }
-    const message = parseWalletApiMessage({ messageObject });
-    if (message === undefined) {
-      console.log('[redirectRequestRoute] Wallet api message not recognized.');
-      return;
-    }
-    const stateForExchangeCredentials =
-      (message: WalletApiMessage) => deepLinkNavigate('ExchangeCredentialsNavigation', {
-        screen: 'ExchangeCredentials',
-        params: { message }
-      });
-    return stateForExchangeCredentials(message);
-  }
+  // getStateFromPath: (url: string) => {
+  //   console.log('deepLink "getStateFromPath" event for path:', url);
+  //   const messageObject = parseWalletApiUrl({ url });
+  //   if (messageObject === undefined) {
+  //     console.log('[redirectRequestRoute] No wallet api message found in url.');
+  //     return;
+  //   }
+  //   const message = parseWalletApiMessage({ messageObject });
+  //   if (message === undefined) {
+  //     console.log('[redirectRequestRoute] Wallet api message not recognized.');
+  //     return;
+  //   }
+  //   const stateForExchangeCredentials =
+  //     (message: WalletApiMessage) => deepLinkNavigate('ExchangeCredentialsNavigation', {
+  //       screen: 'ExchangeCredentials',
+  //       params: { message }
+  //     });
+  //   return stateForExchangeCredentials(message);
+  // }
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
