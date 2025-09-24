@@ -1,4 +1,3 @@
-import { Credential } from './credential';
 import { DidDocument, DidKey } from './did';
 import { ProfileMetadata } from './profile';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';

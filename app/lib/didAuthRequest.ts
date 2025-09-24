@@ -6,7 +6,6 @@ import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verifica
 import { constructExchangeRequest, handleVcApiExchangeSimple } from './exchanges';
 import store from '../store';
 import { stageCredentials } from '../store/slices/credentialFoyer';
-import { Credential } from '../types/credential';
 import { extractCredentialsFrom } from './verifiableObject';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
