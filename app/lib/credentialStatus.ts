@@ -1,13 +1,13 @@
 import { checkStatus } from '@digitalcredentials/vc-bitstring-status-list';
 import { checkStatus as checkStatusLegacy } from '@digitalcredentials/vc-status-list';
-import { Credential } from '../types/credential';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 export enum StatusPurpose {
   Revocation = 'revocation',
   Suspension = 'suspension'
 }
 
-export function getCredentialStatusChecker(credential: Credential) {
+export function getCredentialStatusChecker(credential: IVerifiableCredential) {
   if (!credential.credentialStatus) {
     return null;
   }
@@ -26,7 +26,7 @@ export function getCredentialStatusChecker(credential: Credential) {
 }
 
 export function hasStatusPurpose(
-  credential: Credential,
+  credential: IVerifiableCredential,
   statusPurpose: StatusPurpose
 ) {
   if (!credential.credentialStatus) {

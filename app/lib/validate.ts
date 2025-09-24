@@ -1,7 +1,6 @@
-// import '@digitalcredentials/data-integrity-rn';
-import { VerifiablePresentation, PresentationError } from '../types/presentation';
-import { Credential, CredentialError } from '../types/credential';
-// import * as verifierCore from '@digitalcredentials/verifier-core';
+import { PresentationError } from '../types/presentation';
+import { CredentialError } from '../types/credential';
+import * as verifierCore from '@digitalcredentials/verifier-core';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 
 export type ResultLog = {
@@ -12,7 +11,7 @@ export type ResultLog = {
 
 export type Result = {
   verified: boolean;
-  credential: Credential;
+  credential: IVerifiableCredential;
   error: CredentialError;
   log: ResultLog[];
 }
@@ -26,14 +25,13 @@ export async function verifyPresentation(
   presentation: IVerifiablePresentation
 ): Promise<VerifyResponse> {
   try {
-    // const result = await verifierCore.verifyPresentation({
-    //   presentation
-    // });
-    // if (!result.verified) {
-    //   console.warn('VP not verified:', JSON.stringify(result, null, 2));
-    // }
-    // return result;
-    return {} as VerifyResponse;
+    const result = await verifierCore.verifyPresentation({
+      presentation
+    });
+    if (!result.verified) {
+      console.warn('VP not verified:', JSON.stringify(result, null, 2));
+    }
+    return result;
   } catch (err) {
     console.warn(err);
 
