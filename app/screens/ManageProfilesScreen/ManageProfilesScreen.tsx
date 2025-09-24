@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, FlatList } from 'react-native';
+import { View, FlatList, Text } from 'react-native';
 import { Button } from 'react-native-elements';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
@@ -17,16 +17,22 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
   const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
   const [profileName, setProfileName] = useState('');
   const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
   const dispatch = useAppDispatch();
 
   const rawProfileRecords = useSelectorFactory(makeSelectProfilesWithCredentials);
   const flatListData = useMemo(() => [...rawProfileRecords], [rawProfileRecords]);
 
   async function onPressCreate() {
-    if (profileName !== '' ) {
-      await dispatch(createProfile({ profileName }));
-      setModalIsOpen(false);
-      setProfileName('');
+    if (profileName !== '') {
+      try {
+        await dispatch(createProfile({ profileName })).unwrap();
+        setModalIsOpen(false);
+        setProfileName('');
+        setErrorMessage('');
+      } catch (error: any) {
+        setErrorMessage(error.message || 'Failed to create profile');
+      }
     }
   }
 
@@ -74,8 +80,14 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
       <NavHeader title="Manage Profiles" goBack={navigation.goBack} />
       <ConfirmModal
         open={modalIsOpen}
-        onRequestClose={() => setProfileName('')}
-        onCancel={() => setModalIsOpen(false)}
+        onRequestClose={() => {
+          setProfileName('');
+          setErrorMessage('');
+        }}
+        onCancel={() => {
+          setModalIsOpen(false);
+          setErrorMessage('');
+        }}
         onConfirm={onPressCreate}
         cancelOnBackgroundPress
         title="New Profile"
@@ -84,7 +96,10 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
       >
         <TextInput
           value={profileName}
-          onChangeText={setProfileName}
+          onChangeText={(text) => {
+            setProfileName(text);
+            setErrorMessage('');
+          }}
           style={styles.input}
           outlineColor={theme.color.textPrimary}
           selectionColor={theme.color.textPrimary}
@@ -101,6 +116,11 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
           tvParallaxProperties={undefined}
           onTextInput={() => {}}
         />
+        {errorMessage ? (
+          <Text style={[styles.errorText, { color: theme.color.error }]}>
+            {errorMessage}
+          </Text>
+        ) : null}
       </ConfirmModal>
       <FlatList
         style={styles.list}

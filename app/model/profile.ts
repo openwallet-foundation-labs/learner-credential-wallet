@@ -24,6 +24,11 @@ function generateProfileObjectIdHex(): string {
 const UNTITLED_PROFILE_NAME = 'Untitled Profile';
 export const INITIAL_PROFILE_NAME = 'Default';
 
+// Helper function to check if profile names are case-insensitively equal
+function isProfileNameDuplicate(existingName: string, newName: string): boolean {
+  return existingName.toLowerCase() === newName.toLowerCase();
+}
+
 export type ProfileRecordRaw = {
   readonly _id: Realm.BSON.ObjectId;
   readonly createdAt: Date;
@@ -76,6 +81,14 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
   }
 
   public static async addProfileRecord({ profileName, rawDidRecord }: AddProfileRecordParams): Promise<ProfileRecordRaw> {
+    // Check for duplicate profile names (case-insensitive)
+    const existingProfiles = await ProfileRecord.getAllProfileRecords();
+    const isDuplicate = existingProfiles.some(profile => isProfileNameDuplicate(profile.profileName, profileName));
+    
+    if (isDuplicate) {
+      throw new HumanReadableError(`A profile with the name "${profileName}" already exists. Please choose a different name.`);
+    }
+
     if (rawDidRecord === undefined) {
       const didPayload = await mintDid();
       rawDidRecord = await DidRecord.addDidRecord(didPayload);
@@ -186,6 +199,7 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
 
     const profileImportReport: ProfileImportReport = {
       userIdImported: false,
+      profileDuplicate: false,
       credentials: {
         success: [],
         duplicate: [],
@@ -195,15 +209,52 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
 
     try {
       const { profileName = UNTITLED_PROFILE_NAME } = profileMetadata?.data ?? {};
+      
+      // Check if profile with same name already exists (case-insensitive)
+      const existingProfiles = await ProfileRecord.getAllProfileRecords();
+      const existingProfile = existingProfiles.find(profile => isProfileNameDuplicate(profile.profileName, profileName));
+      
+      if (existingProfile) {
+        // Skip profile creation but still process credentials for existing profile
+        const profileRecordId = existingProfile._id;
+        profileImportReport.userIdImported = false; // Profile already exists
+        profileImportReport.profileDuplicate = true;
+        
+        const existingCredentials = await CredentialRecord.getAllCredentialRecords();
+        const profileCredentialIds = existingCredentials
+          .filter(({ profileRecordId: credProfileId }) => credProfileId.equals(profileRecordId))
+          .map(({ credential }) => credential.id);
+
+        await Promise.all(
+          credentials.map(async (credential) => {
+            let achievement = credential.credentialSubject.hasCredential ?? credential.credentialSubject.achievement;
+            if (Array.isArray(achievement)) {
+              achievement = achievement[0];
+            }
+            const credentialName = achievement?.name ?? 'Unknown Credential';
+            if (profileCredentialIds.includes(credential.id)) {
+              profileImportReport.credentials.duplicate.push(credentialName);
+              return;
+            }
+
+            try {
+              await CredentialRecord.addCredentialRecord({ credential, profileRecordId });
+              profileImportReport.credentials.success.push(credentialName);
+            } catch (err) {
+              console.warn(`Unable to import credential: ${err}`);
+              profileImportReport.credentials.failed.push(credentialName);
+            }
+          }),
+        );
+        
+        return profileImportReport;
+      }
 
       const rawDidRecord = await DidRecord.addDidRecord({ didDocument, verificationKey, keyAgreementKey });
       const rawProfileRecord = await ProfileRecord.addProfileRecord({ profileName, rawDidRecord });
       const profileRecordId = rawProfileRecord._id;
 
       profileImportReport.userIdImported = true;
-
-      const existingCredentials = await CredentialRecord.getAllCredentialRecords();
-      const existingCredentialIds = existingCredentials.map(({ credential }) => credential.id);
 
       await Promise.all(
         credentials.map(async (credential) => {
@@ -212,10 +263,6 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
             achievement = achievement[0];
           }
           const credentialName = achievement?.name ?? 'Unknown Credential';
-          if (existingCredentialIds.includes(credential.id)) {
-            profileImportReport.credentials.duplicate.push(credentialName);
-            return;
-          }
 
           try {
             await CredentialRecord.addCredentialRecord({ credential, profileRecordId });
