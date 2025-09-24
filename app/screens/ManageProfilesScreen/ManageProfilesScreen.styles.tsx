@@ -15,4 +15,9 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     ...mixins.input,
     backgroundColor: theme.color.foregroundPrimary,
   },
+  errorText: {
+    marginTop: 8,
+    fontSize: 14,
+    textAlign: 'center',
+  },
 }));

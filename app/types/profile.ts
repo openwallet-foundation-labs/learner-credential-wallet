@@ -2,6 +2,7 @@ import { CredentialImportReport } from './credential';
 
 export type ProfileImportReport = {
   userIdImported: boolean;
+  profileDuplicate?: boolean;
   credentials: CredentialImportReport;
 };
 
