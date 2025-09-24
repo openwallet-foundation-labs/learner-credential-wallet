@@ -4,12 +4,12 @@ import { IssuerObject } from '../types/credential';
 import { Cache, CacheKey } from './cache';
 import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
 import { credentialIdFor, educationalOperationalCredentialFrom } from './decode';
-import * as verifierPlus from './verifierPlus';
-import { StoreCredentialResult } from './verifierPlus';
+import * as verifierInstance from './verifierInstance';
+import { StoreCredentialResult } from './verifierInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getStorageClient } from '../screens/WAS/WasScreen';
 import { v4 as uuidv4 } from 'uuid';
-import { WAS, VERIFIER_PLUS_URL } from '../../app.config';
+import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
 import { getRootSigner } from './getRootSigner';
 import { ISigner } from '@digitalcredentials/ssi';
 
@@ -34,13 +34,13 @@ export async function createPublicLinkFor(
       return wasLink;
     } catch (error) {
       console.error('[publicLink.ts] Error checking WAS link:', error);
-      // Fall through to verifierPlus
+      // Fall through to verifierInstance
     }
   }
 
-  // Fall back to verifierPlus
-  console.log('[publicLink.ts] Using verifierPlus to create public link');
-  const links = await verifierPlus.postCredential(rawCredentialRecord);
+  // Fall back to verifierInstance
+  console.log('[publicLink.ts] Using verifierInstance to create public link');
+  const links = await verifierInstance.postCredential(rawCredentialRecord);
 
   await Cache.getInstance().store(CacheKey.PublicLinks, id, links);
   return `${links.server}${links.url.view}`;
@@ -65,7 +65,7 @@ async function createWasPublicLinkIfAvailable(
     console.log('Stored space UUID:', storedSpaceUUID);
 
     if (!storedSpaceUUID) {
-      console.log('[publicLink.ts] No stored space ID found, falling back to verifierPlus');
+      console.log('[publicLink.ts] No stored space ID found, falling back to verifierInstance');
       return null;
     }
 
@@ -115,7 +115,7 @@ async function createWasPublicLinkIfAvailable(
     }
 
     // Create the public link using the resource path
-    const publicLink = `${VERIFIER_PLUS_URL}/#verify?vc=${WAS.BASE_URL}${resource.path}`;
+    const publicLink = `${VERIFIER_INSTANCE_URL}/#verify?vc=${WAS.BASE_URL}${resource.path}`;
     console.log('Created WAS public link:', publicLink);
 
     return publicLink;
@@ -171,9 +171,9 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
         }
       }
     } else {
-      // This is a verifierPlus link
+      // This is a verifierInstance link
       const unshareUrl = `${publicLinks.server}${publicLinks.url.unshare}`;
-      await verifierPlus.deleteCredential(rawCredentialRecord, unshareUrl);
+      await verifierInstance.deleteCredential(rawCredentialRecord, unshareUrl);
     }
   } catch (error) {
     console.error('Error unsharing credential:', error);
