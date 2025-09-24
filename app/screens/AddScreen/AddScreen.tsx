@@ -3,16 +3,16 @@ import { AccessibilityInfo, View } from 'react-native';
 import { Text, Button } from 'react-native-elements';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { TextInput } from 'react-native-paper';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 import dynamicStyleSheet from './AddScreen.styles';
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 import { NavHeader } from '../../components';
-import { credentialRequestParamsFromQrText, credentialsFrom, isDeepLink } from '../../lib/decode';
+import { credentialRequestParamsFromQrText, credentialsFrom } from '../../lib/decode';
 import { PresentationError } from '../../types/presentation';
 import { errorMessageMatches, HumanReadableError } from '../../lib/error';
 import { navigationRef } from '../../navigation/navigationRef';
 import { CredentialRequestParams } from '../../lib/credentialRequest';
-import type { Credential } from '../../types/credential';
 import { pickAndReadFile } from '../../lib/import';
 import { displayGlobalModal } from '../../lib/globalModal';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
@@ -20,6 +20,7 @@ import { ScrollView } from 'react-native-gesture-handler';
 import { cleanCopy } from '../../lib/encode';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { CANCEL_PICKER_MESSAGES } from '../../../app.config';
+import { isDeepLink, isWalletApiMessage, parseWalletApiMessage } from '../../lib/walletRequestApi';
 
 export default function AddScreen(): React.ReactElement {
   const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
@@ -47,7 +48,7 @@ export default function AddScreen(): React.ReactElement {
     });
   }
 
-  async function goToCredentialFoyerWith(credentials: Credential[]) {
+  async function goToCredentialFoyerWith(credentials: IVerifiableCredential[]) {
     const rawProfileRecord = await NavigationUtil.selectProfile();
     await dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
     navigationRef.navigate('AcceptCredentialsNavigation', {
@@ -58,13 +59,36 @@ export default function AddScreen(): React.ReactElement {
     });
   }
 
+  /**
+   * Dispatches flow based on text pasted into the Add Credential
+   * textbox.
+   *
+   * @param text {string} - One of:
+   *   - Raw JSON VP or VC
+   *   - Raw JSON Wallet API Request
+   *   - A URL to a remotely hosted VC or VP
+   *   - A legacy Credential Request Flow link (with a 'vc_request_url' param)
+   *       https://github.com/digitalcredentials/docs/blob/main/request/credential_request.md
+   *   - An LCW universal app link (https://lcw.app/request?request=... )
+   *   - An LCW custom protocol link (dccrequest://..?request=)
+   *   - A Universal Interact invitation link (has a query param `iuv=1`)
+   */
   async function addCredentialsFrom(text: string) {
     text = text.trim();
 
     if (isDeepLink(text)) {
+
       const params = credentialRequestParamsFromQrText(text);
       goToCredentialFoyer(cleanCopy(params));
+    } else if (isWalletApiMessage(text)) {
+      // A Wallet API Request JSON object has been pasted
+      const message = parseWalletApiMessage({ messageObject: JSON.parse(text) });
+      navigationRef.navigate('ExchangeCredentialsNavigation', {
+        screen: 'ExchangeCredentials',
+        params: { message }
+      });
     } else {
+      // A direct URL to a credential or raw VC/VP JSON has been pasted
       const credentials = await credentialsFrom(text);
       await goToCredentialFoyerWith(credentials);
     }

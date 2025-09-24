@@ -1,21 +1,19 @@
 import uuid from 'react-native-uuid';
-// import '@digitalcredentials/data-integrity-rn';
 import * as vc from '@digitalcredentials/vc';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 
-import type { VerifiablePresentation } from '../types/presentation';
 import type { DidRecordRaw } from '../model/did';
-import type { Credential } from '../types/credential';
 
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { shareData } from './shareData';
+import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 
 type SignPresentationParams = {
   didRecord: DidRecordRaw;
-  verifiableCredential?: Credential[] | Credential;
+  verifiableCredential?: IVerifiableCredential[] | IVerifiableCredential;
   challenge?: string;
 }
 
@@ -30,28 +28,26 @@ type SignPresentationParams = {
  */
 export async function createVerifiablePresentation({
   didRecord, verifiableCredential, challenge = uuid.v4() as string,
-}: SignPresentationParams): Promise<VerifiablePresentation> {
+}: SignPresentationParams): Promise<IVerifiablePresentation> {
   const verificationKeyPair = await Ed25519VerificationKey2020.from(didRecord.verificationKey);
   const suite = new Ed25519Signature2020({ key: verificationKeyPair });
 
   const holder = didRecord.didDocument.id;
   const presentation = vc.createPresentation({ verifiableCredential, holder });
 
-  const verifiablePresentation: VerifiablePresentation = await vc.signPresentation({
+  return await vc.signPresentation({
     presentation,
     suite,
     challenge,
     documentLoader,
   });
-
-  return verifiablePresentation;
 }
 
-export function createUnsignedPresentation(verifiableCredential: Credential[] | Credential): VerifiablePresentation {
+export function createUnsignedPresentation(verifiableCredential: IVerifiableCredential[] | IVerifiableCredential): IVerifiablePresentation {
   return vc.createPresentation({ verifiableCredential });
 }
 
-export async function sharePresentation(verifiablePresentation: VerifiablePresentation): Promise<void> {
+export async function sharePresentation(verifiablePresentation: IVerifiablePresentation): Promise<void> {
   const { verifiableCredential } = verifiablePresentation;
   const plurality = verifiableCredential instanceof Array && verifiableCredential.length > 1 ? 's' : '';
 

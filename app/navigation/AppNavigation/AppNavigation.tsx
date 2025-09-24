@@ -11,9 +11,9 @@ import { RestartScreen, LoginScreen } from '../../screens';
 import { useAppLoading, useDynamicStyles } from '../../hooks';
 import { selectWalletState } from '../../store/slices/wallet';
 import { EventProvider } from 'react-native-outside-press';
-import GlobalConfirmModal from '../../components/GlobalConfirmModal/GlobalConfirmModal';
+import { deepLinkConfig } from '../../lib/deepLinkConfig';
+import { GlobalConfirmModal } from '../../components/GlobalConfirmModal/GlobalConfirmModal';
 import { navigationRef } from '../navigationRef';
-import { deepLinkConfig } from '../../lib/deepLink';
 
 export { navigationRef };
 

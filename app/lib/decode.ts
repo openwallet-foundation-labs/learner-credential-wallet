@@ -1,19 +1,17 @@
-import { fromQrCode, toQrCode } from '@digitalcredentials/vpqr';
+import { fromQrCode } from '@digitalcredentials/vpqr';
 import qs from 'query-string';
 
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ChapiCredentialResponse, ChapiDidAuthRequest } from '../types/chapi';
 import type { EducationalOperationalCredential, Subject } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';
-import { CredentialRequestParams } from './credentialRequest';
-import { isCredentialRequestParams } from './credentialRequest';
+import { CredentialRequestParams, isCredentialRequestParams } from './credentialRequest';
 import { HumanReadableError } from './error';
 import { isChapiCredentialResponse, isChapiDidAuthRequest, isVerifiableCredential, isVerifiablePresentation } from './verifiableObject';
 import { CredentialRecordRaw } from '../model';
 import { NavigationUtil } from './navigationUtil';
 import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
 
-import { LinkConfig } from '../../app.config';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
@@ -22,10 +20,6 @@ export const regexPattern = {
   url: /^https?:\/\/.+/,
   json: /^{.*}$/s,
 };
-
-export function isDeepLink(text: string): boolean {
-  return text.startsWith(LinkConfig.schemes.universalAppLink) || !!LinkConfig.schemes.customProtocol.find((link) => text.startsWith(link));
-}
 
 export function credentialRequestParamsFromQrText(text: string): CredentialRequestParams {
   const params = qs.parse(text.split('?')[1]);
@@ -36,11 +30,6 @@ export function credentialRequestParamsFromQrText(text: string): CredentialReque
   }
 
   return params as CredentialRequestParams;
-}
-
-export async function toQr(vp: VerifiablePresentation): Promise<string> {
-  const result = await toQrCode({ vp, documentLoader });
-  return result.payload;
 }
 
 function credentialsFromPresentation(vp: IVerifiablePresentation): IVerifiableCredential[] {

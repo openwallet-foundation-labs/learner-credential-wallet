@@ -1,6 +1,6 @@
 import { JSONPath } from 'jsonpath-plus';
 import { CredentialRecordRaw } from '../types/credential';
-import { IQueryByExample } from './vcApi';
+import { IQueryByExample } from './walletRequestApi';
 
 // Check if credential record matches QueryByExample VPR
 export function credentialMatchesVprExampleQuery (

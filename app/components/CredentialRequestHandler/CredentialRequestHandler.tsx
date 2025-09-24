@@ -10,9 +10,8 @@ import { ProfileRecordRaw } from '../../model';
 import { selectWithFactory } from '../../store/selectorFactories';
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
 import dynamicStyleSheet from './CredentialRequestHandler.styles';
-import { Credential } from '../../types/credential';
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
-//import { DidRegistryContext } from '../../init/registries';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 type CredentialRequestHandlerProps = {
   credentialRequestParams: Record<string, unknown> | undefined;
@@ -26,12 +25,11 @@ export default function CredentialRequestHandler({
   const { styles } = useDynamicStyles(dynamicStyleSheet);
   const dispatch = useAppDispatch();
   const [modalIsOpen, setModalIsOpen] = useState(false);
-  //const registries = useContext(DidRegistryContext);
 
   const credentialRequest = useAsyncCallback(requestCredential, { onSuccess: onFinish });
   const errorMessage = credentialRequest.error?.message;
 
-  async function onFinish(credentials: Credential[]) {
+  async function onFinish(credentials: IVerifiableCredential[]) {
     setModalIsOpen(false);
     await dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
   }
@@ -49,7 +47,7 @@ export default function CredentialRequestHandler({
       const rawDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
       credentialRequest.execute(credentialRequestParams, rawDidRecord);
     }
-  }, [credentialRequestParams, rawProfileRecord]);      
+  }, [credentialRequestParams, rawProfileRecord]);
 
   return (
     <ConfirmModal

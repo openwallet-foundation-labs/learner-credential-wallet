@@ -1,7 +1,5 @@
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
-
-import { VcApiCredentialRequest, ChapiCredentialRequestParams } from '../types/chapi';
 import { DidRecordRaw } from '../model';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 import { createVerifiablePresentation } from './present';
 import { parseResponseBody } from './parseResponse';
@@ -18,23 +16,6 @@ export type CredentialRequestParams = {
 export function isCredentialRequestParams(params?: Record<string, unknown>): params is CredentialRequestParams {
   const { issuer, vc_request_url } = (params || {} as CredentialRequestParams);
   return issuer !== undefined && vc_request_url !== undefined;
-}
-
-export function getChapiCredentialRequest(params: Record<string, unknown>): VcApiCredentialRequest {
-  const { request: requestString } = (params as ChapiCredentialRequestParams);
-  if (!requestString) {
-    throw new Error('[getChapiCredentialRequest] Deep link does not contain "request" param.');
-  }
-  let request;
-  try {
-    request = JSON.parse(decodeURI(requestString));
-  } catch (err) {
-    console.log(`Error extracting incoming CHAPI request string "${requestString}"`);
-    console.error(err);
-    throw err;
-  }
-
-  return request;
 }
 
 export async function requestCredential(
