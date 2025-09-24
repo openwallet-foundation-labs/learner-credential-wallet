@@ -1,7 +1,7 @@
 import Realm from 'realm';
-import { createHash, randomBytes } from 'crypto';
+import { randomBytes } from 'crypto';
 
-import { Credential, CredentialRecordEntry, CredentialRecordRaw } from '../types/credential';
+import { CredentialRecordEntry, CredentialRecordRaw } from '../types/credential';
 import { db } from './DatabaseAccess';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
@@ -19,8 +19,8 @@ export class CredentialRecord extends Realm.Object implements CredentialRecordRa
   readonly rawCredential!: string;
   readonly profileRecordId!: ObjectId;
 
-  get credential(): Credential {
-    return JSON.parse(this.rawCredential) as Credential;
+  get credential(): IVerifiableCredential {
+    return JSON.parse(this.rawCredential) as IVerifiableCredential;
   }
 
   static schema: Realm.ObjectSchema = {

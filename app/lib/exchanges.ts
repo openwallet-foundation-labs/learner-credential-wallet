@@ -8,7 +8,7 @@ import { VerifiablePresentation } from '../types/presentation';
 import { filterCredentialRecordsByType } from './credentialMatching';
 import { HumanReadableError } from './error';
 import { ISigner, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
-import { IVpOffer, IVprDetails, IVpRequest, IZcap } from './vcApi';
+import { IVpOffer, IVprDetails, IVpRequest, IZcap } from './walletRequestApi';
 import { extractCredentialsFrom } from './verifiableObject';
 import { selectCredentials } from './selectCredentials';
 
@@ -16,7 +16,7 @@ const MAX_INTERACTIONS = 10;
 
 // Type definition for constructExchangeRequest function parameters
 type ConstructExchangeRequestParameters = {
-  credentials?: Credential[];
+  credentials?: IVerifiableCredential[];
   challenge?: string | undefined;
   domain: string | undefined;
   holder: string;
