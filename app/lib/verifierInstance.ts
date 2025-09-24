@@ -1,4 +1,4 @@
-import { VERIFIER_PLUS_URL } from '../../app.config';
+import { VERIFIER_INSTANCE_URL } from '../../app.config';
 import { CredentialRecordRaw } from '../model';
 import { makeSelectDidForCredential, selectWithFactory } from '../store/selectorFactories';
 import { createVerifiablePresentation } from './present';
@@ -17,7 +17,7 @@ export type StoreCredentialResult = {
 }
 
 /**
- * Posts a credential to Verifier Plus
+ * Posts a credential to verifier instance
  *
  * @param rawCredentialRecord - the credential record to post
  * @returns {StoreCredentialResult} - Server and API URLs for the stored VC.
@@ -34,23 +34,23 @@ export async function postCredential(rawCredentialRecord: CredentialRecordRaw): 
     body: JSON.stringify({ vp }),
   };
 
-  const url = `${VERIFIER_PLUS_URL}/api/credentials`;
+  const url = `${VERIFIER_INSTANCE_URL}/api/credentials`;
 
   const response = await fetch(url, request);
   if (!response.ok) {
-    console.log('Verifier Plus URL:', url);
-    console.log('Verifier Plus response:', await response.text());
-    throw new Error('Failed to post credential to Verifier Plus');
+    console.log('verifier instance URL:', url);
+    console.log('verifier instance response:', await response.text());
+    throw new Error('Failed to post credential to verifier instance');
   }
 
   const result = await response.json() as StoreCredentialResult;
-  result.server = VERIFIER_PLUS_URL;
+  result.server = VERIFIER_INSTANCE_URL;
 
   return result;
 }
 
 /**
- * Sends a 'Delete/Unshare Credential' request to VerifierPlus.
+ * Sends a 'Delete/Unshare Credential' request to verifier instance.
  *
  * @param rawCredentialRecord {CredentialRecordRaw} - Credential to unshare.
  * @param unshareUrl {string} - API url for unsharing the credential.
@@ -73,7 +73,7 @@ export async function deleteCredential(
 
   const response = await fetch(unshareUrl, request);
   if (!response.ok) {
-    console.log('Verifier Plus response:', JSON.stringify(response, null, 2));
-    throw new Error(`Failed to delete credential from Verifier Plus: ${response.status} ${response.statusText} ${await response.text()}`);
+    console.log('verifier instance response:', JSON.stringify(response, null, 2));
+    throw new Error(`Failed to delete credential from verifier instance: ${response.status} ${response.statusText} ${await response.text()}`);
   }
 }
