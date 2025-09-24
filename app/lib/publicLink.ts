@@ -13,7 +13,7 @@ import { getStorageClient } from './storageClient';
 import { getRootSigner } from './getRootSigner';
 import { ISigner } from '@digitalcredentials/ssi';
 
-let cachedSigner: ISigner | null = null;
+let cachedSigner: ISigner | undefined;
 
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
@@ -56,6 +56,10 @@ async function createWasPublicLinkIfAvailable(
 ): Promise<string | null> {
   try {
     const signer = await getRootSigner();
+    if (!signer) {
+      console.log('Cannot create public link, root signer not found.');
+      return null;
+    }
     cachedSigner = signer;
 
     console.log('Using signer with ID:', signer.id);
@@ -149,7 +153,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
       console.log('Unsharing WAS credential');
 
       if (!cachedSigner) {
-        cachedSigner = await getRootSigner();
+        cachedSigner = await getRootSigner()!;
       }
 
       if (cachedSigner) {
