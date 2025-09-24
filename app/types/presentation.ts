@@ -1,10 +1,11 @@
-import type { Credential, Proof, Issuer } from './credential';
+import type { Proof, Issuer } from './credential';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 export type VerifiablePresentation = {
   readonly '@context': string[];
   readonly issuer?: Issuer;
   readonly type: string;
-  readonly verifiableCredential: Credential | Credential[];
+  readonly verifiableCredential: IVerifiableCredential | IVerifiableCredential[];
   readonly proof?: Proof;
 }
 
