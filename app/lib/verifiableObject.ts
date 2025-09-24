@@ -1,9 +1,10 @@
 import { LruCache } from '@digitalcredentials/lru-memoize';
 import { ChapiCredentialResponse, ChapiDidAuthRequest } from '../types/chapi';
-// import { ResultLog, verifyCredential, verifyPresentation } from './validate';
+import { ResultLog, verifyCredential, verifyPresentation } from './validate';
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { CredentialRecordRaw } from '../model';
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { ICredentialSubject, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+
 
 /**
  * This type is used to identify a request response that could be a

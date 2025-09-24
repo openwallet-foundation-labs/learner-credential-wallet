@@ -1,6 +1,9 @@
 /**
  * Wallet/VC API
  *
+ * Contains code having to do with external messages to the wallet,
+ * either offers of credentials, or requests for credentials.
+ *
  * Defines high level VC API message types:
  *
  * - IExchangeInvitation ("A request or an offer is waiting for you over at...")
@@ -14,6 +17,25 @@
  */
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import qs from 'query-string';
+import { LinkConfig } from '../../app.config';
+
+export function isDeepLink (text: string): boolean {
+  return text.startsWith(LinkConfig.schemes.universalAppLink) ||
+    !!LinkConfig.schemes.customProtocol.find((link) => text.startsWith(link));
+}
+
+export function isWalletApiMessage (text: string): boolean {
+  let messageObject
+  try {
+    messageObject = JSON.parse(text);
+  } catch (_) {
+    return false;
+  }
+  return ('protocols' in messageObject) ||
+    ('verifiablePresentationRequest' in messageObject) ||
+    ('verifiablePresentation' in messageObject) ||
+    ('issueRequest' in messageObject)
+}
 
 export function parseWalletApiMessage ({ messageObject }: { messageObject: object }): WalletApiMessage | undefined {
   if ('protocols' in messageObject) {

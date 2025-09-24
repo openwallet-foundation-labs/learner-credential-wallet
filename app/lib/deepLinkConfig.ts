@@ -5,7 +5,8 @@ import { navigationRef } from '../navigation/navigationRef';
 import { encodeQueryParams } from './encode';
 
 import { LinkConfig } from '../../app.config';
-import { parseWalletApiMessage, parseWalletApiUrl, WalletApiMessage } from './vcApi';
+import { parseWalletApiMessage, parseWalletApiUrl, WalletApiMessage } from './walletRequestApi';
+import { redirectRequestRoute } from './navigationUtil';
 
 const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol
   .concat(LinkConfig.schemes.universalAppLink);
@@ -80,27 +81,6 @@ export const deepLinkConfig = {
       });
     return stateForExchangeCredentials(message);
   }
-};
-
-/**
- * Processes incoming deep link from Linking 'subscribe' event.
- * @param url
- */
-const redirectRequestRoute = (url: string) => {
-  const messageObject = parseWalletApiUrl({ url });
-  if (messageObject === undefined) {
-    console.log('[redirectRequestRoute] No wallet api message found in url.');
-    return;
-  }
-  const message = parseWalletApiMessage({ messageObject });
-  if (message === undefined) {
-    console.log('[redirectRequestRoute] Wallet api message not recognized.');
-    return;
-  }
-  navigationRef.navigate('ExchangeCredentialsNavigation', {
-    screen: 'ExchangeCredentials',
-    params: { message }
-  });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

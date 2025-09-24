@@ -5,7 +5,7 @@ import {
   IVpRequest,
   IVpOffer,
   IIssueRequest, IVprDetails
-} from '../app/lib/vcApi';
+} from '../app/lib/walletRequestApi';
 import { mockCredential, rawVcRecords } from '../app/mock/credential';
 import { processMessageChain, processRequestQueries } from '../app/lib/exchanges';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';

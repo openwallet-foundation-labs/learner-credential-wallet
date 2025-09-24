@@ -1,5 +1,5 @@
 // Mock external dependencies
-import { IQueryByExample } from '../app/lib/vcApi';
+import { IQueryByExample } from '../app/lib/walletRequestApi';
 
 jest.mock('@digitalcredentials/security-document-loader');
 jest.mock('@digitalcredentials/ed25519-signature-2020');

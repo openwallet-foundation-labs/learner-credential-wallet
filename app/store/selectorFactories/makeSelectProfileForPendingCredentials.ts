@@ -6,7 +6,7 @@ import { PendingCredential, selectPendingCredentials } from '../slices/credentia
 import { selectRawDidRecords } from '../slices/did';
 
 export const makeSelectProfileForPendingCredentials = (): Selector<
-  undefined, 
+  undefined,
   ProfileRecordRaw | null
 > => createSelector(
   [selectRawProfileRecords, selectRawDidRecords, selectPendingCredentials],
@@ -18,16 +18,29 @@ export const makeSelectProfileForPendingCredentials = (): Selector<
       if (rawDidRecord) {
         const rawProfileRecord = rawProfileRecords.find(({ didRecordId }) => didRecordId.equals(rawDidRecord._id)) || null;
         return rawProfileRecord;
-      }      
+      }
     }
 
     return null;
   }
 );
 
-function reduceCommonDidKeyFrom(pendingCredentials: PendingCredential[]): string | null {
-  const didKeyFrom = (pendingCredential: PendingCredential) => pendingCredential.credential.credentialSubject.id || null;
+export function didKeyFrom (pendingCredential: PendingCredential): string | null {
+  let subject = pendingCredential.credential.credentialSubject;
+  if (!subject) {
+    return null;
+  }
+  if (Array.isArray(subject) && subject.length === 0) {
+    return null;
+  }
+  if (!Array.isArray(subject)) {
+    subject = [subject]
+  }
+  // @ts-ignore
+  return subject[0].id || null;
+}
 
+function reduceCommonDidKeyFrom(pendingCredentials: PendingCredential[]): string | null {
   if (pendingCredentials.length === 0) return null;
   if (pendingCredentials.length === 1) return didKeyFrom(pendingCredentials[0]);
 
