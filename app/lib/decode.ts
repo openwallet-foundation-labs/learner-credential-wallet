@@ -12,7 +12,8 @@ import { CredentialRecordRaw } from '../model';
 import { NavigationUtil } from './navigationUtil';
 import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
 
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { ICredentialSubject, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { getSubject } from './credentialDisplay/shared';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 export const regexPattern = {
@@ -106,7 +107,7 @@ export async function credentialsFrom(text: string): Promise<IVerifiableCredenti
   throw new Error('No credentials were resolved from the text');
 }
 
-export function educationalOperationalCredentialFrom(credentialSubject: Subject): EducationalOperationalCredential | undefined {
+export function educationalOperationalCredentialFrom(credentialSubject: ICredentialSubject): EducationalOperationalCredential | undefined {
   let data = credentialSubject.hasCredential || credentialSubject.achievement;
   if (Array.isArray(data)) {
     data = data[0];
@@ -117,9 +118,10 @@ export function educationalOperationalCredentialFrom(credentialSubject: Subject)
 
 export function credentialIdFor(rawCredentialRecord: CredentialRecordRaw): string {
   const { credential } = rawCredentialRecord;
-  const eoc = educationalOperationalCredentialFrom(credential.credentialSubject);
-  const achievement = credential.credentialSubject?.achievement;
-  const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || credential.credentialSubject.id || eoc?.id;
+  const subject = getSubject(credential);
+  const eoc = educationalOperationalCredentialFrom(subject!);
+  const achievement = subject?.achievement;
+  const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || subject?.id || eoc?.id;
 
   if (!id) {
     throw new Error('Credential ID could not be resolved.');
