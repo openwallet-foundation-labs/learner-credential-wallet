@@ -14,6 +14,7 @@ import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
 
 import { ICredentialSubject, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import { getSubject } from './credentialDisplay/shared';
+import { isDeepLink } from './walletRequestApi';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 export const regexPattern = {
@@ -22,14 +23,18 @@ export const regexPattern = {
   json: /^{.*}$/s,
 };
 
-export function credentialRequestParamsFromQrText(text: string): CredentialRequestParams {
-  const params = qs.parse(text.split('?')[1]);
-  const isValid = isCredentialRequestParams(params);
-
-  if (!isValid) {
-    throw new HumanReadableError('The QR code contained an invalid deep link.');
+export function isLegacyCredentialRequest (url: string): boolean {
+  if (!isDeepLink(url)) {
+    return false;
   }
+  // TODO: Use native URL object instead of 'qs'
+  const queryParams = qs.parse(url.split('?')[1]);
+  return ('vc_request_url' in queryParams) &&
+    ('issuer' in queryParams)
+}
 
+export function legacyRequestParamsFromUrl(url: string): CredentialRequestParams {
+  const params = qs.parse(url.split('?')[1]);
   return params as CredentialRequestParams;
 }
 
