@@ -8,7 +8,7 @@ import { IVerifiableCredential } from '@digitalcredentials/ssi';
 import dynamicStyleSheet from './AddScreen.styles';
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 import { NavHeader } from '../../components';
-import { credentialRequestParamsFromQrText, credentialsFrom } from '../../lib/decode';
+import { legacyRequestParamsFromUrl, credentialsFrom, isLegacyCredentialRequest } from '../../lib/decode';
 import { PresentationError } from '../../types/presentation';
 import { errorMessageMatches, HumanReadableError } from '../../lib/error';
 import { navigationRef } from '../../navigation/navigationRef';
@@ -17,8 +17,7 @@ import { pickAndReadFile } from '../../lib/import';
 import { displayGlobalModal } from '../../lib/globalModal';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { ScrollView } from 'react-native-gesture-handler';
-import { cleanCopy } from '../../lib/encode';
-import { NavigationUtil } from '../../lib/navigationUtil';
+import { NavigationUtil, redirectRequestRoute } from '../../lib/navigationUtil';
 import { CANCEL_PICKER_MESSAGES } from '../../../app.config';
 import { isDeepLink, isWalletApiMessage, parseWalletApiMessage } from '../../lib/walletRequestApi';
 
@@ -32,7 +31,7 @@ export default function AddScreen(): React.ReactElement {
     if (navigationRef.isReady()) {
       navigationRef.navigate('QRScreen', {
         instructionText: 'Scan a shared QR code from your issuer to request your credentials.',
-        onReadQRCode,
+        onReadQRCode
       });
     }
   }
@@ -64,26 +63,31 @@ export default function AddScreen(): React.ReactElement {
    * textbox.
    *
    * @param text {string} - One of:
-   *   - Raw JSON VP or VC
-   *   - Raw JSON Wallet API Request
-   *   - A URL to a remotely hosted VC or VP
    *   - A legacy Credential Request Flow link (with a 'vc_request_url' param)
    *       https://github.com/digitalcredentials/docs/blob/main/request/credential_request.md
    *   - An LCW universal app link (https://lcw.app/request?request=... )
    *   - An LCW custom protocol link (dccrequest://..?request=)
+   *   - Raw JSON Wallet API Request
+   *   - Raw JSON VP or VC
+   *   - A URL to a remotely hosted VC or VP
    *   - A Universal Interact invitation link (has a query param `iuv=1`)
    */
   async function addCredentialsFrom(text: string) {
     text = text.trim();
 
-    if (isDeepLink(text)) {
+    if (isLegacyCredentialRequest(text)) {
+      const params = legacyRequestParamsFromUrl(text);
+      return goToCredentialFoyer(params);
+    }
 
-      const params = credentialRequestParamsFromQrText(text);
-      goToCredentialFoyer(cleanCopy(params));
-    } else if (isWalletApiMessage(text)) {
+    if (isDeepLink(text)) {
+      return redirectRequestRoute(text);
+    }
+
+    if (isWalletApiMessage(text)) {
       // A Wallet API Request JSON object has been pasted
       const message = parseWalletApiMessage({ messageObject: JSON.parse(text) });
-      navigationRef.navigate('ExchangeCredentialsNavigation', {
+      return navigationRef.navigate('ExchangeCredentialsNavigation', {
         screen: 'ExchangeCredentials',
         params: { message }
       });
@@ -111,14 +115,14 @@ export default function AddScreen(): React.ReactElement {
     }
   }
 
-  async function addFromUrl() {
+  async function addFromTextbox() {
     try {
       await addCredentialsFrom(inputValue);
     } catch (err) {
       console.error(err);
       await displayGlobalModal({
         title: 'Unable to Add Credentials',
-        body: 'Ensure the URL references a file that contains one or more credentials.',
+        body: 'Contents not recognized.',
         cancelButton: false,
         confirmText: 'Close',
       });
@@ -207,7 +211,7 @@ export default function AddScreen(): React.ReactElement {
                 buttonStyle={[mixins.button, mixins.buttonPrimary, styles.actionButton]}
                 containerStyle={[mixins.buttonContainer, styles.actionButtonContainer]}
                 titleStyle={[mixins.buttonTitle]}
-                onPress={addFromUrl}
+                onPress={addFromTextbox}
                 disabled={!inputIsValid}
                 disabledStyle={styles.actionButtonInactive}
                 disabledTitleStyle={styles.actionButtonInactiveTitle}
