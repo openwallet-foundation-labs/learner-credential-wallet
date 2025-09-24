@@ -171,17 +171,6 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
     navigation.navigate('PublicLinkScreen', { rawCredentialRecord });
   }
 
-  async function scanShareRequestQRCode() {
-    const text = await NavigationUtil.scanQRCode({ instructionText: 'Scan a shared QR code to continue.' });
-    const params = queryParamsFrom(text);
-
-    if (!isShareRequestParams(params)) {
-      throw new HumanReadableError('Invalid QR code. Make sure you are scanning a share request QR code.');
-    }
-
-    startShareRequest(params);
-  }
-
   function goToShareHome() {
     navigation.navigate('ShareHomeScreen');
   }
