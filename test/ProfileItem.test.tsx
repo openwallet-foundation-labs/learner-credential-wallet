@@ -1,7 +1,24 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 
-// Mock React Native dependencies first
+// Mock navigationRef with proper hoisting
+jest.mock('../app/navigation/navigationRef', () => {
+  const mockNavigate = jest.fn();
+  const mockIsReady = jest.fn(() => true);
+  
+  // Store in global for test access
+  (global as any).__mockNavigate = mockNavigate;
+  (global as any).__mockIsReady = mockIsReady;
+  
+  return {
+    navigationRef: {
+      isReady: mockIsReady,
+      navigate: mockNavigate,
+    },
+  };
+});
+
+// Mock React Native dependencies
 jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
@@ -82,43 +99,77 @@ import ProfileItem from '../app/components/ProfileItem/ProfileItem';
 import { deleteProfile, updateProfile } from '../app/store/slices/profile';
 import { exportProfile } from '../app/lib/export';
 
-// Provide navigation mock entirely within factory scope
-jest.mock('../app/navigation', () => {
-  const mockNavigate = jest.fn();
+
+
+// Mock AccessibleView first
+jest.mock('../app/components/AccessibleView/AccessibleView', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return React.forwardRef(({ children, onPress, label, ...props }: any, ref: any) => 
+    React.createElement(View, { 
+      ...props, 
+      ref, 
+      onPress,
+      accessibilityLabel: label,
+      accessible: true 
+    }, children)
+  );
+});
+
+// Mock individual components
+jest.mock('../app/components/MoreMenuButton/MoreMenuButton', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return ({ children }: any) => React.createElement(View, { testID: 'more-menu' }, children);
+});
+
+jest.mock('../app/components/MenuItem/MenuItem', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return ({ title, onPress }: any) => React.createElement(View, { onPress, testID: `menu-${title}` }, title);
+});
+
+jest.mock('../app/components/ConfirmModal/ConfirmModal', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return ({ title, children, onConfirm, onCancel, onRequestClose, cancelButton = true }: any) => (
+    React.createElement(View, { testID: 'confirm-modal' },
+      React.createElement(View, { testID: 'modal-title' }, title),
+      React.createElement(View, { onPress: onConfirm, testID: 'confirm' }, 'confirm'),
+      cancelButton ? React.createElement(View, { onPress: onCancel || onRequestClose, testID: 'cancel' }, 'cancel') : null,
+      children
+    )
+  );
+});
+
+jest.mock('../app/components/BackupItemModal/BackupItemModal', () => {
+  const React = require('react');
+  const { View } = require('react-native');
+  return ({ title, onBackup, onRequestClose }: any) => (
+    React.createElement(View, { testID: 'backup-modal' },
+      React.createElement(View, { testID: 'backup-title' }, title || 'Backup'),
+      React.createElement(View, { onPress: onBackup, testID: 'backup-do' }, 'backup'),
+      React.createElement(View, { onPress: onRequestClose, testID: 'backup-close' }, 'close')
+    )
+  );
+});
+
+// Mock @expo/vector-icons
+jest.mock('@expo/vector-icons', () => {
+  const React = require('react');
+  const { Text } = require('react-native');
   return {
-    navigationRef: {
-      isReady: jest.fn(() => true),
-      navigate: (...args: any[]) => mockNavigate(...args),
-    },
-    __esModule: true as const,
-    _mockNavigate: mockNavigate,
+    MaterialIcons: ({ name, ...props }: any) => React.createElement(Text, props, name),
+    Ionicons: ({ name, ...props }: any) => React.createElement(Text, props, name),
   };
 });
 
-// Make app components interactive using RN View
-jest.mock('../app/components', () => {
+// Mock react-native-outside-press
+jest.mock('react-native-outside-press', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return {
-    MoreMenuButton: ({ children }: any) => React.createElement(View, null, children),
-    MenuItem: ({ title, onPress }: any) => (
-      React.createElement(View, { onPress, testID: `menu-${title}` }, title)
-    ),
-    ConfirmModal: ({ title, children, onConfirm, onCancel, onRequestClose, cancelButton = true }: any) => (
-      React.createElement(View, null,
-        React.createElement(View, { testID: 'modal-title' }, title),
-        React.createElement(View, { onPress: onConfirm, testID: 'confirm' }, 'confirm'),
-        cancelButton ? React.createElement(View, { onPress: onCancel || onRequestClose, testID: 'cancel' }, 'cancel') : null,
-        children
-      )
-    ),
-    BackupItemModal: ({ title, onBackup, onRequestClose }: any) => (
-      React.createElement(View, null,
-        React.createElement(View, { testID: 'backup-title' }, title || 'Backup'),
-        React.createElement(View, { onPress: onBackup, testID: 'backup-do' }, 'backup'),
-        React.createElement(View, { onPress: onRequestClose, testID: 'backup-close' }, 'close')
-      )
-    ),
+  return ({ children, onOutsidePress, disabled, ...props }: any) => {
+    return React.createElement(View, props, children);
   };
 });
 
@@ -137,6 +188,10 @@ describe('ProfileItem Component', () => {
     jest.clearAllMocks();
     const { useAppDispatch } = require('../app/hooks');
     useAppDispatch.mockReturnValue(mockDispatch);
+    
+    // Reset navigation mocks
+    (global as any).__mockNavigate.mockClear();
+    (global as any).__mockIsReady.mockReturnValue(true);
   });
 
   it('renders menu items so component mounted', () => {
@@ -178,10 +233,8 @@ describe('ProfileItem Component', () => {
   it('navigates to View Source and clears modal', () => {
     const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
 
-    const { _mockNavigate } = require('../app/navigation');
-
     fireEvent.press(getByTestId('menu-View Source'));
-    expect(_mockNavigate).toHaveBeenCalledWith('ViewSourceScreen', expect.any(Object));
+    expect((global as any).__mockNavigate).toHaveBeenCalledWith('ViewSourceScreen', expect.any(Object));
   });
 
   it('deletes a profile successfully', async () => {
@@ -213,24 +266,26 @@ describe('ProfileItem Component', () => {
     fireEvent.press(getByTestId('confirm'));
   });
 
-  it('navigates to Delete Details from delete modal', () => {
+  it('navigates to Delete Details from delete modal', async () => {
     const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
 
-    const { _mockNavigate } = require('../app/navigation');
-
+    // Open delete modal
     fireEvent.press(getByTestId('menu-Delete'));
-    fireEvent.press(getByTestId('Details'));
+    
+    // Wait for modal to render and click Details button
+    await act(async () => {
+      fireEvent.press(getByTestId('Details'));
+    });
 
-    expect(_mockNavigate).toHaveBeenCalledWith('HomeNavigation', expect.any(Object));
+    expect((global as any).__mockNavigate).toHaveBeenCalledWith('HomeNavigation', expect.any(Object));
   });
 
   it('handles navigation not ready for view source', () => {
-    const { navigationRef, _mockNavigate } = require('../app/navigation');
-    navigationRef.isReady.mockReturnValueOnce(false);
+    (global as any).__mockIsReady.mockReturnValueOnce(false);
 
     const { getByTestId } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
 
     fireEvent.press(getByTestId('menu-View Source'));
-    expect(_mockNavigate).not.toHaveBeenCalled();
+    expect((global as any).__mockNavigate).not.toHaveBeenCalled();
   });
 });

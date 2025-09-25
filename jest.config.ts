@@ -5,6 +5,7 @@ const packagesToTransformWithBabel = [
   'react-native',
   'expo-secure-store',
   'expo-modules-core',
+  'expo-font',
   'react-native-fs',
   'base58-universal',
   'base64url-universal',
@@ -13,7 +14,12 @@ const packagesToTransformWithBabel = [
   '@realm', // <-- critical for @realm/fetch
   'react-redux',
   '@reduxjs/toolkit',
-  '@testing-library/react-native'
+  '@testing-library/react-native',
+  '@expo/vector-icons',
+  'immer',
+  'react-native-securerandom',
+  'rn-animated-ellipsis',
+  'react-native-outside-press'
 ];
 
 const transformIgnorePatterns = [
