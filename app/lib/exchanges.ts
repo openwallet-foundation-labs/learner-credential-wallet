@@ -8,7 +8,14 @@ import { VerifiablePresentation } from '../types/presentation';
 import { filterCredentialRecordsByType } from './credentialMatching';
 import { HumanReadableError } from './error';
 import { ISigner, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
-import { IVpOffer, IVprDetails, IVpRequest, IZcap } from './walletRequestApi';
+import {
+  delegateZcap,
+  isDidAuthRequested, isZcapRequested,
+  IVpOffer,
+  IVprDetails,
+  IVpRequest,
+  IZcap
+} from './walletRequestApi';
 import { extractCredentialsFrom } from './verifiableObject';
 import { selectCredentials } from './selectCredentials';
 
@@ -118,13 +125,16 @@ type IResponseToExchanger = {
  */
 export async function processMessageChain (
   { exchangeUrl, requestOrOffer, selectedDidRecord, rootZcapSigner, loadCredentials,
-    interactions = 0, confirmModalEnabled = true }:
+    interactions = 0, confirmModalEnabled = true, confirmZcapModal }:
   { exchangeUrl?: string, requestOrOffer: IVpRequest | IVpOffer,
     selectedDidRecord?: DidRecordRaw, rootZcapSigner?: ISigner,
     loadCredentials: () => Promise<CredentialRecordRaw[]>,
-    interactions?: number, confirmModalEnabled?: boolean }
+    interactions?: number, confirmModalEnabled?: boolean,
+    confirmZcapModal: () => Promise<boolean> }
 ): Promise<{ acceptCredentials?: IVerifiableCredential[], redirectUrl?: string }> {
   const { redirectUrl } = requestOrOffer;
+
+  console.log('selectedDidRecord', JSON.stringify(selectedDidRecord));
 
   // Classify the message
   let request, offer;
@@ -146,6 +156,17 @@ export async function processMessageChain (
   if (!request) {
     console.log('[processMessageChain] No offer or request found, exiting...');
     return {};
+  }
+
+  const queries = Array.isArray(request.query) ? request.query : [request.query];
+  let { didAuthRequest } = isDidAuthRequested({ queries });
+
+  // if (didAuthRequest && confirmModalEnabled) {
+  // }
+
+  let { zcapRequests } = isZcapRequested({ queries });
+  if (zcapRequests && confirmModalEnabled) {
+    await confirmZcapModal();
   }
 
   // Process the queries (assemble and confirm credentials, delegate zcaps)
@@ -284,7 +305,11 @@ export async function processRequestQueries(
       vcs = vcs.concat(filterCredentialRecordsByType(allRecords, query));
       break;
     case VcQueryType.ZcapQuery:
-      // zcaps.push(await delegateZcap({ query, rootZcapSigner }));
+      if (!rootZcapSigner) {
+        throw new HumanReadableError(
+          'Cannot process zcap request, root signer not initialized.');
+      }
+      zcaps.push(await delegateZcap({ query, rootZcapSigner }));
       break;
     default:
       throw new HumanReadableError(`Unsupported query type: "${query.type}"`)
@@ -293,6 +318,3 @@ export async function processRequestQueries(
   return { credentials: vcs, zcaps, challenge, domain, didAuthRequested };
 }
 
-// export async function delegateZcap({ query, rootZcapSigner }): Promise<void> {
-//
-// }

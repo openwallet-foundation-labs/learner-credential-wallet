@@ -15,9 +15,10 @@
  * - Deep links / universal app links
  * - JSON objects fetched or pasted into the Add screen
  */
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { ISigner, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import qs from 'query-string';
 import { LinkConfig } from '../../app.config';
+import { HumanReadableError } from './error';
 
 export function isDeepLink (text: string): boolean {
   return text.startsWith(LinkConfig.schemes.universalAppLink) ||
@@ -71,6 +72,52 @@ export function parseWalletApiUrl ({ url }: { url: string }): object | undefined
     return;
   }
   return messageObject;
+}
+
+export function isZcapRequested ({ queries }:
+  { queries: IVprQuery[] }
+): { zcapRequests?: IVprQuery[] } {
+  const zcapRequests = queries.filter(q => q.type === 'ZcapQuery');
+  if (zcapRequests.length > 0) {
+    return { zcapRequests };
+  }
+  return {};
+}
+
+export function isDidAuthRequested ({ queries }:
+  { queries: IVprQuery[] }
+): { didAuthRequest?: IVprQuery } {
+  const didAuthRequests = queries.filter(q => q.type === 'DIDAuthentication');
+  if (didAuthRequests.length > 1) {
+    // If there's more than one DIDAuth request, fail
+    throw new HumanReadableError(
+      'More than one DIDAuthentication request found, exiting.');
+  }
+  if (didAuthRequests.length === 1) {
+    return { didAuthRequest: didAuthRequests[0] };
+  }
+  return {};
+}
+
+/**
+ * {
+ *   capabilityQuery: {
+ *     reason: '...',
+ *     allowedAction: ['GET', 'PUT', ...],
+ *     controller: 'did:key:...',
+ *     invocationTarget: {
+ *       type: 'urn:was:collection', contentType: 'application/vc',
+ *       name: 'VerifiableCredential collection'
+ *     }
+ *   }
+ * }
+ * @param query
+ * @param rootZcapSigner
+ */
+export async function delegateZcap({ query, rootZcapSigner }:
+  {query: IZcapQuery, rootZcapSigner: ISigner}
+): Promise<IZcap> {
+
 }
 
 export type WalletApiMessage = IExchangeInvitation

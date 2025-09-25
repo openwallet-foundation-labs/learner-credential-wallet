@@ -16,11 +16,13 @@ import { ExchangeCredentialsProps } from './ExchangeCredentials.d';
 import { HumanReadableError } from '../../lib/error';
 import { getRootSigner } from '../../lib/getRootSigner';
 import { CredentialRecord } from '../../model';
+import { useThemeContext } from '../../hooks/useThemeContext';
 
 export default function ExchangeCredentials({ route }: ExchangeCredentialsProps): React.ReactElement {
   const { params } = route;
   const { message } = params;
 
+  const { theme } = useThemeContext();
   const dispatch = useAppDispatch();
   const { mixins } = useDynamicStyles();
 
@@ -49,6 +51,20 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     cancelButton: false,
     body: <GlobalModalBody message='You have successfully delivered credentials to the organization.' />
   };
+
+  const confirmZcapModal = async () => {
+    const confirmed = await displayGlobalModal({
+      title: 'Storage Access Request',
+      confirmText: 'Grant',
+      cancelOnBackgroundPress: true,
+      body: (
+        <Text style={{ color: theme.color.textPrimary }}>
+          Something is requesting storage access.
+        </Text>
+      )
+    });
+    return confirmed;
+  }
 
   /**
    * Called when user confirms Yes to the 'Incoming Message' modal below.
@@ -104,7 +120,8 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const { acceptCredentials } = await processMessageChain(
-      { exchangeUrl, requestOrOffer, selectedDidRecord, rootZcapSigner, loadCredentials });
+      { exchangeUrl, requestOrOffer, selectedDidRecord, rootZcapSigner,
+        loadCredentials, confirmZcapModal });
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {
