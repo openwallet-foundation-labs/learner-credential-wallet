@@ -11,17 +11,9 @@ import { RestartScreen, LoginScreen } from '../../screens';
 import { useAppLoading, useDynamicStyles } from '../../hooks';
 import { selectWalletState } from '../../store/slices/wallet';
 import { EventProvider } from 'react-native-outside-press';
-// Lazy load deepLink to avoid cycle
-let deepLinkConfig: any = null;
-const getDeepLinkConfig = async () => {
-  if (!deepLinkConfig) {
-    const { deepLinkConfig: config } = await import('../../lib/deepLink');
-    deepLinkConfig = config;
-  }
-  return deepLinkConfig;
-};
 import GlobalConfirmModal from '../../components/GlobalConfirmModal/GlobalConfirmModal';
 import { navigationRef } from '../navigationRef';
+import { deepLinkConfig } from '../../lib/deepLink';
 
 export { navigationRef };
 
@@ -72,7 +64,7 @@ export default function AppNavigation(): React.ReactElement | null {
           onReady={SplashScreen.hideAsync}
           theme={navigatorTheme}
           ref={navigationRef}
-          linking={undefined}
+          linking={deepLinkConfig}
         >
           {renderScreen()}
         </NavigationContainer>
