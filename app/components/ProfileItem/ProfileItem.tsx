@@ -12,6 +12,7 @@ import { deleteProfile, updateProfile } from '../../store/slices/profile';
 import { exportProfile } from '../../lib/export';
 import { errorMessageFrom } from '../../lib/error';
 import { fmtCredentialCount } from '../../lib/text';
+import { getCredentialName } from '../../lib/credentialName';
 
 enum ActiveModal {
   Rename,
@@ -148,7 +149,7 @@ function DeleteModal({ rawProfileRecord, onRequestClose }: ActionModalProps): Re
             header: 'Delete Profile Details',
             details: {
               [`${rawProfileRecord.rawCredentialRecords.length} total credential`]:
-              rawProfileRecord.rawCredentialRecords.map(({ credential }) => credential.credentialSubject.hasCredential?.name ?? ''),
+              rawProfileRecord.rawCredentialRecords.map(({ credential }) => getCredentialName(credential)),
             },
           },
         },
