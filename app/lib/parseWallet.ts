@@ -4,7 +4,9 @@ import { DidDocument, DidKey } from '../types/did';
 import { ProfileMetadata } from '../types/profile';
 
 function isCredential(item: WalletContent): item is Credential {
-  return (item as Credential)['@context']?.includes('https://www.w3.org/2018/credentials/v1') ;
+  const context = (item as Credential)['@context'];
+  return context?.includes('https://www.w3.org/2018/credentials/v1') || 
+         context?.includes('https://www.w3.org/ns/credentials/v2');
 }
 
 function isDidDocument(item: WalletContent): item is DidDocument {

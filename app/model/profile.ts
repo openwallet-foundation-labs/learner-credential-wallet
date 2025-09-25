@@ -25,6 +25,11 @@ function generateProfileObjectIdHex(): string {
 const UNTITLED_PROFILE_NAME = 'Untitled Profile';
 export const INITIAL_PROFILE_NAME = 'Default';
 
+const WALLET_CONTEXTS = ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'] as const;
+function generateWalletUrnId(): string {
+  return `urn:uuid:${uuid.v4()}`;
+}
+
 // Helper function to check if profile names are case-insensitively equal
 function isProfileNameDuplicate(existingName: string, newName: string): boolean {
   return existingName.toLowerCase() === newName.toLowerCase();
@@ -185,8 +190,8 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
     ];
 
     const profile: UnlockedWallet = {
-      '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
-      id: 'http://example.gov/wallet/3732',
+      '@context': WALLET_CONTEXTS as unknown as string[],
+      id: generateWalletUrnId(),
       type: 'UniversalWallet2020',
       status: 'UNLOCKED',
       contents,
