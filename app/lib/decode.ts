@@ -124,8 +124,8 @@ export function educationalOperationalCredentialFrom(credentialSubject: ICredent
 export function credentialIdFor(rawCredentialRecord: CredentialRecordRaw): string {
   const { credential } = rawCredentialRecord;
   const subject = getSubject(credential);
-  const eoc = educationalOperationalCredentialFrom(subject!);
-  const achievement = subject?.achievement;
+  const eoc = educationalOperationalCredentialFrom(subject);
+  const achievement = subject.achievement;
   const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || subject?.id || eoc?.id;
 
   if (!id) {
