@@ -3,7 +3,7 @@ import { CredentialRecordRaw } from '../model';
 import { IssuerObject } from '../types/credential';
 import { Cache, CacheKey } from './cache';
 import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
-import { credentialIdFor, educationalOperationalCredentialFrom } from './decode';
+import { educationalOperationalCredentialFrom } from './decode';
 import * as verifierPlus from './verifierPlus';
 import { StoreCredentialResult } from './verifierPlus';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,7 +18,7 @@ let cachedSigner: ISigner | null = null;
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string> {
-  const id = credentialIdFor(rawCredentialRecord);
+  const id = rawCredentialRecord._id.toString();
 
   const wasLink = WAS.enabled ? await createWasPublicLinkIfAvailable(rawCredentialRecord) : null;
 
@@ -138,7 +138,7 @@ async function createWasPublicLinkIfAvailable(
 }
 
 export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw): Promise<void> {
-  const vcId = credentialIdFor(rawCredentialRecord);
+  const vcId = rawCredentialRecord._id.toString();
 
   try {
     const publicLinks = await Cache.getInstance()
@@ -182,7 +182,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
 }
 
 export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw): Promise<string | null> {
-  const id = credentialIdFor(rawCredentialRecord);
+  const id = rawCredentialRecord._id.toString();
 
   try {
     const publicLinks = await Cache.getInstance()
