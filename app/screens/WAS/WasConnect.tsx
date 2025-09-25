@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
 import { navigationRef } from '../../navigation/navigationRef';
-import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
-import { handleVcApiExchange } from '../../lib/exchanges';
 import { theme } from '../../styles';
-import { getRootSigner } from '../../lib/getRootSigner';
+import { redirectRequestRoute } from '../../lib/navigationUtil';
 
 export default function WasConnectScreen() {
   const [statusMessage, setStatusMessage] = useState('');
@@ -18,7 +16,6 @@ export default function WasConnectScreen() {
     setStatusMessage('');
     setStatusType('');
   };
-
 
   const handleScanQR = () => {
     if (navigationRef.isReady()) {
@@ -41,17 +38,17 @@ export default function WasConnectScreen() {
               throw new Error('Missing request URL in QR code');
             }
 
-            const signer = await getRootSigner();
-
-            await handleVcApiExchange({
-              url: requestUrl,
-              holder: signer.id,
-              suite: new Ed25519Signature2020({ signer })
-            });
+            redirectRequestRoute(qrText)
+            // const signer = await getRootSigner();
+            //
+            // await handleVcApiExchange({
+            //   url: requestUrl,
+            //   holder: signer.id,
+            //   suite: new Ed25519Signature2020({ signer })
+            // });
 
             setStatusMessage('✅ Wallet successfully connected to Resume Author!');
             setStatusType('success');
-
 
             if (navigationRef.isReady()) {
               navigationRef.goBack();

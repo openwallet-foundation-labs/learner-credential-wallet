@@ -110,6 +110,7 @@ describe('vcApi', () => {
       const allCredentials = [{ credential: mockCredential } as CredentialRecordRaw];
       const loadCredentials = async () => allCredentials;
       const { acceptCredentials } = await processMessageChain({
+        exchangeUrl: 'https://exchange.example',
         requestOrOffer: message, loadCredentials, confirmModalEnabled: false });
       expect(acceptCredentials).toBeUndefined()
     });
@@ -125,6 +126,7 @@ describe('vcApi', () => {
       }
       const loadCredentials = async () => { return [] };
       const { acceptCredentials } = await processMessageChain({
+        exchangeUrl: 'https://exchange.example',
         requestOrOffer: message, loadCredentials, confirmModalEnabled: false });
 
       expect(Array.isArray(acceptCredentials)).toBeTruthy();

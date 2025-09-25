@@ -3,8 +3,6 @@ jest.mock('../app/lib/globalModal', () => ({
   clearGlobalModal: jest.fn()
 }));
 
-import handleZcapRequest from '../app/lib/handleZcapRequest';
-
 jest.mock('@react-native-async-storage/async-storage', () => ({
   getItem: async (key: string) => {
     if (key === 'was_signer_json') {

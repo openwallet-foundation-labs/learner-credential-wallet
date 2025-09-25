@@ -12,7 +12,7 @@ import { useAppLoading, useDynamicStyles } from '../../hooks';
 import { selectWalletState } from '../../store/slices/wallet';
 import { EventProvider } from 'react-native-outside-press';
 import { deepLinkConfig } from '../../lib/deepLinkConfig';
-import { GlobalConfirmModal } from '../../components/GlobalConfirmModal/GlobalConfirmModal';
+import GlobalConfirmModal from '../../components/GlobalConfirmModal/GlobalConfirmModal';
 import { navigationRef } from '../navigationRef';
 
 export { navigationRef };
