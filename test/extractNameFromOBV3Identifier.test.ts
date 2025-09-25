@@ -1,4 +1,4 @@
-import type { Subject } from '../app/types/credential'; 
+import type { Subject } from '../app/types/credential';
 import { extractNameFromOBV3Identifier } from '../app/lib/extractNameFromOBV3Identifier';
 
 describe('extractNameFromOBV3Identifier', () => {
@@ -15,8 +15,8 @@ describe('extractNameFromOBV3Identifier', () => {
   });
 
  it('should return name from a valid OBV3 identifier object', async () => {
- 	const credentialSubject: Subject = { identifier: { identityType: 'name', identityHash: 'Jane Doe' }};
-	
+  const credentialSubject: Subject = { identifier: { identityType: 'name', identityHash: 'Jane Doe' }};
+
   expect(extractNameFromOBV3Identifier(credentialSubject)).toEqual('Jane Doe');
  });
 
