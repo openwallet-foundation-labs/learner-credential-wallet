@@ -3,7 +3,12 @@ import { Text, ScrollView, View } from 'react-native';
 
 import { NavHeader } from '../../components';
 import dynamicStyleSheet from './ViewSourceScreen.styles';
-import { ViewSourceScreenProps } from './ViewSourceScreen.d';
+import { ViewSourceScreenParams } from './ViewSourceScreen.d';
+
+type ViewSourceScreenProps = {
+  navigation: any;
+  route: { params: ViewSourceScreenParams };
+};
 import { useDynamicStyles } from '../../hooks';
 import { Button } from 'react-native-elements';
 
