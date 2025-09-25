@@ -2,9 +2,10 @@ import type { NavigatorScreenParams } from '@react-navigation/native';
 import type { StackScreenProps } from '@react-navigation/stack';
 import type { VerifyPayload } from '../../lib/verifiableObject';
 import type { HomeNavigationParamList, AcceptCredentialsNavigationParamList, ExchangeCredentialsNavigationParamList } from '..';
-import { Credential, CredentialRecordRaw } from '../../types/credential';
+import { CredentialRecordRaw } from '../../types/credential';
 import { ProfileRecordRaw } from '../../model';
 import { CredentialSelectionScreenParams, ProfileSelectionScreenParams, QRScreenParams, ViewSourceScreenParams } from '../../screens';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 export type RootNavigationParamsList = {
   HomeNavigation: NavigatorScreenParams<HomeNavigationParamList>;
@@ -14,7 +15,7 @@ export type RootNavigationParamsList = {
   };
   QRScreen: QRScreenParams;
   VerificationStatusScreen: {
-    credential: Credential;
+    credential: IVerifiableCredential;
     verifyPayload: VerifyPayload;
   };
   AcceptCredentialsNavigation: NavigatorScreenParams<AcceptCredentialsNavigationParamList>;

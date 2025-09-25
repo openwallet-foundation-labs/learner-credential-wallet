@@ -1,6 +1,6 @@
 import Realm from 'realm';
-import { createHash, randomBytes } from 'crypto';
-const ObjectId = Realm.BSON.ObjectId; 
+import { randomBytes } from 'crypto';
+const ObjectId = Realm.BSON.ObjectId;
 
 // Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
 let __OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);

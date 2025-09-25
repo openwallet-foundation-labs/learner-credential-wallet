@@ -14,12 +14,11 @@ import { CredentialRecord } from './credential';
 import { DidRecord, DidRecordRaw } from './did';
 import { CredentialRecordRaw } from '../types/credential';
 import { credentialContentHash } from '../lib/credentialHash';
-import { getSubject } from '../lib/credentialDisplay/shared';
 
 const ObjectId = Realm.BSON.ObjectId;
 
 // Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
-let __PROFILE_OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);
+// let __PROFILE_OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff);
 function generateProfileObjectIdHex(): string {
   return randomBytes(12).toString('hex');
 }

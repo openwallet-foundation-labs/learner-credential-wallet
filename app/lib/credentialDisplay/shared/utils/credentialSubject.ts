@@ -21,16 +21,8 @@ type CredentialRenderInfo = {
   alignment: Alignment[] | undefined;
 }
 
-export function getSubject (vc: IVerifiableCredential): ICredentialSubject | undefined {
+export function getSubject (vc: IVerifiableCredential): ICredentialSubject {
   const { credentialSubject } = vc;
-  if (!credentialSubject) {
-    console.log('Warning: This VC has no credentialSubject!');
-    return;
-  }
-  if (Array.isArray(credentialSubject) && credentialSubject.length === 0) {
-    console.log('Warning: This vc.credentialSubject is an empty array!');
-    return;
-  }
   if (Array.isArray(credentialSubject)) {
     return credentialSubject[0];
   }
