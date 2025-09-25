@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { themes, ThemeType } from '.';
+import { themes } from './index';
+import type { ThemeType } from './index.d';
 import { AsyncStorageKey } from '../../lib/asyncStorage';
 
 export async function loadThemeName(): Promise<string | null> {

@@ -7,7 +7,8 @@ import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verifica
 import { ConfirmModal } from '../../components';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { navigationRef } from '../../navigation';
-import { makeSelectDidFromProfile, selectWithFactory } from '../../store/selectorFactories';
+import { selectWithFactory } from '../../store/selectorFactories';
+import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
 import { stageCredentials } from '../../store/slices/credentialFoyer';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
 import { displayGlobalModal } from '../../lib/globalModal';

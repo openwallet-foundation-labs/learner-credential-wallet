@@ -5,7 +5,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 import dynamicStyleSheet from './CredentialItem.styles';
 import type { CredentialItemProps } from './CredentialItem.d';
-import { CredentialStatusBadges } from '../../components';
+import CredentialStatusBadges from '../CredentialStatusBadges/CredentialStatusBadges';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { credentialItemPropsFor } from '../../lib/credentialDisplay';
 import { CardImage } from '../../lib/credentialDisplay/shared';

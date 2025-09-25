@@ -5,7 +5,7 @@ import { Button } from 'react-native-elements';
 import { NavHeader } from '../../components';
 import dynamicStyleSheet from './DebugScreen.styles';
 import { DebugScreenProps } from '../../navigation';
-import { makeSelectDidFromProfile } from '../../store/selectorFactories';
+import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
 import { useSelectorFactory } from '../../hooks/useSelectorFactory';
 import { useDynamicStyles } from '../../hooks';
 

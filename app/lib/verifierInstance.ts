@@ -1,6 +1,7 @@
 import { VERIFIER_INSTANCE_URL } from '../../app.config';
 import { CredentialRecordRaw } from '../model';
-import { makeSelectDidForCredential, selectWithFactory } from '../store/selectorFactories';
+import { selectWithFactory } from '../store/selectorFactories';
+import { makeSelectDidForCredential } from '../store/selectorFactories/makeSelectDidForCredential';
 import { createVerifiablePresentation } from './present';
 
 export type StoreCredentialResult = {
