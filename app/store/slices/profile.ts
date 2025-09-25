@@ -1,6 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { type RootState} from '..';
-import {getAllRecords} from '../getAllRecords';
 import { AddProfileRecordParams, ProfileRecord, ProfileRecordRaw } from '../../model';
 import { _getAllDidRecords } from './did';
 
@@ -33,6 +32,8 @@ const updateProfile = createAsyncThunk('profileState/updateProfile', async (rawP
 
 const deleteProfile = createAsyncThunk('profileState/deleteProfile', async (rawProfileRecord: ProfileRecordRaw, { dispatch }) => {
   await ProfileRecord.deleteProfileRecord(rawProfileRecord);
+  // Import getAllRecords dynamically to avoid circular dependency
+  const { getAllRecords } = await import('../getAllRecords');
   await dispatch(getAllRecords());
 });
 

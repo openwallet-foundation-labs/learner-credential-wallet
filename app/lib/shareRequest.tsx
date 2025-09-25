@@ -1,5 +1,6 @@
 import { CredentialRecordRaw, ProfileRecordRaw } from '../model';
-import { makeSelectDidFromProfile, selectWithFactory } from '../store/selectorFactories';
+import { selectWithFactory } from '../store/selectorFactories';
+import { makeSelectDidFromProfile } from '../store/selectorFactories/makeSelectDidFromProfile';
 import { createVerifiablePresentation } from './present';
 
 export type ShareRequestParams = {

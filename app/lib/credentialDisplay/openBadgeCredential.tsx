@@ -7,7 +7,7 @@ import { CredentialNavigationParamList } from '../../navigation/CredentialNaviga
 import { Button } from 'react-native-elements';
 import { mixins } from '../../styles';
 
-import { CredentialStatusBadges } from '../../components';
+import CredentialStatusBadges from '../../components/CredentialStatusBadges/CredentialStatusBadges';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { getExpirationDate, getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';

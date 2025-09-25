@@ -9,7 +9,7 @@ import { CredentialScreenProps, navigationRef } from '../../navigation';
 
 import dynamicStyleSheet from './CredentialScreen.styles';
 import { deleteCredential } from '../../store/slices/credential';
-import { makeSelectProfileFromCredential } from '../../store/selectorFactories';
+import { makeSelectProfileFromCredential } from '../../store/selectorFactories/makeSelectProfileFromCredential';
 import { useSelectorFactory } from '../../hooks/useSelectorFactory';
 import { PublicLinkScreenMode } from '../../screens';
 import { credentialItemPropsFor } from '../../lib/credentialDisplay';

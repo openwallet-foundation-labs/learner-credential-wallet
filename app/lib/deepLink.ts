@@ -2,7 +2,8 @@ import { getStateFromPath, LinkingOptions, NavigationState, PartialState } from 
 import { Linking } from 'react-native';
 import qs from 'query-string';
 
-import { navigationRef, RootNavigationParamsList } from '../navigation';
+import { navigationRef } from '../navigation/AppNavigation/AppNavigation';
+import type { RootNavigationParamsList } from '../navigation/RootNavigation/RootNavigation.d';
 import { ChapiCredentialRequest } from '../types/chapi';
 import { credentialRequestFromChapiUrl } from './decode';
 import { encodeQueryParams } from './encode';

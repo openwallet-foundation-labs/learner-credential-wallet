@@ -10,7 +10,6 @@ export const themes = {
 
 export type { ThemeType } from './index.d';
 
-export * from './themeName';
 export * from './themeContext';
 
 /* Temporary static definition */

@@ -6,7 +6,7 @@ import { GlobalModalPayload } from '../../components';
 import { isBiometricsSupported } from '../../lib/biometrics';
 import { importWalletOrProfileFrom } from '../../lib/import';
 import { db, INITIAL_PROFILE_NAME } from '../../model';
-import { loadThemeName, saveThemeName } from '../../styles';
+import { loadThemeName, saveThemeName } from '../../styles/theme/themeName';
 import { createProfile } from './profile';
 import { Cache } from '../../lib/cache';
 import {getAllRecords} from '../getAllRecords';

@@ -28,7 +28,8 @@ export function selectWithFactory<F extends UnknownSelectorFactory>(selectorFact
   return value as SelectorFactoryReturn<F>;
 }
 
-export * from './makeSelectDidForCredential';
-export * from './makeSelectDidFromProfile';
-export * from './makeSelectProfileFromCredential';
-export * from './makeSelectProfilesWithCredentials';
+// Individual selector factories should be imported directly to avoid cycles
+// export * from './makeSelectDidForCredential';
+// export * from './makeSelectDidFromProfile';
+// export * from './makeSelectProfileFromCredential';
+// export * from './makeSelectProfilesWithCredentials';
