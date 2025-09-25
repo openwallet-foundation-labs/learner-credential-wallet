@@ -1,11 +1,11 @@
 import { verifyPresentation } from '../app/lib/validate';
 
 import { mockCredential } from '../app/mock/credential';
-import { VerifiablePresentation } from '../app/types/presentation';
+import { IVerifiablePresentation } from '@digitalcredentials/ssi';
 
 describe('verifier-core usage', () => {
   it('should verify a VP', async () => {
-    const mockVp: VerifiablePresentation = {
+    const mockVp: IVerifiablePresentation = {
       '@context': ['https://www.w3.org/2018/credentials/v1'],
       type: 'VerifiablePresentation',
       verifiableCredential: [ mockCredential ]
