@@ -5,6 +5,7 @@ import uuid from 'react-native-uuid';
 import { db } from './DatabaseAccess';
 
 import { mintDid } from '../lib/did';
+import { getCredentialName } from '../lib/credentialName';
 import { UnlockedWallet } from '../types/wallet';
 import { ProfileImportReport, ProfileMetadata } from '../types/profile';
 import { parseWalletContents } from '../lib/parseWallet';
@@ -227,11 +228,7 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
 
         await Promise.all(
           credentials.map(async (credential) => {
-            let achievement = credential.credentialSubject.hasCredential ?? credential.credentialSubject.achievement;
-            if (Array.isArray(achievement)) {
-              achievement = achievement[0];
-            }
-            const credentialName = achievement?.name ?? 'Unknown Credential';
+            const credentialName = getCredentialName(credential);
             if (profileCredentialIds.includes(credential.id)) {
               profileImportReport.credentials.duplicate.push(credentialName);
               return;
@@ -258,11 +255,7 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
 
       await Promise.all(
         credentials.map(async (credential) => {
-          let achievement = credential.credentialSubject.hasCredential ?? credential.credentialSubject.achievement;
-          if (Array.isArray(achievement)) {
-            achievement = achievement[0];
-          }
-          const credentialName = achievement?.name ?? 'Unknown Credential';
+          const credentialName = getCredentialName(credential);
 
           try {
             await CredentialRecord.addCredentialRecord({ credential, profileRecordId });

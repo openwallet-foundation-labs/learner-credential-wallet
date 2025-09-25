@@ -1,11 +1,12 @@
 import { ProfileRecord } from '../app/model/profile';
 import { HumanReadableError } from '../app/lib/error';
+import { CredentialRecord } from '../app/model/credential';
 
 // Mock the database and dependencies
 jest.mock('../app/model/DatabaseAccess');
 jest.mock('../app/lib/did');
 jest.mock('../app/model/did');
-jest.mock('../app/lib/parseWallet');
+jest.mock('../app/model/credential');
 
 describe('Profile Duplicate Prevention', () => {
   beforeEach(() => {
@@ -65,38 +66,60 @@ describe('Profile Duplicate Prevention', () => {
       
       jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
       
-      // Mock the database write operation
+      // Mock the database operations
+      const { db } = require('../app/model/DatabaseAccess');
       const mockRawProfile = { profileName: 'New Profile', _id: 'newId' };
-      jest.spyOn(ProfileRecord, 'rawFrom').mockReturnValue(mockRawProfile as any);
+      db.withInstance.mockImplementation((callback: any) => {
+        const mockInstance = {
+          write: (writeCallback: any) => writeCallback(),
+          create: () => ({ asRaw: () => mockRawProfile })
+        };
+        return callback(mockInstance);
+      });
       
-      // This should not throw
-      expect(async () => {
-        await ProfileRecord.addProfileRecord({ profileName: 'New Profile' });
-      }).not.toThrow();
+      // Mock mintDid and DidRecord.addDidRecord
+      const { mintDid } = require('../app/lib/did');
+      const { DidRecord } = require('../app/model/did');
+      mintDid.mockResolvedValue({ didDocument: {}, verificationKey: {}, keyAgreementKey: {} });
+      DidRecord.addDidRecord.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' }); // Valid 24-char hex ObjectId
+      
+      const result = await ProfileRecord.addProfileRecord({ profileName: 'New Profile' });
+      expect(result.profileName).toBe('New Profile');
     });
   });
 
   describe('importProfileRecord', () => {
     it('should skip profile creation when profile name already exists', async () => {
       const mockExistingProfiles = [
-        { profileName: 'Existing Profile', _id: 'existingId' }
+        { profileName: 'Existing Profile', _id: { equals: () => true } }
       ];
       
       jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
+      jest.spyOn(CredentialRecord, 'getAllCredentialRecords').mockResolvedValue([]);
+      jest.spyOn(CredentialRecord, 'addCredentialRecord').mockResolvedValue({} as any);
       
-      // Mock parseWalletContents to return the required wallet contents
-      const { parseWalletContents } = require('../app/lib/parseWallet');
-      parseWalletContents.mockReturnValue({
-        credentials: [],
-        didDocument: { id: 'did:example:123' },
-        verificationKey: { type: 'Ed25519VerificationKey2020' },
-        keyAgreementKey: { type: 'X25519KeyAgreementKey2020' },
-        profileMetadata: {
-          data: { profileName: 'Existing Profile' }
-        }
+      const mockWalletData = JSON.stringify({
+        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
+        type: 'UniversalWallet2020',
+        contents: [
+          {
+            '@context': ['https://www.w3.org/ns/did/v1'],
+            id: 'did:example:123'
+          },
+          {
+            type: 'Ed25519VerificationKey2020',
+            id: 'key1'
+          },
+          {
+            type: 'X25519KeyAgreementKey2020', 
+            id: 'key2'
+          },
+          {
+            type: 'ProfileMetadata',
+            data: { profileName: 'Existing Profile' }
+          }
+        ]
       });
-      
-      const mockWalletData = '{}'; // The actual content doesn't matter since we're mocking parseWalletContents
       
       // The import should mark profile as duplicate
       const result = await ProfileRecord.importProfileRecord(mockWalletData);
@@ -107,30 +130,93 @@ describe('Profile Duplicate Prevention', () => {
 
     it('should skip profile creation when profile name already exists with different case', async () => {
       const mockExistingProfiles = [
-        { profileName: 'Existing Profile', _id: 'existingId' }
+        { profileName: 'Existing Profile', _id: { equals: () => true } }
       ];
       
       jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
+      jest.spyOn(CredentialRecord, 'getAllCredentialRecords').mockResolvedValue([]);
+      jest.spyOn(CredentialRecord, 'addCredentialRecord').mockResolvedValue({} as any);
       
-      // Mock parseWalletContents to return the required wallet contents
-      const { parseWalletContents } = require('../app/lib/parseWallet');
-      parseWalletContents.mockReturnValue({
-        credentials: [],
-        didDocument: { id: 'did:example:123' },
-        verificationKey: { type: 'Ed25519VerificationKey2020' },
-        keyAgreementKey: { type: 'X25519KeyAgreementKey2020' },
-        profileMetadata: {
-          data: { profileName: 'existing profile' }
-        }
+      const mockWalletData = JSON.stringify({
+        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
+        type: 'UniversalWallet2020',
+        contents: [
+          {
+            '@context': ['https://www.w3.org/ns/did/v1'],
+            id: 'did:example:123'
+          },
+          {
+            type: 'Ed25519VerificationKey2020',
+            id: 'key1'
+          },
+          {
+            type: 'X25519KeyAgreementKey2020',
+            id: 'key2' 
+          },
+          {
+            type: 'ProfileMetadata',
+            data: { profileName: 'existing profile' }
+          }
+        ]
       });
-      
-      const mockWalletData = '{}'; // The actual content doesn't matter since we're mocking parseWalletContents
       
       // The import should mark profile as duplicate even with different case
       const result = await ProfileRecord.importProfileRecord(mockWalletData);
       
       expect(result.userIdImported).toBe(false);
       expect(result.profileDuplicate).toBe(true);
+    });
+
+    it('should create new profile when profile name is unique', async () => {
+      const mockExistingProfiles = [
+        { profileName: 'Different Profile', _id: 'differentId' }
+      ];
+      
+      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
+      jest.spyOn(CredentialRecord, 'getAllCredentialRecords').mockResolvedValue([]);
+      jest.spyOn(CredentialRecord, 'addCredentialRecord').mockResolvedValue({} as any);
+      
+      // Mock DidRecord.addDidRecord
+      const { DidRecord } = require('../app/model/did');
+      DidRecord.addDidRecord.mockResolvedValue({ _id: '507f1f77bcf86cd799439012' }); // Valid 24-char hex ObjectId
+      
+      // Mock ProfileRecord.addProfileRecord to avoid circular call
+      const originalAddProfile = ProfileRecord.addProfileRecord;
+      jest.spyOn(ProfileRecord, 'addProfileRecord').mockImplementation(async ({ profileName }) => {
+        // Don't call the real method to avoid infinite recursion
+        return { _id: 'newProfileId', profileName } as any;
+      });
+      
+      const mockWalletData = JSON.stringify({
+        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
+        type: 'UniversalWallet2020',
+        contents: [
+          {
+            '@context': ['https://www.w3.org/ns/did/v1'],
+            id: 'did:example:123'
+          },
+          {
+            type: 'Ed25519VerificationKey2020',
+            id: 'key1'
+          },
+          {
+            type: 'X25519KeyAgreementKey2020',
+            id: 'key2'
+          },
+          {
+            type: 'ProfileMetadata',
+            data: { profileName: 'New Unique Profile' }
+          }
+        ]
+      });
+      
+      const result = await ProfileRecord.importProfileRecord(mockWalletData);
+      
+      expect(result.userIdImported).toBe(true);
+      expect(result.profileDuplicate).toBe(false);
+      
+      // Restore original method
+      ProfileRecord.addProfileRecord = originalAddProfile;
     });
   });
 });

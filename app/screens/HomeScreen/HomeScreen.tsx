@@ -13,6 +13,7 @@ import { HomeScreenProps, RenderItemProps } from './HomeScreen.d';
 import { CredentialRecordRaw } from '../../model';
 import { useAppDispatch, useDynamicStyles, useShareCredentials } from '../../hooks';
 import { deleteCredential, selectRawCredentialRecords } from '../../store/slices/credential';
+import { getCredentialName } from '../../lib/credentialName';
 
 
 export default function HomeScreen({ navigation }: HomeScreenProps): React.ReactElement {
@@ -23,7 +24,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
   const dispatch = useAppDispatch();
   const share = useShareCredentials();
 
-  const itemToDeleteName = itemToDelete?.credential.credentialSubject.hasCredential?.name ?? '';
+  const itemToDeleteName = itemToDelete ? getCredentialName(itemToDelete.credential) : '';
 
   function renderItem({ item }: RenderItemProps) {
     const { credential } = item;

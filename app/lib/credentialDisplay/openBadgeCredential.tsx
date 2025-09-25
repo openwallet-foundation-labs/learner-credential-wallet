@@ -24,6 +24,7 @@ import {
 } from './shared';
 
 import { DATE_FORMAT } from '../../../app.config';
+import { getCredentialName } from '../credentialName';
 
 const getSafeImageSource = (imageUri?: string | null): ImageSourcePropType => {
   return imageUri && imageUri.trim() !== '' ? { uri: imageUri } : defaultIssuerImage;
@@ -57,9 +58,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
   } = credentialSubjectRenderInfoFrom(credentialSubject);
 
   const issuedToName: string = issuedTo || (name as string);
-  const credentialName = Array.isArray(credentialSubject.achievement)
-    ? credentialSubject.achievement.at(0)?.name ?? null
-    : credentialSubject.achievement?.name ?? null;
+  const credentialName = getCredentialName(credential);
 
   const {
     issuerName,
