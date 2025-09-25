@@ -5,7 +5,7 @@ import { Header } from 'react-native-elements';
 
 import { useAccessibilityFocus, useDynamicStyles } from '../../hooks';
 import type { NavHeaderProps } from './NavHeader.d';
-import { AccessibleView } from '../';
+import AccessibleView from '../AccessibleView/AccessibleView';
 
 export default function NavHeader({
   title,

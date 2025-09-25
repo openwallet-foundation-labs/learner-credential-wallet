@@ -2,19 +2,28 @@ import React, { useMemo } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { createNavigationContainerRef } from '@react-navigation/native';
 import { useSelector } from 'react-redux';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { RootNavigation, SetupNavigation, RootNavigationParamsList } from '../';
+import RootNavigation from '../RootNavigation/RootNavigation';
+import SetupNavigation from '../SetupNavigation/SetupNavigation';
 import { RestartScreen, LoginScreen } from '../../screens';
 import { useAppLoading, useDynamicStyles } from '../../hooks';
 import { selectWalletState } from '../../store/slices/wallet';
 import { EventProvider } from 'react-native-outside-press';
-import { deepLinkConfig } from '../../lib/deepLink';
-import { GlobalConfirmModal } from '../../components';
+// Lazy load deepLink to avoid cycle
+let deepLinkConfig: any = null;
+const getDeepLinkConfig = async () => {
+  if (!deepLinkConfig) {
+    const { deepLinkConfig: config } = await import('../../lib/deepLink');
+    deepLinkConfig = config;
+  }
+  return deepLinkConfig;
+};
+import GlobalConfirmModal from '../../components/GlobalConfirmModal/GlobalConfirmModal';
+import { navigationRef } from '../navigationRef';
 
-export const navigationRef = createNavigationContainerRef<RootNavigationParamsList>();
+export { navigationRef };
 
 SplashScreen.preventAutoHideAsync();
 
@@ -63,7 +72,7 @@ export default function AppNavigation(): React.ReactElement | null {
           onReady={SplashScreen.hideAsync}
           theme={navigatorTheme}
           ref={navigationRef}
-          linking={deepLinkConfig}
+          linking={undefined}
         >
           {renderScreen()}
         </NavigationContainer>

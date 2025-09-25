@@ -9,12 +9,10 @@ import {
   VerificationStatusScreen,
   ViewSourceScreen
 } from '../../screens';
-import {
-  HomeNavigation,
-  RootNavigationParamsList,
-  AcceptCredentialsNavigation,
-  ExchangeCredentialsNavigation
-} from '../../navigation';
+import HomeNavigation from '../HomeNavigation/HomeNavigation';
+import type { RootNavigationParamsList } from './RootNavigation.d';
+import AcceptCredentialsNavigation from '../AcceptCredentialsNavigation/AcceptCredentialsNavigation';
+import ExchangeCredentialsNavigation from '../ExchangeCredentialsNavigation/ExchangeCredentialsNavigation';
 
 const Stack = createStackNavigator<RootNavigationParamsList>();
 

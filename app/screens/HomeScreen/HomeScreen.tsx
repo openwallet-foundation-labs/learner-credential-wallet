@@ -6,12 +6,13 @@ import { useSelector } from 'react-redux';
 import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler';
 
 import { CredentialItem, NavHeader, ConfirmModal } from '../../components';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 
 import dynamicStyleSheet from './HomeScreen.styles';
 import { HomeScreenProps, RenderItemProps } from './HomeScreen.d';
 import { CredentialRecordRaw } from '../../model';
-import { useAppDispatch, useDynamicStyles, useShareCredentials } from '../../hooks';
+import { useAppDispatch, useDynamicStyles } from '../../hooks';
+import { useShareCredentials } from '../../hooks/useShareCredentials';
 import { deleteCredential, selectRawCredentialRecords } from '../../store/slices/credential';
 import { getCredentialName } from '../../lib/credentialName';
 

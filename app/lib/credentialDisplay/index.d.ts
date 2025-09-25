@@ -1,5 +1,5 @@
 import { Credential } from '../../types/credential';
-import { CredentialCardProps } from '../../components';
+import type { CredentialCardProps } from '../../components/CredentialCard/CredentialCard.d';
 
 export { CredentialCardProps };
 

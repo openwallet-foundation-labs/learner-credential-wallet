@@ -1,14 +1,5 @@
-// Navigation Components
-export { default as RootNavigation } from './RootNavigation/RootNavigation';
-export { default as AcceptCredentialsNavigation } from './AcceptCredentialsNavigation/AcceptCredentialsNavigation';
-export { default as AddNavigation } from './AddNavigation/AddNavigation';
-export { default as AppNavigation } from './AppNavigation/AppNavigation';
-export { default as CredentialNavigation } from './CredentialNavigation/CredentialNavigation';
-export { default as HomeNavigation } from './HomeNavigation/HomeNavigation';
-export { default as SettingsNavigation } from './SettingsNavigation/SettingsNavigation';
-export { default as SetupNavigation } from './SetupNavigation/SetupNavigation';
-export { default as ShareNavigation } from './ShareNavigation/ShareNavigation';
-export { default as ExchangeCredentialsNavigation } from './ExchangeCredentialsNavigation/ExchangeCredentialsNavigation';
+// Navigation Components - removed to break cycles
+// Components should be imported directly
 
 // Type Definitions
 export * from './RootNavigation/RootNavigation.d';
@@ -21,7 +12,9 @@ export * from './CredentialNavigation/CredentialNavigation.d';
 export * from './ShareNavigation/ShareNavigation.d';
 export * from './ExchangeCredentialsNavigation/ExchangeCredentialsNavigation.d';
 
-export { navigationRef } from './AppNavigation/AppNavigation';
+export { navigationRef } from './navigationRef';
+
+// Remove component re-exports to break cycles - import directly instead
 
 /**
  * If screens are re-used, we need to make union types for their

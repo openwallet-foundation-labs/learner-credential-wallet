@@ -4,7 +4,7 @@ import { Text } from 'react-native';
 
 import { useDynamicStyles } from '../../hooks';
 import { selectWalletState } from '../../store/slices/wallet';
-import { ConfirmModal } from '..';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
 import { clearGlobalModal } from '../../lib/globalModal';
 
 export default function GlobalConfirmModal(): React.ReactElement {

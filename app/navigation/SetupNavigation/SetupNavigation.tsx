@@ -8,7 +8,10 @@ import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
 
 import appConfig, {FEATURE_FLAGS} from '../../../app.config';
 import { initialize, pollWalletState, selectWalletState } from '../../store/slices/wallet';
-import { LoadingIndicator, SafeScreenView, AccessibleView, PasswordForm } from '../../components';
+import LoadingIndicator from '../../components/LoadingIndicator/LoadingIndicator';
+import SafeScreenView from '../../components/SafeScreenView/SafeScreenView';
+import AccessibleView from '../../components/AccessibleView/AccessibleView';
+import PasswordForm from '../../components/PasswordForm/PasswordForm';
 import walletImage from '../../assets/wallet.png';
 import { useAccessibilityFocus } from '../../hooks';
 

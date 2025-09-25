@@ -3,10 +3,13 @@ import { View, Text } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { Button } from 'react-native-elements';
 
-import { MoreMenuButton, MenuItem, ConfirmModal, BackupItemModal } from '../';
+import MoreMenuButton from '../MoreMenuButton/MoreMenuButton';
+import MenuItem from '../MenuItem/MenuItem';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import BackupItemModal from '../BackupItemModal/BackupItemModal';
 import dynamicStyleSheet from './ProfileItem.styles';
 import { ActionModalProps, ProfileItemProps } from './ProfileItem.d';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { deleteProfile, updateProfile } from '../../store/slices/profile';
 import { exportProfile } from '../../lib/export';

@@ -10,7 +10,7 @@ import { NavHeader } from '../../components';
 import { credentialRequestParamsFromQrText, credentialsFrom, isDeepLink } from '../../lib/decode';
 import { PresentationError } from '../../types/presentation';
 import { errorMessageMatches, HumanReadableError } from '../../lib/error';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { CredentialRequestParams } from '../../lib/credentialRequest';
 import { pickAndReadFile } from '../../lib/import';
 import { displayGlobalModal } from '../../lib/globalModal';

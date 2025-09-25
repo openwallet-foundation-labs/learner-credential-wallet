@@ -6,7 +6,7 @@ import { ObjectId } from 'bson';
 import store from '../store';
 import validator from 'validator';
 import { CredentialRecord } from '../model';
-import { navigationRef } from '../navigation';
+import { navigationRef } from '../navigation/navigationRef';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
 import { Credential, CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { VerifiablePresentation } from '../types/presentation';

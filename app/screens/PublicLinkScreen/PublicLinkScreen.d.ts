@@ -1,6 +1,7 @@
 import { CredentialRecordRaw } from '../../model';
 import { PublicLinkScreenMode } from './PublicLinkScreen';
-export { PublicLinkScreenProps } from '../../navigation';
+// Avoid cycle by not re-exporting navigation types
+// export { PublicLinkScreenProps };
 
 export type PublicLinkScreenParams = {
   rawCredentialRecord: CredentialRecordRaw;

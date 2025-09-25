@@ -11,7 +11,7 @@ import dynamicStyleSheet from './DeveloperScreen.styles';
 import { DeveloperScreenProps } from './DeveloperScreen.d';
 import { stageCredentials } from '../../store/slices/credentialFoyer';
 import { credentials } from '../../mock/credential';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { Cache, CacheKey } from '../../lib/cache';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { revokedCredential } from '../../mock/revokedCredential';
