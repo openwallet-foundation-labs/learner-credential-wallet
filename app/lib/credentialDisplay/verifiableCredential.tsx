@@ -6,7 +6,7 @@ import { mixins } from '../../styles';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { CredentialNavigationParamList } from '../../navigation/CredentialNavigation/CredentialNavigation.d';
-import { CredentialStatusBadges } from '../../components';
+import CredentialStatusBadges from '../../components/CredentialStatusBadges/CredentialStatusBadges';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';

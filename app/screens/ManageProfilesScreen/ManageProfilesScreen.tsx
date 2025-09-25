@@ -7,7 +7,7 @@ import { TextInput } from 'react-native-paper';
 
 import { ConfirmModal, NavHeader, ProfileItem } from '../../components';
 import { useSelectorFactory } from '../../hooks/useSelectorFactory';
-import { makeSelectProfilesWithCredentials } from '../../store/selectorFactories';
+import { makeSelectProfilesWithCredentials } from '../../store/selectorFactories/makeSelectProfilesWithCredentials';
 import { createProfile } from '../../store/slices/profile';
 
 import { ManageProfilesScreenProps } from './ManageProfilesScreen.d';

@@ -4,18 +4,22 @@ import * as RNFS from 'react-native-fs';
 import * as encoding from 'text-encoding';
 import { generateSecureRandom } from 'react-native-securerandom';
 
-import { CredentialRecord } from './credential';
-import { DidRecord } from './did';
 import { resetBiometricKeychain, retrieveFromBiometricKeychain, storeInBiometricKeychain } from '../lib/biometrics';
-import { ProfileRecord } from './profile';
 import { runMigrations, schemaVersion } from './migration';
 import { createHash, pbkdf2Sync } from 'crypto';
 
-const models: Realm.ObjectClass[] = [
-  CredentialRecord,
-  DidRecord,
-  ProfileRecord,
-];
+// Models will be loaded dynamically to avoid circular dependencies
+let models: Realm.ObjectClass[] | null = null;
+
+async function getModels(): Promise<Realm.ObjectClass[]> {
+  if (models === null) {
+    const { CredentialRecord } = await import('./credential');
+    const { DidRecord } = await import('./did');
+    const { ProfileRecord } = await import('./profile');
+    models = [CredentialRecord, DidRecord, ProfileRecord];
+  }
+  return models;
+}
 
 
 const PRIVILEGED_KEY_KID = 'privileged_key';
@@ -212,7 +216,7 @@ class DatabaseAccess {
 
   private static async config(): Promise<Realm.Configuration> {
     return {
-      schema: models,
+      schema: await getModels(),
       schemaVersion,
       onMigration: runMigrations,
       encryptionKey: await DatabaseAccess.encryptionKey(),

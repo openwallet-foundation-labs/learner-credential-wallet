@@ -4,7 +4,8 @@ import { useSelector } from 'react-redux';
 import type { ThemeProviderProps } from './ThemeProvider.d';
 import { useAppDispatch } from '../../hooks';
 import { selectWalletState, updateThemeName } from '../../store/slices/wallet';
-import { defaultTheme, findThemeBy, ThemeContext, ThemeContextValue, themes } from '../../styles';
+import { defaultTheme, ThemeContext, ThemeContextValue, themes } from '../../styles';
+import { findThemeBy } from '../../styles/theme/themeName';
 
 export default function ThemeProvider({ children }: ThemeProviderProps): React.ReactElement {
   const dispatch = useAppDispatch();

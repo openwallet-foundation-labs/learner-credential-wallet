@@ -1,5 +1,5 @@
 import { CredentialRecordRaw, ProfileRecordRaw } from '../model';
-import { navigationRef } from '../navigation';
+import { navigationRef } from '../navigation/AppNavigation/AppNavigation';
 import { CredentialSelectionScreenParams, ProfileSelectionScreenParams, QRScreenParams } from '../screens';
 import store from '../store';
 import { selectRawProfileRecords } from '../store/slices/profile';
