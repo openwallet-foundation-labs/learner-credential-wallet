@@ -1,6 +1,7 @@
 import React from 'react';
 import { Text } from 'react-native';
-import { ConfirmModal, LoadingIndicatorDots } from '..';
+import ConfirmModal from '../ConfirmModal/ConfirmModal';
+import LoadingIndicatorDots from '../LoadingIndicatorDots/LoadingIndicatorDots';
 import { useAsyncCallback } from 'react-async-hook';
 import dynamicStyleSheet from './BackupItemModal.styles';
 import { BackupItemModalProps } from './BackupItemModal.d';

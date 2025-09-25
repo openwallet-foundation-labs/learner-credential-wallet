@@ -6,7 +6,7 @@ import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { ConfirmModal } from '../../components';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { selectWithFactory } from '../../store/selectorFactories';
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
 import { stageCredentials } from '../../store/slices/credentialFoyer';

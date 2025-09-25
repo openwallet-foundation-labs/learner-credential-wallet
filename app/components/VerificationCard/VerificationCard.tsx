@@ -6,7 +6,7 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { VerifyPayload } from '../../lib/verifiableObject';
 import dynamicStyleSheet from './VerificationCard.styles';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { CredentialRecordRaw } from '../../model';
 
 import { DATE_FORMAT } from '../../../app.config';

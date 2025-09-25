@@ -14,9 +14,10 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import OutsidePressHandler from 'react-native-outside-press';
 import Share from 'react-native-share';
 
-import { PublicLinkScreenProps } from './PublicLinkScreen.d';
+import { PublicLinkScreenParams } from './PublicLinkScreen.d';
 import dynamicStyleSheet from './PublicLinkScreen.styles';
-import { LoadingIndicatorDots, NavHeader } from '../../components';
+import LoadingIndicatorDots from '../../components/LoadingIndicatorDots/LoadingIndicatorDots';
+import NavHeader from '../../components/NavHeader/NavHeader';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import {
   createPublicLinkFor,
@@ -24,10 +25,11 @@ import {
   linkedinUrlFrom,
   unshareCredential,
 } from '../../lib/publicLink';
-import { useDynamicStyles, useShareCredentials } from '../../hooks';
+import { useDynamicStyles } from '../../hooks';
+import { useShareCredentials } from '../../hooks/useShareCredentials';
 // import { useDynamicStyles, useShareCredentials, useVerifyCredential } from '../../hooks';
 import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 
 import { convertSVGtoPDF } from '../../lib/svgToPdf';
 import { PDF } from '../../types/pdf';
@@ -45,7 +47,10 @@ const nextFrame = () => wait(16); // ~1 frame
 export default function PublicLinkScreen({
   navigation,
   route,
-}: PublicLinkScreenProps): React.ReactElement {
+}: {
+  navigation: any;
+  route: { params: PublicLinkScreenParams };
+}): React.ReactElement {
   const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet);
 
   const share = useShareCredentials();
@@ -233,7 +238,7 @@ export default function PublicLinkScreen({
   const screenTitle = {
     [PublicLinkScreenMode.Default]: 'Public Link',
     [PublicLinkScreenMode.ShareCredential]: 'Share Credential',
-  }[screenMode];
+  }[screenMode as PublicLinkScreenMode] ?? 'Public Link';
 
   // ---------- Global modal variants (UI unchanged) ----------
   const displayLoadingModal = () => {

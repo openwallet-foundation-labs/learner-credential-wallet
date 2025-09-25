@@ -6,7 +6,8 @@ import { CredentialItem, NavHeader } from '../../components';
 import dynamicStyleSheet from './PresentationPreviewScreen.styles';
 import type { PresentationPreviewScreenProps } from '../../navigation';
 import type { RenderItemProps } from './PresentationPreviewScreen.d';
-import { useDynamicStyles, useShareCredentials } from '../../hooks';
+import { useDynamicStyles } from '../../hooks';
+import { useShareCredentials } from '../../hooks/useShareCredentials';
 
 export default function PresentationPreviewScreen({
   navigation,

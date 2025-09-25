@@ -2,13 +2,14 @@ import React, { useMemo } from 'react';
 import { View, ScrollView } from 'react-native';
 
 //import { CredentialCard, VerificationCard, VerificationStatusCard } from '../../components';
-import { CredentialCard, VerificationStatusCard } from '../../components';
-import { NavHeader } from '../../components';
+import CredentialCard from '../../components/CredentialCard/CredentialCard';
+import VerificationStatusCard from '../../components/VerificationStatusCard/VerificationStatusCard';
+import NavHeader from '../../components/NavHeader/NavHeader';
 import type { ApproveCredentialScreenProps } from './ApproveCredentialScreen.d';
 import { CredentialRecord } from '../../model';
 import dynamicStyleSheet from './ApproveCredentialScreen.styles';
 import { useDynamicStyles, usePendingCredential } from '../../hooks';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { useVerifyCredential } from '../../hooks';
 
 export default function ApproveCredentialScreen({ navigation, route }: ApproveCredentialScreenProps): React.ReactElement {

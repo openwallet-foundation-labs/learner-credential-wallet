@@ -5,14 +5,11 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import dynamicStyleSheet from './HomeNavigation.styles';
-import {
-  CredentialNavigation,
-  ShareNavigation,
-  SettingsNavigation,
-  HomeNavigationParamList,
-  TabIconProps,
-  AddNavigation,
-} from '../../navigation';
+import CredentialNavigation from '../CredentialNavigation/CredentialNavigation';
+import ShareNavigation from '../ShareNavigation/ShareNavigation';
+import SettingsNavigation from '../SettingsNavigation/SettingsNavigation';
+import type { HomeNavigationParamList, TabIconProps } from './HomeNavigation.d';
+import AddNavigation from '../AddNavigation/AddNavigation';
 import { useDynamicStyles } from '../../hooks';
 
 const Tab = createBottomTabNavigator<HomeNavigationParamList>();

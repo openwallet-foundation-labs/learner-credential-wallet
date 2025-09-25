@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
 import { theme } from '../../styles';

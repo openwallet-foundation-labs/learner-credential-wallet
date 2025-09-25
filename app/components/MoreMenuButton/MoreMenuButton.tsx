@@ -3,7 +3,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import OutsidePressHandler from 'react-native-outside-press';
 
 import dynamicStyleSheet from './MoreMenuButton.styles';
-import { AccessibleView } from '..';
+import AccessibleView from '../AccessibleView/AccessibleView';
 import { View } from 'react-native';
 import { useDynamicStyles } from '../../hooks';
 

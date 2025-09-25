@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react';
 import { View } from 'react-native';
 import { CredentialStatusBadgesProps } from './CredentialStatusBadges.d';
-import { StatusBadge } from '../';
+import StatusBadge from '../StatusBadge/StatusBadge';
 import dynamicStyleSheet from './CredentialStatusBadges.styles';
 import { useAsyncCallback } from 'react-async-hook';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';

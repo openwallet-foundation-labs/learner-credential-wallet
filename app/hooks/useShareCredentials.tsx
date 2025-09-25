@@ -1,11 +1,11 @@
 import React from 'react';
 import { Text } from 'react-native';
 import { Button } from 'react-native-elements';
-import { LoadingIndicatorDots } from '../components';
+import LoadingIndicatorDots from '../components/LoadingIndicatorDots/LoadingIndicatorDots';
 import { errorMessageMatches } from '../lib/error';
 import { clearGlobalModal, displayGlobalModal } from '../lib/globalModal';
 import { createUnsignedPresentation, sharePresentation } from '../lib/present';
-import { navigationRef } from '../navigation';
+import { navigationRef } from '../navigation/navigationRef';
 import { useDynamicStyles } from './useDynamicStyles';
 import { CredentialRecordRaw } from '../types/credential';
 

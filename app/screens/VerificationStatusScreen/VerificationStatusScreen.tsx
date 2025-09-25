@@ -1,7 +1,9 @@
 import React from 'react';
 import { ScrollView, Text } from 'react-native';
 
-import { NavHeader, VerificationCard, VerificationStatusCard } from '../../components';
+import NavHeader from '../../components/NavHeader/NavHeader';
+import VerificationCard from '../../components/VerificationCard/VerificationCard';
+import VerificationStatusCard from '../../components/VerificationStatusCard/VerificationStatusCard';
 import { useDynamicStyles } from '../../hooks';
 
 import type { VerificationStatusScreenProps } from './VerificationStatusScreen.d';

@@ -3,7 +3,8 @@ import { View, FlatList } from 'react-native';
 import { Text, Button } from 'react-native-elements';
 import { useSelector } from 'react-redux';
 
-import { CredentialItem, NavHeader } from '../../components';
+import CredentialItem from '../../components/CredentialItem/CredentialItem';
+import NavHeader from '../../components/NavHeader/NavHeader';
 import dynamicStyleSheet from './CredentialSelectionScreen.styles';
 import type { RenderItemProps } from './CredentialSelectionScreen.d';
 import type { CredentialSelectionScreenProps } from '../../navigation';

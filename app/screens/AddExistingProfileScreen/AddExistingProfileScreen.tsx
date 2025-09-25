@@ -13,7 +13,7 @@ import { HumanReadableError } from '../../lib/error';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { getAllRecords } from '../../store';
 import type { ImportFileModalHandle } from '../../components';
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 
 
 export default function AddExistingProfileScreen({ navigation }: AddExistingProfileScreenProps): React.ReactElement {
