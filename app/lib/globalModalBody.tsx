@@ -1,6 +1,6 @@
 import React from 'react';
 import { Text } from 'react-native-elements';
-import { LoadingIndicatorDots } from '../components';
+import LoadingIndicatorDots from '../components/LoadingIndicatorDots/LoadingIndicatorDots';
 import { useDynamicStyles } from '../hooks';
 
 type GlobalModalBodyProps = {

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import AnimatedEllipsis from 'rn-animated-ellipsis';
-import { useDynamicStyles } from '../../hooks';
+import { useDynamicStyles } from '../../hooks/useDynamicStyles';
 
 import dynamicStyleSheet from './LoadingIndicatorDots.styles';
 

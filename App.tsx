@@ -6,8 +6,8 @@ import { Provider } from 'react-redux';
 import { LogBox } from 'react-native';
 
 import store from './app/store';
-import { AppNavigation } from './app/navigation';
-import { ThemeProvider } from './app/components';
+import AppNavigation from './app/navigation/AppNavigation/AppNavigation';
+import ThemeProvider from './app/components/ThemeProvider/ThemeProvider';
 
 LogBox.ignoreLogs([
   'Non-serializable values were found in the navigation state',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, View } from 'react-native';
 import { useDynamicStyles, useThemeContext } from '../../../../hooks';
-import { dynamicStyleSheet } from '..';
+import dynamicStyleSheet from '../styles';
 
 import Markdown from 'react-native-markdown-display';
 

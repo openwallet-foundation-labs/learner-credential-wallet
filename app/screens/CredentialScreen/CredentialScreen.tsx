@@ -5,13 +5,14 @@ import { useAppDispatch, useDynamicStyles } from '../../hooks';
 
 //import { MenuItem, NavHeader, ConfirmModal, AccessibleView, VerificationCard, CredentialCard, VerificationStatusCard } from '../../components';
 import { MenuItem, NavHeader, ConfirmModal, AccessibleView, CredentialCard, VerificationStatusCard } from '../../components';
-import { CredentialScreenProps, navigationRef } from '../../navigation';
+import type { CredentialScreenProps } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 
 import dynamicStyleSheet from './CredentialScreen.styles';
 import { deleteCredential } from '../../store/slices/credential';
 import { makeSelectProfileFromCredential } from '../../store/selectorFactories/makeSelectProfileFromCredential';
 import { useSelectorFactory } from '../../hooks/useSelectorFactory';
-import { PublicLinkScreenMode } from '../../screens';
+import { PublicLinkScreenMode } from '../PublicLinkScreen/PublicLinkScreen';
 import { credentialItemPropsFor } from '../../lib/credentialDisplay';
 import { useVerifyCredential } from '../../hooks';
 

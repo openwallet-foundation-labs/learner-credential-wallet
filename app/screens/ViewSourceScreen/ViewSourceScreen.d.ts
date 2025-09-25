@@ -1,4 +1,5 @@
-export { ViewSourceScreenProps } from '../../navigation';
+// Avoid cycle by not re-exporting navigation types
+// export { ViewSourceScreenProps };
 
 export type ViewSourceScreenParams = {
   data: string;

@@ -5,7 +5,7 @@ import { ReceivedFilePayload } from '../types/receiveSharingIntent';
 import store from '../store';
 import { stageCredentials } from '../store/slices/credentialFoyer';
 import { Credential } from '../types/credential';
-import { navigationRef } from '../navigation';
+import { navigationRef } from '../navigation/navigationRef';
 import { displayGlobalModal } from '../lib/globalModal';
 import { credentialsFrom } from './decode';
 import { readFile } from './import';

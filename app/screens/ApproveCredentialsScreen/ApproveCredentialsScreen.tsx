@@ -3,9 +3,13 @@ import { useSelector } from 'react-redux';
 import { FlatList, View, Text } from 'react-native';
 import { Button } from 'react-native-elements';
 
-import { navigationRef } from '../../navigation';
+import { navigationRef } from '../../navigation/navigationRef';
 import { acceptPendingCredentials, ApprovalStatus, clearFoyer, selectPendingCredentials } from '../../store/slices/credentialFoyer';
-import { CredentialItem, NavHeader, CredentialRequestHandler, ApprovalControls, ConfirmModal } from '../../components';
+import CredentialItem from '../../components/CredentialItem/CredentialItem';
+import NavHeader from '../../components/NavHeader/NavHeader';
+import CredentialRequestHandler from '../../components/CredentialRequestHandler/CredentialRequestHandler';
+import ApprovalControls from '../../components/ApprovalControls/ApprovalControls';
+import ConfirmModal from '../../components/ConfirmModal/ConfirmModal';
 import { ApproveCredentialsScreenProps, RenderItemProps } from './ApproveCredentialsScreen.d';
 import dynamicStyleSheet from './ApproveCredentialsScreen.styles';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';

@@ -7,7 +7,15 @@ import { credentialIdFor, educationalOperationalCredentialFrom } from './decode'
 import * as verifierInstance from './verifierInstance';
 import { StoreCredentialResult } from './verifierInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getStorageClient } from '../screens/WAS/WasScreen';
+// Dynamic import to avoid cycle
+let getStorageClient: any = null;
+const getStorageClientLazy = async () => {
+  if (!getStorageClient) {
+    const wasScreen = await import('../screens/WAS/WasScreen');
+    getStorageClient = wasScreen.getStorageClient;
+  }
+  return getStorageClient;
+};
 import { v4 as uuidv4 } from 'uuid';
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
 import { getRootSigner } from './getRootSigner';
@@ -71,7 +79,8 @@ async function createWasPublicLinkIfAvailable(
 
     const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
 
-    const storage = getStorageClient();
+    const getStorageClientFn = await getStorageClientLazy();
+    const storage = getStorageClientFn();
 
     const space = storage.space({
       signer,
@@ -161,7 +170,8 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
         const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
         if (storedSpaceUUID) {
           const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
-          const storage = getStorageClient();
+          const getStorageClientFn = await getStorageClientLazy();
+          const storage = getStorageClientFn();
           const space = storage.space({
             signer,
             id: spaceId

@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 import dynamicStyleSheet from './ErrorDialog.styles';
-import { AccessibleView } from '../';
+import AccessibleView from '../AccessibleView/AccessibleView';
 import { useAccessibilityFocus, useDynamicStyles } from '../../hooks';
 
 export type ErrorDialogProps = {

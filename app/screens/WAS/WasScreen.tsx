@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking } from 'react-native';
-import { NavHeader } from '../../components';
-import { navigationRef } from '../../navigation';
+import NavHeader from '../../components/NavHeader/NavHeader';
+import { navigationRef } from '../../navigation/navigationRef';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { StorageClient } from '@wallet.storage/fetch-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';

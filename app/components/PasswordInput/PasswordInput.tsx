@@ -2,7 +2,7 @@ import React, { ComponentProps, forwardRef, Ref, useRef, RefObject } from 'react
 import { View, TextInput as RNTextInput, Platform } from 'react-native';
 import { TextInput } from 'react-native-paper';
 
-import { AccessibleView } from '../';
+import AccessibleView from '../AccessibleView/AccessibleView';
 import { useDynamicStyles } from '../../hooks';
 
 import dynamicStyleSheet from './PasswordInput.styles';
