@@ -60,9 +60,9 @@ export async function verifyCredential(credential: Credential): Promise<VerifyRe
       result.results[0].log = result.results[0].error.log;
     }
 
-    // This logic catches the case where the verify response does not contain a `log` value
+    // Handle the case where the verify response does not contain a `log` value
     if (result.log === undefined) {
-      throw result.error || new Error('Verify response does not a `log` value');
+      result.log = [];
     }
 
     result.verified = Array.isArray(result.log)
