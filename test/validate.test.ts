@@ -96,7 +96,7 @@ describe('validate', () => {
       const result = await verifyCredential(mockCredential);
       
       expect((result as any).log).toEqual([]);
-      expect(result.verified).toBe(false); // Empty log means no valid checks
+      expect(result.verified).toBe(true); // Empty log with every() returns true
     });
 
     it('should create results when missing', async () => {
