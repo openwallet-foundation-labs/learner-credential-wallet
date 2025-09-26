@@ -13,16 +13,7 @@ import { removeWasPublicLink } from '../../lib/removeWasPublicLink';
 import { shareBinaryFile } from '../../lib/shareData';
 import { displayGlobalModal } from '../../lib/globalModal';
 import { getRootSigner } from '../../lib/getRootSigner';
-
-// Create a singleton instance of StorageClient
-let storageClientInstance: InstanceType<typeof StorageClient> | null = null;
-
-export function getStorageClient() {
-  if (!storageClientInstance) {
-    storageClientInstance = new StorageClient(new URL(WAS.BASE_URL));
-  }
-  return storageClientInstance;
-}
+import { getStorageClient } from '../../lib/storageClient';
 
 const WASScreen = () => {
   const { theme } = useThemeContext();
