@@ -1,13 +1,12 @@
 import { DidAuthRequestParams } from '../lib/didAuthRequest';
-import type { Credential } from './credential';
-import { VerifiablePresentation } from './presentation';
+import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 
 export type ChapiCredentialResponse = {
   readonly credentialRequestOrigin?: string;
   readonly credential?: {
     readonly type: 'web';
     readonly dataType: 'VerifiableCredential' | 'VerifiablePresentation';
-    readonly data: Credential | VerifiablePresentation;
+    readonly data: IVerifiableCredential | IVerifiablePresentation;
   };
   readonly options?: {
     readonly recommendedHandlerOrigins?: string[];
@@ -27,9 +26,11 @@ export type ChapiCredentialRequestParams = {
   request: string;
 }
 
-export type ChapiCredentialRequest = {
-  readonly credentialRequestOrigin: string;
-  readonly protocols: {
+export type VcApiCredentialRequest = {
+  readonly credentialRequestOrigin?: string;
+  readonly verifiablePresentationRequest?: any;
+  readonly issueRequest?: any;
+  readonly protocols?: {
     readonly OID4VCI?: string;
     readonly OID4VP?: string;
     readonly vcapi?: string;

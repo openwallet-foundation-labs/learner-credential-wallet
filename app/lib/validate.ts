@@ -1,7 +1,7 @@
-// import '@digitalcredentials/data-integrity-rn';
-import { VerifiablePresentation, PresentationError } from '../types/presentation';
-import { Credential, CredentialError } from '../types/credential';
+import { PresentationError } from '../types/presentation';
+import { CredentialError } from '../types/credential';
 import * as verifierCore from '@digitalcredentials/verifier-core';
+import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 
 export type ResultLog = {
   id: string,
@@ -11,7 +11,7 @@ export type ResultLog = {
 
 export type Result = {
   verified: boolean;
-  credential: Credential;
+  credential: IVerifiableCredential;
   error: CredentialError;
   log: ResultLog[];
 }
@@ -22,7 +22,7 @@ export type VerifyResponse = {
 }
 
 export async function verifyPresentation(
-  presentation: VerifiablePresentation,
+  presentation: IVerifiablePresentation
 ): Promise<VerifyResponse> {
   try {
     const result = await verifierCore.verifyPresentation({
@@ -39,10 +39,10 @@ export async function verifyPresentation(
   }
 }
 
-export async function verifyCredential(credential: Credential): Promise<VerifyResponse> {
+export async function verifyCredential(credential: IVerifiableCredential): Promise<VerifyResponse> {
   const response = await fetch('https://digitalcredentials.github.io/dcc-known-registries/known-did-registries.json');
   const knownDIDRegistries = await response.json();
-  
+
   // const isInRegistry = issuerInRegistries({ issuer, registries });
   // if (!isInRegistry) {
   //   throw new Error(CredentialError.DidNotInRegistry);

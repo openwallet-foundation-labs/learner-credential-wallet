@@ -54,7 +54,7 @@ const studentIdImg =
 
 //Issuer Name, Issuer Logo, Subject Photo, subjectName, Subject ID number, Subject Barcode and Subject QR Code
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const studentCard: Credential = {
+export const studentCard: Credential = {
   '@context': [
     'https://www.w3.org/2018/credentials/v1',
     'https://w3id.org/security/suites/ed25519-2020/v1',

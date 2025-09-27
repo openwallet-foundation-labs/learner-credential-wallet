@@ -4,6 +4,7 @@ import { educationalOperationalCredentialFrom } from '../../../decode';
 import { extractNameFromOBV3Identifier } from '../../../extractNameFromOBV3Identifier';
 import { imageSourceFrom } from './image';
 import { DATE_FORMAT } from '../../../../../app.config';
+import { ICredentialSubject, IVerifiableCredential } from '@digitalcredentials/ssi';
 
 type CredentialRenderInfo = {
   subjectName: string | null;
@@ -17,6 +18,14 @@ type CredentialRenderInfo = {
   numberOfCredits: string | null;
   achievementImage: string | null;
   achievementType: string | null;
+}
+
+export function getSubject (vc: IVerifiableCredential): ICredentialSubject {
+  const { credentialSubject } = vc;
+  if (Array.isArray(credentialSubject)) {
+    return credentialSubject[0];
+  }
+  return credentialSubject;
 }
 
 export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): CredentialRenderInfo {
