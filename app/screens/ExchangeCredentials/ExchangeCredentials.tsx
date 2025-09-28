@@ -114,7 +114,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     const rawProfileRecord = await NavigationUtil.selectProfile();
     const selectedDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
     const selectedProfile = await profileWithSigners(
-      {rawProfileRecord, didRecord: selectedDidRecord })
+      { profileName: rawProfileRecord.profileName, didRecord: selectedDidRecord })
 
     // Recursively process exchanges until either:
     //  1) we're issued some credentials, or
