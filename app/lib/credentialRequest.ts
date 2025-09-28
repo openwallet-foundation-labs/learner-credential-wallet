@@ -2,8 +2,9 @@ import { DidRecordRaw } from '../model';
 
 import { createVerifiablePresentation } from './present';
 import { parseResponseBody } from './parseResponse';
-import { extractCredentialsFrom, verifyVerifiableObject, VerifiableObject } from './verifiableObject';
+import { extractCredentialsFrom, VerifiableObject } from './verifiableObject';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';
+import { verifyVerifiableObject } from './validate';
 
 export type CredentialRequestParams = {
   auth_type?: string;

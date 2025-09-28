@@ -1,13 +1,14 @@
-import { fromQrCode } from '@digitalcredentials/vpqr';
 import qs from 'query-string';
 
-import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ChapiCredentialResponse, ChapiDidAuthRequest } from '../types/chapi';
-import type { EducationalOperationalCredential, Subject } from '../types/credential';
-import { VerifiablePresentation } from '../types/presentation';
-import { CredentialRequestParams, isCredentialRequestParams } from './credentialRequest';
-import { HumanReadableError } from './error';
-import { isChapiCredentialResponse, isChapiDidAuthRequest, isVerifiableCredential, isVerifiablePresentation } from './verifiableObject';
+import { CredentialRequestParams } from './credentialRequest';
+
+import {
+  isChapiCredentialResponse,
+  isChapiDidAuthRequest,
+  isVerifiableCredential,
+  isVerifiablePresentation
+} from './verifiableObject';
 import { CredentialRecordRaw } from '../model';
 import { NavigationUtil } from './navigationUtil';
 import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
@@ -15,8 +16,9 @@ import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
 import { ICredentialSubject, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import { getSubject } from './credentialDisplay/shared';
 import { isDeepLink } from './walletRequestApi';
+import { credentialsFromVpqr } from './credentialsFromVpqr';
+import { credentialsFromPresentation } from './credentialsFromPresentation';
 
-const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 export const regexPattern = {
   vpqr: /^VP1-[A-Z|0-9]+/,
   url: /^https?:\/\/.+/,
@@ -38,11 +40,6 @@ export function legacyRequestParamsFromUrl(url: string): CredentialRequestParams
   return params as CredentialRequestParams;
 }
 
-function credentialsFromPresentation(vp: IVerifiablePresentation): IVerifiableCredential[] {
-  const { verifiableCredential } = vp;
-  return ([] as IVerifiableCredential[]).concat(verifiableCredential!);
-}
-
 function credentialsFromChapiCredentialResponse(chapiCredentialResponse: ChapiCredentialResponse): IVerifiableCredential[] {
   const { credential } = chapiCredentialResponse;
   const dataType = credential?.dataType;
@@ -50,7 +47,7 @@ function credentialsFromChapiCredentialResponse(chapiCredentialResponse: ChapiCr
   case 'VerifiableCredential':
     return [credential?.data as IVerifiableCredential];
   case 'VerifiablePresentation':
-    return credentialsFromPresentation(credential?.data as VerifiablePresentation);
+    return credentialsFromPresentation(credential?.data as IVerifiablePresentation);
   default:
     return [];
   }
@@ -60,11 +57,6 @@ async function credentialsFromChapiDidAuthRequest(chapiDidAuthRequest: ChapiDidA
   const didAuthRequest = chapiDidAuthRequest.credentialRequestOptions?.web?.VerifiablePresentation as DidAuthRequestParams;
   const rawProfileRecord = await NavigationUtil.selectProfile();
   return performDidAuthRequest(didAuthRequest, rawProfileRecord);
-}
-
-async function credentialsFromVpqr(text: string): Promise<IVerifiableCredential[]> {
-  const { vp }: { vp: VerifiablePresentation } = await fromQrCode({ text, documentLoader });
-  return credentialsFromPresentation(vp);
 }
 
 async function credentialsFromJson(text: string): Promise<IVerifiableCredential[]> {
@@ -112,21 +104,11 @@ export async function credentialsFrom(text: string): Promise<IVerifiableCredenti
   throw new Error('No credentials were resolved from the text');
 }
 
-export function educationalOperationalCredentialFrom(credentialSubject: ICredentialSubject): EducationalOperationalCredential | undefined {
-  let data = credentialSubject.hasCredential || credentialSubject.achievement;
-  if (Array.isArray(data)) {
-    data = data[0];
-  }
-
-  return data;
-}
-
 export function credentialIdFor(rawCredentialRecord: CredentialRecordRaw): string {
   const { credential } = rawCredentialRecord;
   const subject = getSubject(credential);
-  const eoc = educationalOperationalCredentialFrom(subject);
   const achievement = subject.achievement;
-  const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || subject?.id || eoc?.id;
+  const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || subject?.id;
 
   if (!id) {
     throw new Error('Credential ID could not be resolved.');

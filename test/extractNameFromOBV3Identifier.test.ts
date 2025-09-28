@@ -1,5 +1,6 @@
-import type { Subject } from '../app/types/credential';
+
 import { extractNameFromOBV3Identifier } from '../app/lib/extractNameFromOBV3Identifier';
+import { ICredentialSubject } from '@digitalcredentials/ssi';
 
 describe('extractNameFromOBV3Identifier', () => {
   it('should return null when there is no identifier object', async () => {
@@ -15,13 +16,13 @@ describe('extractNameFromOBV3Identifier', () => {
   });
 
  it('should return name from a valid OBV3 identifier object', async () => {
-  const credentialSubject: Subject = { identifier: { identityType: 'name', identityHash: 'Jane Doe' }};
+  const credentialSubject: ICredentialSubject = { identifier: { identityType: 'name', identityHash: 'Jane Doe' }};
 
   expect(extractNameFromOBV3Identifier(credentialSubject)).toEqual('Jane Doe');
  });
 
  it('should return name from a valid OBV3 array of identifiers', async () => {
-  const credentialSubject: Subject = { identifier: [{ identityType: 'name', identityHash: 'Jane Doe'}] }
+  const credentialSubject: ICredentialSubject = { identifier: [{ identityType: 'name', identityHash: 'Jane Doe'}] }
 
   expect(extractNameFromOBV3Identifier(credentialSubject)).toEqual('Jane Doe');
  });
