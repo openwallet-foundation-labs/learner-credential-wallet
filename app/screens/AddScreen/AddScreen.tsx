@@ -8,7 +8,7 @@ import dynamicStyleSheet from './AddScreen.styles';
 import { stageCredentials } from '../../store/slices/credentialFoyer';
 import { NavHeader } from '../../components';
 import { legacyRequestParamsFromUrl, credentialsFrom, isLegacyCredentialRequest } from '../../lib/decode';
-import { PresentationError } from '../../types/presentation';
+import { PresentationError } from '../../types/credential';
 import { errorMessageMatches, HumanReadableError } from '../../lib/error';
 import { navigationRef } from '../../navigation/navigationRef';
 import { CredentialRequestParams } from '../../lib/credentialRequest';

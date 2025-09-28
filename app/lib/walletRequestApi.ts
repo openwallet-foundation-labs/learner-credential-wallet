@@ -75,6 +75,9 @@ export function parseWalletApiUrl ({ url }: { url: string }): object | undefined
   return messageObject;
 }
 
+/**
+ * Filters an incoming VCALM query for zCap requests, and returns only those.
+ */
 export function zcapsRequested ({ queries }:
   { queries: IVprQuery[] }
 ): { zcapRequests?: IVprQuery[] } {
@@ -119,7 +122,7 @@ export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): bool
 export async function delegateZcaps({ zcapRequests, selectedProfile }:
   { zcapRequests: IVprQuery[], selectedProfile: ISelectedProfile }
 ): Promise<IZcap[]> {
-
+  return []
 }
 
 export type WalletApiMessage = IExchangeInvitation
@@ -140,23 +143,12 @@ export type IExchangeInvitation = {
   protocols: Record<string, string>
 }
 
-/**
- * {
- *   "type": "UnmediatedHttpPresentationService2021",
- *   "serviceEndpoint": "https://example.com/exchanges/tx/12345"
- * }
- */
-export type IInteractMethod = {
-  type: string;
-  serviceEndpoint?: string;
-}
-
 export type IIssueRequest = {
   credentialRequestOrigin?: string;
   issueRequest: {
-    interact: IInteractMethod | IInteractMethod[];
     credential: IVerifiableCredential | IVerifiableCredential[];
-  }
+  },
+  redirectUrl: string
 }
 
 /**
@@ -187,8 +179,6 @@ export type IVpRequest = {
 }
 
 export type IVprDetails = {
-  // 'interact' object soon to be deprecated in VPR spec
-  interact?: IInteractMethod | IInteractMethod[];
   query: IVprQuery | IVprQuery[];
   challenge?: string;
   domain?: string;

@@ -1,21 +1,17 @@
 import React, { useContext, useEffect } from 'react';
-import { Linking, ScrollView } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Text, Button } from 'react-native-elements';
 import { MaterialIcons } from '@expo/vector-icons';
-import qs from 'query-string';
 
 import { LoadingIndicatorDots, NavHeader } from '../../components';
 import dynamicStyleSheet from './ShareHomeScreen.styles';
 import { ShareHomeScreenProps } from '../../navigation';
 import { useDynamicStyles } from '../../hooks';
 import { isShareRequestParams, performShareRequest, ShareRequestParams } from '../../lib/shareRequest';
-import { HumanReadableError } from '../../lib/error';
 import { fmtCredentialCount } from '../../lib/text';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { displayGlobalModal } from '../../lib/globalModal';
 import { DidRegistryContext } from '../../init/registries';
-
-import { LinkConfig } from '../../../app.config';
 
 export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenProps): React.ReactElement {
   const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
@@ -131,9 +127,9 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
       singleSelect: true,
     });
 
-    navigation.navigate('PresentationPreviewScreen', { 
-      selectedCredentials, 
-      mode: 'createLink' 
+    navigation.navigate('PresentationPreviewScreen', {
+      selectedCredentials,
+      mode: 'createLink'
     });
   }
 

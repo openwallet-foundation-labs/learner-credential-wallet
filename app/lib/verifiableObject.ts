@@ -1,10 +1,9 @@
 import { LruCache } from '@digitalcredentials/lru-memoize';
 import { ChapiCredentialResponse, ChapiDidAuthRequest } from '../types/chapi';
-import { ResultLog, verifyCredential, verifyPresentation } from './validate';
+import { ResultLog, verifyCredential } from './validate';
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { CredentialRecordRaw } from '../model';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
-
 
 /**
  * This type is used to identify a request response that could be a
@@ -26,23 +25,6 @@ export function isChapiCredentialResponse(obj: ChapiCredentialResponse): obj is 
 
 export function isChapiDidAuthRequest(obj: ChapiDidAuthRequest): obj is ChapiDidAuthRequest {
   return obj.credentialRequestOptions?.web?.VerifiablePresentation?.query?.type === 'DIDAuthentication';
-}
-
-export async function verifyVerifiableObject(
-  obj: VerifiableObject
-): Promise<boolean> {
-  try {
-    if (isVerifiableCredential(obj)) {
-      return (await verifyCredential(obj)).verified;
-    }
-    if (isVerifiablePresentation(obj)) {
-      return (await verifyPresentation(obj)).verified;
-    }
-  } catch (err) {
-    console.warn('Error while verifying:', err);
-  }
-
-  return false;
 }
 
 export function extractCredentialsFrom(obj: IVerifiableCredential | IVerifiablePresentation):

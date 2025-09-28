@@ -3,7 +3,6 @@ import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { CredentialRecordRaw, VcQueryType } from '../types/credential';
-import { VerifiablePresentation } from '../types/presentation';
 import { filterCredentialRecordsByType } from './credentialMatching';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import {
@@ -31,7 +30,7 @@ type ConstructExchangeRequestParameters = {
 
 // Type definitions for constructExchangeRequest function output
 type ExchangeRequest = {
-  verifiablePresentation: VerifiablePresentation
+  verifiablePresentation: IVerifiablePresentation
 }
 type ExchangeResponse = ExchangeRequest;
 
@@ -90,7 +89,7 @@ export const handleVcApiExchangeSimple = async ({ url, request }: HandleVcApiExc
 };
 
 type IResponseToExchanger = {
-  verifiablePresentation?: VerifiablePresentation;
+  verifiablePresentation?: IVerifiablePresentation;
   zcap?: IZcap[];
 }
 
@@ -134,6 +133,18 @@ export async function processMessageChain (
   return {};
 }
 
+/**
+ *
+ * @param request
+ * @param exchangeUrl {string}
+ * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
+ *   key signers used for DIDAuthentication and zCap delegation.
+ * @param [modalsEnabled=true] {boolean} - Whether to present the user
+ *   with an interactive modal popup to confirm sending credentials.
+ *   Disabled for unit testing.
+ * @param modalConfirmZcapRequest {function}
+ * @param credentialRequestOrigin {string}
+ */
 export async function processRequest (
   { request, exchangeUrl, selectedProfile, modalsEnabled = true,
     modalConfirmZcapRequest, credentialRequestOrigin }:
@@ -164,7 +175,7 @@ export async function processRequest (
 
   let { zcapRequests } = zcapsRequested({ queries });
   let zcapUserConsent, zcaps;
-  if (modalsEnabled) {
+  if (zcapRequests && modalsEnabled) {
     zcapUserConsent = await modalConfirmZcapRequest();
   } else {
     zcapUserConsent = true;
@@ -173,7 +184,7 @@ export async function processRequest (
     zcaps = await delegateZcaps({ zcapRequests, selectedProfile });
   }
 
-  if (vcMatches.length === 0 && !zcaps) {
+  if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {
     // No matches were found, nothing to send to requester
     console.log(
       '[processMessageChain] No zcaps or VCs matched request query, ending exchange.');
@@ -240,11 +251,11 @@ export async function vcMatchesFor ({ queries, selectedProfile }:
  * The VP is signed if DID Auth was requested, and unsigned otherwise.
  */
 export async function composeVp (
-  { selectedProfile, selectedVcs, challenge, domain, didAuthRequested }:
-    { selectedProfile: ISelectedProfile, selectedVcs: IVerifiableCredential[],
+  { selectedProfile, selectedVcs = [], challenge, domain, didAuthRequested }:
+    { selectedProfile: ISelectedProfile, selectedVcs?: IVerifiableCredential[],
       challenge?: string, domain?: string, didAuthRequested: boolean }
-): Promise<VerifiablePresentation> {
-  if (!didAuthRequested && selectedVcs.length === 0) {
+): Promise<IVerifiablePresentation> {
+  if (!didAuthRequested && selectedVcs!.length === 0) {
     throw new Error('A VP requires either credentials or a DID Auth request.');
   }
   if (didAuthRequested && !(challenge && domain)) {
@@ -253,13 +264,14 @@ export async function composeVp (
 
   if (!didAuthRequested) {
     // Return an unsigned VP
-    return await vc.createPresentation({ credential: selectedVcs });
+    return await vc.createPresentation({ verifiableCredential: selectedVcs, verify: false });
   }
 
   // Return a signed VP
   const presentation = await vc.createPresentation({
     holder: selectedProfile.did,
-    credential: (selectedVcs.length > 0) ? selectedVcs : undefined
+    verifiableCredential: (selectedVcs!.length > 0) ? selectedVcs : undefined,
+    verify: false
   });
   return await vc.signPresentation({
     presentation, challenge, domain, documentLoader,
@@ -277,7 +289,7 @@ export async function composeVp (
 export async function sendToExchanger({ exchangeUrl, payload }:
   { exchangeUrl: string,
     payload: {
-      verifiablePresentation?: VerifiablePresentation, zcap?: IZcap[]
+      verifiablePresentation?: IVerifiablePresentation, zcap?: IZcap[]
     } }
 ): Promise<any> {
   try {
