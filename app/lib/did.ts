@@ -1,6 +1,8 @@
 import * as DidMethodKey from '@digitalcredentials/did-method-key';
 import { generateSecureRandom } from 'react-native-securerandom';
-import { AddDidRecordParams, CredentialRecord, CredentialRecordRaw, DidRecordRaw, ProfileRecordRaw } from '../model';
+import { AddDidRecordParams, DidRecordRaw } from '../model/did';
+import { CredentialRecord } from '../model/credential';
+import { CredentialRecordRaw } from '../types/credential';
 import { DidKey } from '../types/did';
 import { ISigner } from '@digitalcredentials/ssi';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
@@ -36,13 +38,13 @@ export interface ISelectedProfile {
   loadCredentials: () => Promise<CredentialRecordRaw[]>
 }
 
-export async function profileWithSigners ({ rawProfileRecord, didRecord }:
-  { rawProfileRecord : ProfileRecordRaw, didRecord: DidRecordRaw }
+export async function profileWithSigners ({ profileName, didRecord }:
+  { profileName : string, didRecord: Partial<DidRecordRaw> }
 ): Promise<ISelectedProfile> {
   return  {
-    name: rawProfileRecord.profileName,
-    did: didRecord.didDocument.id,
-    signers: await signersFromKey(didRecord.verificationKey),
+    name: profileName,
+    did: didRecord.didDocument!.id,
+    signers: await signersFromKey(didRecord.verificationKey!),
     loadCredentials: CredentialRecord.getAllCredentialRecords
   } as ISelectedProfile;
 }
