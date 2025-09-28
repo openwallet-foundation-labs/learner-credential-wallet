@@ -12,8 +12,7 @@ const credentialDisplayConfigs: CredentialDisplayConfig[] = [
   studentIdDisplayConfig,
   universityDegreeCredentialDisplayConfig,
   openBadgeCredentialDisplayConfig,
-
-  verifiableCredentialDisplayConfig,
+  verifiableCredentialDisplayConfig
 ];
 
 export function credentialDisplayConfigFor(credential: IVerifiableCredential): CredentialDisplayConfig {

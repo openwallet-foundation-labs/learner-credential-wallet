@@ -1,6 +1,6 @@
-import type { Subject } from '../types/credential';
+import type { IOpenBadgeSubject, ICredentialSubject } from '@digitalcredentials/ssi';
 
-export function extractNameFromOBV3Identifier (credentialSubject: Subject): string | undefined {
+export function extractNameFromOBV3Identifier (credentialSubject: IOpenBadgeSubject | ICredentialSubject): string | undefined {
   if(!credentialSubject?.identifier) {
     return undefined;
   }
@@ -15,6 +15,6 @@ export function extractNameFromOBV3Identifier (credentialSubject: Subject): stri
   const identifierWithHash = identifiers.find(
     i => i.identityHash && (i?.hashed === false || i?.hashed === undefined)
   )
-    
+
   return identifierWithHash?.identityHash || undefined;
 }

@@ -1,5 +1,5 @@
 import { getValidAlignments } from '../app/lib/credentialDisplay/shared/utils/alignment';
-import { Alignment } from '../app/types/credential';
+import { IAlignment } from '@digitalcredentials/ssi';
 
 describe('getValidAlignments', () => {
   it('should return empty array when alignments is undefined', () => {
@@ -15,7 +15,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should filter out alignments without targetName', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetUrl: 'https://example.com',
         targetDescription: 'Test description'
@@ -25,7 +25,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should include alignments with targetName but no targetUrl', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Test Name'
       }
@@ -39,7 +39,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should include alignments with invalid targetUrl but mark as non-clickable', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Test Name',
         targetUrl: 'invalid-url'
@@ -56,7 +56,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should return valid alignments with both targetName and valid targetUrl', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Requirements Analysis',
         targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis',
@@ -74,7 +74,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should return valid alignments without targetDescription', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Requirements Analysis',
         targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis'
@@ -91,7 +91,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should return valid alignments with only targetName and targetDescription', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Test Name',
         targetDescription: 'Test description'
@@ -106,7 +106,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should handle AC 4: alignment with targetName but no targetUrl should be displayed', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Requirements Analysis'
         // No targetUrl - this should still be valid per AC 4
@@ -120,7 +120,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should ignore targetCode, targetFramework, and targetType fields', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Requirements Analysis',
         targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis',
@@ -144,7 +144,7 @@ describe('getValidAlignments', () => {
   });
 
   it('should handle mixed valid and invalid alignments', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       {
         targetName: 'Valid Alignment',
         targetUrl: 'https://example.com'

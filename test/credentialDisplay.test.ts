@@ -1,4 +1,6 @@
 // Mock credential display components
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
+
 jest.mock('../app/lib/credentialDisplay/openBadgeCredential', () => ({
   openBadgeCredentialDisplayConfig: {
     credentialType: 'OpenBadgeCredential',
@@ -32,10 +34,9 @@ jest.mock('../app/lib/credentialDisplay/verifiableCredential', () => ({
 }));
 
 import { credentialDisplayConfigFor, credentialItemPropsFor } from '../app/lib/credentialDisplay';
-import { Credential } from '../app/types/credential';
 
 describe('credentialDisplay', () => {
-  const mockOpenBadgeCredential: Credential = {
+  const mockOpenBadgeCredential: IVerifiableCredential = {
     '@context': ['https://www.w3.org/2018/credentials/v1'],
     id: 'test-credential',
     type: ['VerifiableCredential', 'OpenBadgeCredential'],
@@ -44,7 +45,7 @@ describe('credentialDisplay', () => {
     credentialSubject: { id: 'test-subject' },
   };
 
-  const mockAchievementCredential: Credential = {
+  const mockAchievementCredential: IVerifiableCredential = {
     '@context': ['https://www.w3.org/2018/credentials/v1'],
     id: 'test-achievement',
     type: ['VerifiableCredential', 'AchievementCredential'],
@@ -53,7 +54,7 @@ describe('credentialDisplay', () => {
     credentialSubject: { id: 'test-subject' },
   };
 
-  const mockGenericCredential: Credential = {
+  const mockGenericCredential: IVerifiableCredential = {
     '@context': ['https://www.w3.org/2018/credentials/v1'],
     id: 'test-generic',
     type: ['VerifiableCredential'],

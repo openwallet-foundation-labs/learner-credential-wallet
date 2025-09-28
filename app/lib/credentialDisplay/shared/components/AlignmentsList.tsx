@@ -2,11 +2,11 @@ import React from 'react';
 import { View, Text, Linking } from 'react-native';
 import { useDynamicStyles } from '../../../../hooks';
 import { getValidAlignments, ValidAlignment } from '../utils/alignment';
-import { Alignment } from '../../../../types/credential';
 import { createDynamicStyleSheet } from '../../../dynamicStyles';
+import { IAlignment } from '@digitalcredentials/ssi';
 
 type AlignmentsListProps = {
-  alignment?: Alignment[];
+  alignment?: IAlignment[];
   disabled?: boolean;
 };
 
@@ -30,7 +30,7 @@ const AlignmentItem = ({ alignment, disabled }: { alignment: ValidAlignment, dis
             {alignment.targetUrl}
           </Text>
         ) : (
-          <Text 
+          <Text
             style={styles.alignmentUrl}
             numberOfLines={3}
             ellipsizeMode="tail"

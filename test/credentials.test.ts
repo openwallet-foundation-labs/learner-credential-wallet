@@ -5,8 +5,7 @@ jest.mock('@digitalcredentials/security-document-loader');
 jest.mock('@digitalcredentials/ed25519-signature-2020');
 jest.mock('@digitalcredentials/vc');
 
-// import { getCredentialStatusChecker } from '../app/lib/credentialStatus';
-import { rawVcRecords, mockCredential } from '../app/mock/credential';
+import { rawVcRecords } from '../app/mock/credential';
 import { filterCredentialRecordsByType } from '../app/lib/credentialMatching';
 
 // Sample query for type filtering

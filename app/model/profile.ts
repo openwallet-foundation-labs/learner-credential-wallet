@@ -1,10 +1,10 @@
 import Realm from 'realm';
 import { randomBytes } from 'crypto';
 import uuid from 'react-native-uuid';
+import { generateSecureRandom } from 'react-native-securerandom';
 
 import { db } from './DatabaseAccess';
 
-import { mintDid } from '../lib/did';
 import { getCredentialName } from '../lib/credentialName';
 import { UnlockedWallet } from '../types/wallet';
 import { ProfileImportReport, ProfileMetadata } from '../types/profile';
@@ -14,6 +14,7 @@ import { CredentialRecord } from './credential';
 import { DidRecord, DidRecordRaw } from './did';
 import { CredentialRecordRaw } from '../types/credential';
 import { credentialContentHash } from '../lib/credentialHash';
+import { mintDid } from '../lib/did';
 
 const ObjectId = Realm.BSON.ObjectId;
 
@@ -97,7 +98,9 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
     }
 
     if (rawDidRecord === undefined) {
-      const didPayload = await mintDid();
+      // No DID record passed in -- generate a new one from random seed
+      const randomSeed = await generateSecureRandom(32);
+      const didPayload = await mintDid({ seed: randomSeed });
       rawDidRecord = await DidRecord.addDidRecord(didPayload);
     }
 

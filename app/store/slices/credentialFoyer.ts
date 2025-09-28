@@ -2,12 +2,14 @@ import uuid from 'react-native-uuid';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import {canonicalize as jcsCanonicalize} from 'json-canonicalize';
 
-import { CredentialRecord, CredentialRecordRaw } from '../../model';
+import { CredentialRecord } from '../../model/credential';
+
 import { RootState } from '..';
 import { addCredential } from './credential';
 import { ObjectID } from 'bson';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';
 import { credentialContentHash } from '../../lib/credentialHash';
+import { CredentialRecordRaw } from '../../types/credential';
 
 export enum ApprovalStatus {
   Pending,

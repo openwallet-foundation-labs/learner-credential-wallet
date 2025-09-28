@@ -3,11 +3,11 @@
 
 import { credentialSubjectRenderInfoFrom } from '../app/lib/credentialDisplay/shared/utils/credentialSubject';
 import { getValidAlignments } from '../app/lib/credentialDisplay/shared/utils/alignment';
-import { Subject, Alignment } from '../app/types/credential';
+import { IAlignment, ICredentialSubject } from '@digitalcredentials/ssi';
 
 // Mock only essential dependencies
 jest.mock('../app/lib/decode', () => ({
-  educationalOperationalCredentialFrom: jest.fn((subject) => 
+  educationalOperationalCredentialFrom: jest.fn((subject) =>
     Array.isArray(subject.achievement) ? subject.achievement[0] : subject.achievement
   )
 }));
@@ -22,7 +22,7 @@ jest.mock('../app/lib/credentialDisplay/shared/utils/image', () => ({
 
 describe('AlignmentsList Component Integration', () => {
   it('should provide no alignments when credentialSubject has none', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       achievement: {
         id: 'achievement-1',
@@ -32,13 +32,13 @@ describe('AlignmentsList Component Integration', () => {
 
     const result = credentialSubjectRenderInfoFrom(subject);
     const validAlignments = getValidAlignments(result.alignment);
-    
+
     expect(validAlignments).toHaveLength(0);
     // Component would render null (no "Alignments" header)
   });
 
   it('should provide valid alignments for component rendering', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       achievement: {
         id: 'achievement-1',
@@ -59,7 +59,7 @@ describe('AlignmentsList Component Integration', () => {
 
     const result = credentialSubjectRenderInfoFrom(subject);
     const validAlignments = getValidAlignments(result.alignment);
-    
+
     expect(validAlignments).toHaveLength(2);
     expect(validAlignments[0].targetName).toBe('Requirements Analysis');
     expect(validAlignments[1].targetDescription).toBe('This is a test description');
@@ -67,7 +67,7 @@ describe('AlignmentsList Component Integration', () => {
   });
 
   it('should include invalid URLs but mark them as non-clickable', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       achievement: {
         id: 'achievement-1',
@@ -85,7 +85,7 @@ describe('AlignmentsList Component Integration', () => {
 
     const result = credentialSubjectRenderInfoFrom(subject);
     const validAlignments = getValidAlignments(result.alignment);
-    
+
     expect(validAlignments).toHaveLength(3);
     expect(validAlignments[0].targetName).toBe('Valid - No URL');
     expect(validAlignments[0].targetUrl).toBeUndefined();
@@ -99,7 +99,7 @@ describe('AlignmentsList Component Integration', () => {
   });
 
   it('should handle mixed valid and invalid alignments', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       { targetName: 'No URL' },
       { targetUrl: 'https://example.com' }, // No targetName
       {
@@ -111,7 +111,7 @@ describe('AlignmentsList Component Integration', () => {
     ];
 
     const validAlignments = getValidAlignments(alignments);
-    
+
     expect(validAlignments).toHaveLength(3);
     expect(validAlignments[0].targetName).toBe('No URL');
     expect(validAlignments[0].targetUrl).toBeUndefined();
@@ -125,14 +125,14 @@ describe('AlignmentsList Component Integration', () => {
   });
 
   it('should provide valid alignments when some have no URL', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       { targetName: 'No URL' },
       { targetUrl: 'https://example.com' }, // No targetName
       { targetName: 'Invalid URL', targetUrl: 'not-a-url' },
     ];
 
     const validAlignments = getValidAlignments(alignments);
-    
+
     expect(validAlignments).toHaveLength(2);
     expect(validAlignments[0].targetName).toBe('No URL');
     expect(validAlignments[0].targetUrl).toBeUndefined();
@@ -143,14 +143,14 @@ describe('AlignmentsList Component Integration', () => {
   });
 
   it('should provide empty array when all alignments lack targetName', () => {
-    const alignments: Alignment[] = [
+    const alignments: IAlignment[] = [
       { targetUrl: 'https://example.com' }, // No targetName
       { targetUrl: 'https://example2.com' }, // No targetName
       { targetDescription: 'Just description' }, // No targetName
     ];
 
     const validAlignments = getValidAlignments(alignments);
-    
+
     expect(validAlignments).toHaveLength(0);
     // Component would render null (no "Alignments" header)
   });

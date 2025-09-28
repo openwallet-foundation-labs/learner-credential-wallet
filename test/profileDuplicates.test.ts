@@ -25,7 +25,6 @@ jest.mock('../app/lib/credentialName', () => ({
 }));
 
 import { credentialContentHash } from '../app/lib/credentialHash';
-import { CredentialRecord } from '../app/model/credential';
 import { getCredentialName } from '../app/lib/credentialName';
 
 describe('Profile Duplicate Detection', () => {
@@ -150,7 +149,7 @@ describe('Profile Duplicate Detection', () => {
       credentials.forEach((credential) => {
         const credentialName = getCredentialName(credential);
         const hash = credentialContentHash(credential);
-        
+
         if (existingHashes.includes(hash) && !processedHashes.has(hash)) {
           profileImportReport.credentials.duplicate.push(credentialName);
           processedHashes.add(hash);
@@ -207,12 +206,12 @@ describe('Profile Duplicate Detection', () => {
         { profileRecordId: profileId1, credential: mockCredential },
       ];
 
-      const profile1Credentials = credentials.filter(({ profileRecordId }) => 
+      const profile1Credentials = credentials.filter(({ profileRecordId }) =>
         profileRecordId.equals(profileId1)
       );
 
       expect(profile1Credentials).toHaveLength(2);
-      expect(profile1Credentials.every(({ profileRecordId }) => 
+      expect(profile1Credentials.every(({ profileRecordId }) =>
         profileRecordId.equals(profileId1)
       )).toBe(true);
     });

@@ -8,7 +8,7 @@ export function getExpirationDate(credential: IVerifiableCredential): string | u
   return credential.validUntil ?? credential.expirationDate;
 }
 
-export function isExpired(credential: Credential): boolean {
+export function isExpired(credential: IVerifiableCredential): boolean {
   const expiration = getExpirationDate(credential);
   if (!expiration) return false;
   const t = Date.parse(String(expiration));

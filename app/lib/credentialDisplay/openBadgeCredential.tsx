@@ -22,7 +22,7 @@ import {
   CardImage,
   issuerRenderInfoWithVerification,
   IssuerInfoButton,
-  credentialSubjectRenderInfoFrom,
+  credentialSubjectRenderInfoFrom, getSubject,
   AlignmentsList
 } from './shared';
 
@@ -164,9 +164,11 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
 export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
   credentialType: 'OpenBadgeCredential',
   cardComponent: OpenBadgeCredentialCard,
-  itemPropsResolver: ({ credentialSubject, issuer }) => {
-    const { title, achievementImage } = credentialSubjectRenderInfoFrom(credentialSubject);
-    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(issuer, undefined);
+  itemPropsResolver: (credential) => {
+    const subject = getSubject(credential)
+    const title = getCredentialName(credential)
+    const { achievementImage } = credentialSubjectRenderInfoFrom(subject);
+    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(credential.issuer, undefined);
 
     return {
       title,

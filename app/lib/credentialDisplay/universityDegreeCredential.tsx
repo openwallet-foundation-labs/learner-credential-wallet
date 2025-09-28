@@ -3,14 +3,22 @@ import { View, Text } from 'react-native';
 
 import { useDynamicStyles } from '../../hooks';
 import { CredentialCardProps, CredentialDisplayConfig } from '.';
-import { CardDetail, credentialSubjectRenderInfoFrom, dynamicStyleSheet, issuerRenderInfoFrom } from './shared';
+import {
+  CardDetail,
+  credentialSubjectRenderInfoFrom,
+  dynamicStyleSheet,
+  getSubject,
+  issuerRenderInfoFrom
+} from './shared';
+import { getCredentialName } from '../credentialName';
 
 export const universityDegreeCredentialDisplayConfig: CredentialDisplayConfig = {
   credentialType: 'UniversityDegreeCredential',
   cardComponent: UniversityDegreeCredentialCard,
-  itemPropsResolver: ({ credentialSubject, issuer }) => {
-    const { degreeName } = credentialSubjectRenderInfoFrom(credentialSubject);
-    const { issuerName, issuerImage } = issuerRenderInfoFrom(issuer);
+  itemPropsResolver: (credential) => {
+    const subject = getSubject(credential)
+    const { degreeName } = credentialSubjectRenderInfoFrom(subject);
+    const { issuerName, issuerImage } = issuerRenderInfoFrom(credential.issuer);
 
     return {
       title: degreeName,
