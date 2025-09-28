@@ -15,10 +15,11 @@
  * - Deep links / universal app links
  * - JSON objects fetched or pasted into the Add screen
  */
-import { ISigner, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import qs from 'query-string';
 import { LinkConfig } from '../../app.config';
 import { HumanReadableError } from './error';
+import { ISelectedProfile } from './did';
 
 export function isDeepLink (text: string): boolean {
   return text.startsWith(LinkConfig.schemes.universalAppLink) ||
@@ -74,7 +75,7 @@ export function parseWalletApiUrl ({ url }: { url: string }): object | undefined
   return messageObject;
 }
 
-export function isZcapRequested ({ queries }:
+export function zcapsRequested ({ queries }:
   { queries: IVprQuery[] }
 ): { zcapRequests?: IVprQuery[] } {
   const zcapRequests = queries.filter(q => q.type === 'ZcapQuery');
@@ -84,9 +85,7 @@ export function isZcapRequested ({ queries }:
   return {};
 }
 
-export function isDidAuthRequested ({ queries }:
-  { queries: IVprQuery[] }
-): { didAuthRequest?: IVprQuery } {
+export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): boolean {
   const didAuthRequests = queries.filter(q => q.type === 'DIDAuthentication');
   if (didAuthRequests.length > 1) {
     // If there's more than one DIDAuth request, fail
@@ -94,12 +93,15 @@ export function isDidAuthRequested ({ queries }:
       'More than one DIDAuthentication request found, exiting.');
   }
   if (didAuthRequests.length === 1) {
-    return { didAuthRequest: didAuthRequests[0] };
+    return true;
   }
-  return {};
+  return false;
 }
 
 /**
+ * Delegates requested zcaps. Assumes user consent was already prompted for.
+ *
+ * Example zcap request:
  * {
  *   capabilityQuery: {
  *     reason: '...',
@@ -111,12 +113,12 @@ export function isDidAuthRequested ({ queries }:
  *     }
  *   }
  * }
- * @param query
- * @param rootZcapSigner
+ * @param zcapRequests - One or more requests containing a capabilityQuery.
+ * @param selectedProfile - Selected user DID profile, with signers.
  */
-export async function delegateZcap({ query, rootZcapSigner }:
-  {query: IZcapQuery, rootZcapSigner: ISigner}
-): Promise<IZcap> {
+export async function delegateZcaps({ zcapRequests, selectedProfile }:
+  { zcapRequests: IVprQuery[], selectedProfile: ISelectedProfile }
+): Promise<IZcap[]> {
 
 }
 
