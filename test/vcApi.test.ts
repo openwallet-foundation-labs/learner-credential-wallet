@@ -15,6 +15,18 @@ jest.mock('../app/lib/selectCredentials.ts', () => ({
   selectCredentials: jest.fn()
 }));
 
+const mockProfileRecord = {
+  profileName: 'Mock Profile',
+  didDocument: { id: 'did:key:z6MknUDfE3YAbPPX6D7E38RnnS47fRefDTtpFPR5tthn4z8f' },
+  verificationKey: {
+    id: 'did:key:z6MknUDfE3YAbPPX6D7E38RnnS47fRefDTtpFPR5tthn4z8f#z6MknUDfE3YAbPPX6D7E38RnnS47fRefDTtpFPR5tthn4z8f',
+    controller: 'did:key:z6MknUDfE3YAbPPX6D7E38RnnS47fRefDTtpFPR5tthn4z8f',
+    type: 'Ed25519VerificationKey2020',
+    publicKeyMultibase: 'z6MknUDfE3YAbPPX6D7E38RnnS47fRefDTtpFPR5tthn4z8f',
+    privateKeyMultibase: 'zrv1EmCwbEZrutfKWWjeVVJF55YzdmRymmKEtwXoSdqzzSYa8Dp9Cy3bF6HBDCBqPPEFYBohEhdCDEwmCexUTd1WeA3'
+  }
+}
+
 describe('vcApi', () => {
   describe('Parsing', () => {
     it('parses an IExchangeInvitation url', () => {
