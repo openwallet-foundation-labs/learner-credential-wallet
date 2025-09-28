@@ -7,10 +7,7 @@ const packagesToTransformWithBabel = [
   'expo-modules-core',
   'expo-font',
   'react-native-fs',
-  'base58-universal',
-  'base64url-universal',
-  '@interop/*',
-  '@digitalcredentials/*',
+  '@digitalcredentials/http-client',
   'realm',
   '@realm', // <-- critical for @realm/fetch
   'react-redux',
@@ -29,6 +26,7 @@ const transformIgnorePatterns = [
 
 const config: Config = {
   preset: 'react-native',
+  testPathIgnorePatterns: ['test-node/'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },

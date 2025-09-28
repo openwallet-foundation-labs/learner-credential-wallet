@@ -1,5 +1,5 @@
-import { Issuer } from '../../../../types/credential';
 import { imageSourceFrom } from './image';
+import { IIssuerObject } from '@digitalcredentials/ssi';
 
 type IssuerInfo = {
   issuerName: string | null;
@@ -16,7 +16,7 @@ type VerifyCredentialResult = {
 };
 
 export function issuerRenderInfoWithVerification(
-  issuer: Issuer,
+  issuer: IIssuerObject,
   verifyResult?: VerifyCredentialResult
 ): IssuerInfo {
   const registeredIssuerLog = verifyResult?.log?.find(
@@ -46,7 +46,7 @@ export function issuerRenderInfoWithVerification(
 }
 
 
-export function issuerRenderInfoFrom(issuer: Issuer): IssuerInfo {
+export function issuerRenderInfoFrom(issuer: IIssuerObject | string): IssuerInfo {
   const issuerName = (typeof issuer === 'string' ? issuer : issuer?.name) ?? null;
   const issuerUrl = (typeof issuer === 'string' ? null : issuer?.url) ?? null;
   const issuerId = typeof issuer === 'string' ? null : issuer?.id;

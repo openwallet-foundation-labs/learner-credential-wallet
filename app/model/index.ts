@@ -4,7 +4,6 @@ export * from './credential';
 export * from './did';
 export * from './profile';
 
-
 export {
   models,
   db,

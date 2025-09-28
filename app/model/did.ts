@@ -8,19 +8,20 @@ function generateObjectIdHex(): string {
   return randomBytes(12).toString('hex');
 }
 
-import { DidKey, DidDocument } from '../types/did';
 import { db } from './DatabaseAccess';
+import { IDidDocument, IKeyAgreementKeyPair2020, IKeyPair } from '@digitalcredentials/ssi';
+import { AddDidRecordParams } from '../lib/did';
 
 export type DidRecordRaw = {
   readonly _id: Realm.BSON.ObjectId;
   readonly createdAt: Date;
   readonly updatedAt: Date;
   readonly rawDidDocument: string;
-  readonly didDocument: DidDocument;
+  readonly didDocument: IDidDocument;
   readonly rawVerificationKey: string;
-  readonly verificationKey: DidKey;
+  readonly verificationKey: IKeyPair;
   readonly rawKeyAgreementKey: string;
-  readonly keyAgreementKey: DidKey;
+  readonly keyAgreementKey: IKeyAgreementKeyPair2020;
 };
 export class DidRecord extends Realm.Object implements DidRecordRaw {
   readonly _id!: Realm.BSON.ObjectId;
@@ -30,16 +31,16 @@ export class DidRecord extends Realm.Object implements DidRecordRaw {
   readonly rawVerificationKey!: string;
   readonly rawKeyAgreementKey!: string;
 
-  get didDocument(): DidDocument {
-    return JSON.parse(this.rawDidDocument) as DidDocument;
+  get didDocument(): IDidDocument {
+    return JSON.parse(this.rawDidDocument) as IDidDocument;
   }
 
-  get verificationKey(): DidKey {
-    return JSON.parse(this.rawVerificationKey) as DidKey;
+  get verificationKey(): IKeyPair {
+    return JSON.parse(this.rawVerificationKey) as IKeyPair;
   }
 
-  get keyAgreementKey(): DidKey {
-    return JSON.parse(this.rawKeyAgreementKey) as DidKey;
+  get keyAgreementKey(): IKeyPair {
+    return JSON.parse(this.rawKeyAgreementKey) as IKeyPair;
   }
 
   static schema: Realm.ObjectSchema = {
@@ -121,9 +122,3 @@ export class DidRecord extends Realm.Object implements DidRecordRaw {
     });
   }
 }
-
-export type AddDidRecordParams = {
-  didDocument: DidDocument;
-  verificationKey: DidKey;
-  keyAgreementKey: DidKey;
-};

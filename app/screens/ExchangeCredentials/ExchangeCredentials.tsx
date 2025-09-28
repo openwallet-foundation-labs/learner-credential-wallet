@@ -14,9 +14,10 @@ import { NavigationUtil } from '../../lib/navigationUtil';
 import { delay } from '../../lib/time';
 import { ExchangeCredentialsProps } from './ExchangeCredentials.d';
 import { HumanReadableError } from '../../lib/error';
-import { getRootSigner } from '../../lib/getRootSigner';
-import { CredentialRecord } from '../../model';
 import { useThemeContext } from '../../hooks/useThemeContext';
+
+import { profileWithSigners } from '../../lib/profile';
+import { CredentialRecord } from '../../model';
 
 export default function ExchangeCredentials({ route }: ExchangeCredentialsProps): React.ReactElement {
   const { params } = route;
@@ -52,7 +53,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     body: <GlobalModalBody message='You have successfully delivered credentials to the organization.' />
   };
 
-  const confirmZcapModal = async () => {
+  const modalConfirmZcapRequest = async () => {
     const confirmed = await displayGlobalModal({
       title: 'Storage Access Request',
       confirmText: 'Grant',
@@ -106,25 +107,33 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
         JSON.stringify(initialResponse, null, 2));
       requestOrOffer = initialResponse;
     } else {
+      exchangeUrl = message.redirectUrl;
       requestOrOffer = message;
     }
 
     // Regardless if request is an offer or a request, select profile
     const rawProfileRecord = await NavigationUtil.selectProfile();
     const selectedDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
-    const rootZcapSigner = await getRootSigner();
-    const loadCredentials = CredentialRecord.getAllCredentialRecords;
+    const selectedProfile = await profileWithSigners({
+      profileName: rawProfileRecord.profileName,
+      loadCredentials: CredentialRecord.getAllCredentialRecords,
+      didRecord: {
+        didDocument: selectedDidRecord.didDocument,
+        verificationKey: selectedDidRecord.verificationKey
+      }
+    });
 
     // Recursively process exchanges until either:
     //  1) we're issued some credentials, or
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const { acceptCredentials } = await processMessageChain(
-      { exchangeUrl, requestOrOffer, selectedDidRecord, rootZcapSigner,
-        loadCredentials, confirmZcapModal });
+      { exchangeUrl, requestOrOffer, selectedProfile, modalConfirmZcapRequest });
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {
+      const { credentialRequestOrigin } = requestOrOffer;
+      console.log('credentialRequestOrigin:', credentialRequestOrigin);
       console.log('[acceptExchange] Accepting credentials:', acceptCredentials);
       await dispatch(stageCredentialsForProfile({ credentials: acceptCredentials, profileRecordId: rawProfileRecord._id }));
       await delay(500);

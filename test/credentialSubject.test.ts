@@ -1,7 +1,9 @@
 // Mock dependencies
+import { ICredentialSubject } from '@digitalcredentials/ssi';
+
 jest.mock('../app/lib/decode', () => ({
-  educationalOperationalCredentialFrom: jest.fn((subject) => 
-    Array.isArray(subject.achievement) ? subject.achievement[0] : subject.achievement || subject.hasCredential
+  educationalOperationalCredentialFrom: jest.fn((subject) =>
+    Array.isArray(subject.achievement) ? subject.achievement[0] : subject.achievement
   )
 }));
 
@@ -14,11 +16,10 @@ jest.mock('../app/lib/credentialDisplay/shared/utils/image', () => ({
 }));
 
 import { credentialSubjectRenderInfoFrom } from '../app/lib/credentialDisplay/shared/utils/credentialSubject';
-import { Subject } from '../app/types/credential';
 
 describe('credentialSubjectRenderInfoFrom', () => {
   it('should extract basic subject information', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       name: 'John Doe'
     };
@@ -28,14 +29,13 @@ describe('credentialSubjectRenderInfoFrom', () => {
     expect(result.subjectName).toBe('John Doe');
     expect(result.issuedTo).toBe('John Doe');
     expect(result.degreeName).toBeNull();
-    expect(result.title).toBeNull();
     expect(result.description).toBeNull();
     expect(result.criteria).toBeNull();
     expect(result.alignment).toBeUndefined();
   });
 
   it('should extract achievement information with alignments', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       achievement: {
         id: 'achievement-1',
@@ -56,7 +56,6 @@ describe('credentialSubjectRenderInfoFrom', () => {
 
     const result = credentialSubjectRenderInfoFrom(subject);
 
-    expect(result.title).toBe('Test Achievement');
     expect(result.description).toBe('Test Description');
     expect(result.criteria).toBe('Test criteria narrative');
     expect(result.alignment).toHaveLength(1);
@@ -64,7 +63,7 @@ describe('credentialSubjectRenderInfoFrom', () => {
   });
 
   it('should handle array of achievements', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       achievement: [
         {
@@ -73,7 +72,7 @@ describe('credentialSubjectRenderInfoFrom', () => {
           description: 'First Description'
         },
         {
-          id: 'achievement-2', 
+          id: 'achievement-2',
           name: 'Second Achievement',
           description: 'Second Description'
         }
@@ -81,13 +80,11 @@ describe('credentialSubjectRenderInfoFrom', () => {
     };
 
     const result = credentialSubjectRenderInfoFrom(subject);
-
-    expect(result.title).toBe('First Achievement');
     expect(result.description).toBe('First Description');
   });
 
   it('should extract degree information', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       degree: {
         type: 'BachelorDegree',
@@ -100,26 +97,8 @@ describe('credentialSubjectRenderInfoFrom', () => {
     expect(result.degreeName).toBe('Bachelor of Science');
   });
 
-  it('should handle hasCredential property', () => {
-    const subject: Subject = {
-      id: 'did:example:123',
-      hasCredential: {
-        id: 'credential-1',
-        name: 'Test Credential',
-        description: 'Test credential description',
-        achievementType: 'Certificate'
-      }
-    };
-
-    const result = credentialSubjectRenderInfoFrom(subject);
-
-    expect(result.title).toBe('Test Credential');
-    expect(result.description).toBe('Test credential description');
-    expect(result.achievementType).toBe('Certificate');
-  });
-
   it('should format dates correctly', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123',
       achievement: {
         id: 'achievement-1',
@@ -141,7 +120,7 @@ describe('credentialSubjectRenderInfoFrom', () => {
   });
 
   it('should handle missing optional fields gracefully', () => {
-    const subject: Subject = {
+    const subject: ICredentialSubject = {
       id: 'did:example:123'
     };
 
@@ -150,7 +129,6 @@ describe('credentialSubjectRenderInfoFrom', () => {
     expect(result.subjectName).toBeNull();
     expect(result.issuedTo).toBeNull();
     expect(result.degreeName).toBeNull();
-    expect(result.title).toBeNull();
     expect(result.description).toBeNull();
     expect(result.criteria).toBeNull();
     expect(result.numberOfCredits).toBeNull();

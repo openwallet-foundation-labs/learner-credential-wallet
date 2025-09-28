@@ -1,4 +1,4 @@
-import { Alignment } from '../../../../types/credential';
+import { IAlignment } from '@digitalcredentials/ssi';
 
 export type ValidAlignment = {
   targetName: string;
@@ -50,7 +50,7 @@ function isStrictHttpUrl(raw: string): string | null {
   }
 }
 
-export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
+export function getValidAlignments(alignments?: IAlignment[]): ValidAlignment[] {
   if (!alignments || !Array.isArray(alignments)) {
     return [];
   }
@@ -65,13 +65,13 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
         targetName: alignment.targetName!,
         targetDescription: alignment.targetDescription,
       };
-      
+
       if (alignment.targetUrl) {
         const normalizedUrl = isStrictHttpUrl(alignment.targetUrl);
         result.targetUrl = alignment.targetUrl;
         result.isValidUrl = !!normalizedUrl;
       }
-      
+
       return result;
     });
 }

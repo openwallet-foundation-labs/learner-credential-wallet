@@ -20,11 +20,12 @@ import {
   CardImage,
   issuerRenderInfoWithVerification,
   credentialSubjectRenderInfoFrom,
-  IssuerInfoButton
+  IssuerInfoButton, getSubject
 } from './shared';
 
 
 import { DATE_FORMAT } from '../../../app.config';
+import { getCredentialName } from '../credentialName';
 const getSafeImageSource = (imageUri?: string | null): ImageSourcePropType => {
   return imageUri && imageUri.trim() !== '' ? { uri: imageUri } : defaultIssuerImage;
 };
@@ -42,9 +43,8 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
 
   const issuanceDate = getIssuanceDate(credential);
   const formattedIssuanceDate = issuanceDate ? moment(issuanceDate).format(DATE_FORMAT) : 'N/A';
-
+  const title = getCredentialName(credential)
   const {
-    title,
     description,
     criteria,
     subjectName,
@@ -127,13 +127,14 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
   );
 }
 
-
 export const verifiableCredentialDisplayConfig: CredentialDisplayConfig = {
   credentialType: 'VerifiableCredential',
   cardComponent: VerifiableCredentialCard,
-  itemPropsResolver: ({ credentialSubject, issuer }) => {
-    const { title, achievementImage } = credentialSubjectRenderInfoFrom(credentialSubject);
-    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(issuer);
+  itemPropsResolver: (credential) => {
+    const subject = getSubject(credential)
+    const title = getCredentialName(credential)
+    const { achievementImage } = credentialSubjectRenderInfoFrom(subject);
+    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(credential.issuer);
 
     return {
       title,

@@ -1,9 +1,8 @@
 import 'react-native-get-random-values';
 import { CredentialRecordRaw } from '../model';
-import { IssuerObject } from '../types/credential';
 import { Cache, CacheKey } from './cache';
 import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
-import { credentialIdFor, educationalOperationalCredentialFrom } from './decode';
+import { credentialIdFor } from './decode';
 import * as verifierInstance from './verifierInstance';
 import { StoreCredentialResult } from './verifierInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -12,6 +11,7 @@ import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
 import { getStorageClient } from './storageClient';
 import { getRootSigner } from './getRootSigner';
 import { ISigner } from '@digitalcredentials/ssi';
+import { getCredentialName } from './credentialName';
 
 let cachedSigner: ISigner | undefined;
 
@@ -214,21 +214,23 @@ export async function hasPublicLink(rawCredentialRecord: CredentialRecordRaw): P
 
 export async function linkedinUrlFrom(rawCredentialRecord: CredentialRecordRaw): Promise<string> {
   const publicLink = await getPublicViewLink(rawCredentialRecord);
-  const eoc = educationalOperationalCredentialFrom(rawCredentialRecord.credential.credentialSubject);
 
-  if (!eoc) {
-    throw new Error('No achievement/credential found, not sharing to LI.');
+  let issuerName;
+  const { issuer } = rawCredentialRecord.credential;
+  if (typeof issuer === 'string') {
+    issuerName = issuer;
+  } else {
+    issuerName = issuer.name;
   }
 
-  const issuer = rawCredentialRecord.credential.issuer as IssuerObject;
-  const title = eoc?.name ?? 'Verifiable Credential';
+  const title = getCredentialName(rawCredentialRecord.credential);
   const issuanceDateString = getIssuanceDate(rawCredentialRecord.credential);
   const hasIssuanceDate = issuanceDateString !== undefined;
   const issuanceDate = hasIssuanceDate && new Date(issuanceDateString);
   const expirationDateString = getExpirationDate(rawCredentialRecord.credential);
   const hasExpirationDate = expirationDateString !== undefined;
   const expirationDate = hasExpirationDate && new Date(expirationDateString);
-  const organizationInfo = `&name=${title}&organizationName=${issuer.name}`;
+  const organizationInfo = `&name=${title}&organizationName=${issuerName}`;
   const issuance = issuanceDate ? `&issueYear=${issuanceDate.getFullYear()}` +
     `&issueMonth=${new Date(issuanceDate).getMonth() + 1}` : '';
   const expiration = expirationDate ? `&expirationYear=${expirationDate.getFullYear()}` +

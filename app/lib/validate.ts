@@ -1,7 +1,7 @@
-import { PresentationError } from '../types/presentation';
-import { CredentialError } from '../types/credential';
+import { CredentialError, PresentationError } from '../types/credential';
 import * as verifierCore from '@digitalcredentials/verifier-core';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { VerifiableObject } from './verifiableObject';
 
 export type ResultLog = {
   id: string,
@@ -102,9 +102,6 @@ export async function verifyCredential(credential: IVerifiableCredential): Promi
       }
     }
 
-
-
-
     if (!result.verified) {
       console.warn('VC not verified:', JSON.stringify(result, null, 2));
     }
@@ -119,4 +116,29 @@ export async function verifyCredential(credential: IVerifiableCredential): Promi
 
 function removeStackReplacer(key: string, value: unknown) {
   return key === 'stack' ? '...' : value;
+}
+
+export function isVerifiableCredential(obj: VerifiableObject): obj is IVerifiableCredential {
+  return obj.type?.includes('VerifiableCredential');
+}
+
+export function isVerifiablePresentation(obj: VerifiableObject): obj is IVerifiablePresentation {
+  return obj.type?.includes('VerifiablePresentation');
+}
+
+export async function verifyVerifiableObject(
+  obj: VerifiableObject
+): Promise<boolean> {
+  try {
+    if (isVerifiableCredential(obj)) {
+      return (await verifyCredential(obj)).verified;
+    }
+    if (isVerifiablePresentation(obj)) {
+      return (await verifyPresentation(obj)).verified;
+    }
+  } catch (err) {
+    console.warn('Error while verifying:', err);
+  }
+
+  return false;
 }

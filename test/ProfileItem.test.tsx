@@ -5,11 +5,11 @@ import { render, fireEvent, act } from '@testing-library/react-native';
 jest.mock('../app/navigation/navigationRef', () => {
   const mockNavigate = jest.fn();
   const mockIsReady = jest.fn(() => true);
-  
+
   // Store in global for test access
   (global as any).__mockNavigate = mockNavigate;
   (global as any).__mockIsReady = mockIsReady;
-  
+
   return {
     navigationRef: {
       isReady: mockIsReady,
@@ -23,7 +23,7 @@ jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
   TouchableOpacity: 'TouchableOpacity',
-  StyleSheet: { 
+  StyleSheet: {
     create: jest.fn((styles: any) => styles),
     flatten: jest.fn((styles: any) => styles)
   },
@@ -100,19 +100,17 @@ import ProfileItem from '../app/components/ProfileItem/ProfileItem';
 import { deleteProfile, updateProfile } from '../app/store/slices/profile';
 import { exportProfile } from '../app/lib/export';
 
-
-
 // Mock AccessibleView first
 jest.mock('../app/components/AccessibleView/AccessibleView', () => {
   const React = require('react');
   const { View } = require('react-native');
-  return React.forwardRef(({ children, onPress, label, ...props }: any, ref: any) => 
-    React.createElement(View, { 
-      ...props, 
-      ref, 
+  return React.forwardRef(({ children, onPress, label, ...props }: any, ref: any) =>
+    React.createElement(View, {
+      ...props,
+      ref,
       onPress,
       accessibilityLabel: label,
-      accessible: true 
+      accessible: true
     }, children)
   );
 });
@@ -189,7 +187,7 @@ describe('ProfileItem Component', () => {
     jest.clearAllMocks();
     const { useAppDispatch } = require('../app/hooks');
     useAppDispatch.mockReturnValue(mockDispatch);
-    
+
     // Reset navigation mocks
     (global as any).__mockNavigate.mockClear();
     (global as any).__mockIsReady.mockReturnValue(true);
@@ -272,7 +270,7 @@ describe('ProfileItem Component', () => {
 
     // Open delete modal
     fireEvent.press(getByTestId('menu-Delete'));
-    
+
     // Wait for modal to render and click Details button
     await act(async () => {
       fireEvent.press(getByTestId('Details'));
