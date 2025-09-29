@@ -13,6 +13,7 @@ const mixins = (theme: ThemeType) => {
         height: 5,
         width: 0,
       },
+      backgroundColor: theme.color.backgroundPrimary,
     },
     paragraphText: {
       fontFamily: theme.fontFamily.regular,
