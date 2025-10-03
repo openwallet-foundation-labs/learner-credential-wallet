@@ -2,10 +2,10 @@ import type { Credential, Proof, Issuer } from './credential';
 
 export type VerifiablePresentation = {
   readonly '@context': string[];
-  readonly issuer: Issuer;
+  readonly issuer?: Issuer;
   readonly type: string;
   readonly verifiableCredential: Credential | Credential[];
-  readonly proof: Proof;
+  readonly proof?: Proof;
 }
 
 export enum PresentationError {
