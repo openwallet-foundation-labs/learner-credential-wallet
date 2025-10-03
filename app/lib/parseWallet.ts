@@ -1,11 +1,11 @@
 import { ParsedWalletContents, WalletContent, UnlockedWallet } from '../types/wallet';
-import { Credential } from '../types/credential';
 import { DidDocument, DidKey } from '../types/did';
 import { ProfileMetadata } from '../types/profile';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
-function isCredential(item: WalletContent): item is Credential {
-  const context = (item as Credential)['@context'];
-  return context?.includes('https://www.w3.org/2018/credentials/v1') || 
+function isCredential(item: WalletContent): item is IVerifiableCredential {
+  const context = (item as IVerifiableCredential)['@context'];
+  return context?.includes('https://www.w3.org/2018/credentials/v1') ||
          context?.includes('https://www.w3.org/ns/credentials/v2');
 }
 

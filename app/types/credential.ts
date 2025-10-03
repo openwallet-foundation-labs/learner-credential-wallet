@@ -1,4 +1,5 @@
 import { ObjectID } from 'bson';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 
 export type IssuerURI = string;
 
@@ -128,7 +129,7 @@ export type CredentialV2 = {
   readonly renderMethod?: RenderMethod[]; // https://www.w3.org/TR/vc-data-model-2.0/#reserved-extension-points
 }
 
-export type Credential = CredentialV1 | CredentialV2;
+// export type Credential = CredentialV1 | CredentialV2;
 
 // https://www.w3.org/TR/vc-bitstring-status-list
 export type CredentialStatus = {
@@ -164,7 +165,7 @@ export type CredentialRecordEntry = {
   readonly profileRecordId: ObjectID;
 }
 export type CredentialRecordRaw = CredentialRecordEntry & {
-  readonly credential: Credential;
+  readonly credential: IVerifiableCredential;
 }
 
 // Different types of queries in verifiable presentation request
