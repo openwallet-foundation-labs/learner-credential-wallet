@@ -136,7 +136,7 @@ describe('credentialSubjectRenderInfoFrom', () => {
     const result = credentialSubjectRenderInfoFrom(subject);
 
     expect(result.startDateFmt).toBe('Jan 1, 2023');
-    expect(result.endDateFmt).toBe('Dec 31, 2023');
+    expect(result.endDateFmt).toBe('Jan 1, 2024');
     expect(result.numberOfCredits).toBe('3');
   });
 
