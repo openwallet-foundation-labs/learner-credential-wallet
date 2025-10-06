@@ -42,8 +42,8 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
   const alignments = eoc?.alignment;
 
   const { startDate, endDate } = eoc?.awardedOnCompletionOf || {};
-  const startDateFmt = startDate ? moment(startDate).format(DATE_FORMAT) : null;
-  const endDateFmt = endDate ? moment(endDate).format(DATE_FORMAT) : null;
+  const startDateFmt = startDate ? moment.utc(startDate).format(DATE_FORMAT) : null;
+  const endDateFmt = endDate ? moment.utc(endDate).format(DATE_FORMAT) : null;
 
   return {
     subjectName,
