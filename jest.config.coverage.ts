@@ -5,10 +5,23 @@ const packagesToTransformWithBabel = [
   'react-native',
   'expo-secure-store',
   'expo-modules-core',
+  'expo-font',
   'react-native-fs',
   '@digitalcredentials/http-client',
+  '@digitalcredentials/vpqr',
+  '@digitalcredentials/cborld',
+  '@digitalcredentials/verifier-core',
+  'uuid',
   'realm',
   '@realm', // <-- critical for @realm/fetch
+  'react-redux',
+  '@reduxjs/toolkit',
+  '@testing-library/react-native',
+  '@expo/vector-icons',
+  'immer',
+  'react-native-securerandom',
+  'rn-animated-ellipsis',
+  'react-native-outside-press'
 ];
 
 const transformIgnorePatterns = [
