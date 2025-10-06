@@ -19,6 +19,7 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
   instructionText: {
     ...mixins.paragraphText,
     paddingHorizontal: 16,
+    paddingTop: 16,
     width: '100%',
     flex: 0,
   },
