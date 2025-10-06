@@ -13,8 +13,6 @@ import { HumanReadableError } from '../../lib/error';
 import { fmtCredentialCount } from '../../lib/text';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { displayGlobalModal } from '../../lib/globalModal';
-import { hasPublicLink } from '../../lib/publicLink';
-import { verificationResultFor } from '../../lib/verifiableObject';
 import { DidRegistryContext } from '../../init/registries';
 
 import { LinkConfig } from '../../../app.config';
@@ -127,48 +125,16 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
   }
 
   async function goToLinkSelect(): Promise<void> {
-    const [rawCredentialRecord] = await NavigationUtil.selectCredentials({
+    const selectedCredentials = await NavigationUtil.selectCredentials({
       title: 'Create Public Link',
       instructionText: 'Select which credential you want to create a public link to.',
       singleSelect: true,
     });
 
-    const verified = await verificationResultFor({rawCredentialRecord, registries});
-    if (!verified) {
-      await displayGlobalModal({
-        title: 'Unable to Create Link',
-        cancelButton: false,
-        confirmText: 'Close',
-        cancelOnBackgroundPress: true,
-        body: 'You can only create a public link for a verified credential. Please ensure the credential is verified before trying again.',
-      });
-
-      return goToLinkSelect();
-    }
-
-    const alreadyCreated = await hasPublicLink(rawCredentialRecord);
-    if (!alreadyCreated) {
-      const confirmedShare = await displayGlobalModal({
-        title: 'Are you sure?',
-        confirmText: 'Create Link',
-        body: (
-          <>
-            <Text style={mixins.modalBodyText}>Creating a public link will allow anyone with the link to view the credential. The link will automatically expire 1 year after creation. A public link expiration date is not the same as the expiration date for your credential.</Text>
-            <Button
-              buttonStyle={mixins.buttonClear}
-              titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
-              containerStyle={mixins.buttonClearContainer}
-              title="What does this mean?"
-              onPress={() => Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`)}
-            />
-          </>
-        ),
-      });
-
-      if (!confirmedShare) return goToShareHome();
-    }
-
-    navigation.navigate('PublicLinkScreen', { rawCredentialRecord });
+    navigation.navigate('PresentationPreviewScreen', { 
+      selectedCredentials, 
+      mode: 'createLink' 
+    });
   }
 
   function goToShareHome() {

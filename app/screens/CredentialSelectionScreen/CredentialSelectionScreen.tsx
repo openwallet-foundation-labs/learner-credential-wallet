@@ -27,7 +27,12 @@ export default function CredentialSelectionScreen({
     if (selected.includes(credentialIndex)) {
       setSelected(selected.filter(i => i !== credentialIndex));
     } else {
-      setSelected([...selected, credentialIndex]);
+      if (singleSelect) {
+        // In single-select mode, only allow one selection at a time
+        setSelected([credentialIndex]);
+      } else {
+        setSelected([...selected, credentialIndex]);
+      }
     }
   }
 
@@ -36,7 +41,6 @@ export default function CredentialSelectionScreen({
 
     const onSelectItem = () => {
       toggleItem(index);
-      if (singleSelect) onSelectCredentials([item]);
     };
 
     return (
@@ -44,9 +48,9 @@ export default function CredentialSelectionScreen({
         credential={credential}
         onSelect={onSelectItem}
         selected={selected.includes(index)}
-        checkable={!singleSelect}
-        hideLeft={singleSelect}
-        chevron={singleSelect}
+        checkable={true}
+        hideLeft={false}
+        chevron={false}
         rawCredentialRecord={item}
         showStatusBadges
       />
@@ -56,16 +60,21 @@ export default function CredentialSelectionScreen({
 
 
   function ShareButton(): React.ReactElement | null {
-    if (selected.length === 0 || singleSelect) {
+    if (selected.length === 0) {
       return null;
     }
 
+    const buttonTitle = singleSelect ? 'Create Link' : 'Send Selected Credentials';
+
     return (
       <Button
-        title="Send Selected Credentials"
+        title={buttonTitle}
         buttonStyle={styles.shareButton}
         titleStyle={mixins.buttonTitle}
-        onPress={() => onSelectCredentials(selectedCredentials)}
+        onPress={() => {
+          onSelectCredentials(selectedCredentials);
+          goBack();
+        }}
       />
     );
   }

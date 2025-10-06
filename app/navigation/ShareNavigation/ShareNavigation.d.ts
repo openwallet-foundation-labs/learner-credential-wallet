@@ -10,6 +10,7 @@ export type ShareNavigationParamsList = {
   } | undefined;
   PresentationPreviewScreen: {
     selectedCredentials: CredentialRecordRaw[];
+    mode?: 'send' | 'createLink';
   };
   CredentialScreen: {
     rawCredentialRecord: CredentialRecordRaw;
