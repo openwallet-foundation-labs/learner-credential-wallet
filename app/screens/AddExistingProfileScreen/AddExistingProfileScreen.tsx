@@ -48,7 +48,7 @@ export default function AddExistingProfileScreen({ navigation }: AddExistingProf
     if (navigationRef.isReady()) {
       navigationRef.navigate('QRScreen', {
         onReadQRCode,
-        instructionText: 'Scan a valid QR code to add an existing profile.',
+        instructionText: 'Scan a shared valid QR code to add an existing profile.',
       });
     }
   }
