@@ -1,5 +1,5 @@
 import moment from 'moment';
-import { Subject } from '../../../../types/credential';
+import { Subject, Alignment } from '../../../../types/credential';
 import { educationalOperationalCredentialFrom } from '../../../decode';
 import { extractNameFromOBV3Identifier } from '../../../extractNameFromOBV3Identifier';
 import { imageSourceFrom } from './image';
@@ -17,6 +17,7 @@ type CredentialRenderInfo = {
   numberOfCredits: string | null;
   achievementImage: string | null;
   achievementType: string | null;
+  alignments: Alignment[] | undefined;
 }
 
 export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): CredentialRenderInfo {
@@ -38,6 +39,7 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
   const achievementImage = imageSourceFrom(eoc?.image);
 
   const achievementType = eoc && eoc.achievementType ? eoc.achievementType : null;
+  const alignments = eoc?.alignment;
 
   const { startDate, endDate } = eoc?.awardedOnCompletionOf || {};
   const startDateFmt = startDate ? moment(startDate).format(DATE_FORMAT) : null;
@@ -54,6 +56,7 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
     startDateFmt,
     endDateFmt,
     achievementImage,
-    achievementType
+    achievementType,
+    alignments
   };
 }
