@@ -20,7 +20,8 @@ import {
   CardImage,
   issuerRenderInfoWithVerification,
   IssuerInfoButton,
-  credentialSubjectRenderInfoFrom
+  credentialSubjectRenderInfoFrom,
+  AlignmentsList
 } from './shared';
 
 import { DATE_FORMAT } from '../../../app.config';
@@ -54,7 +55,8 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
     startDateFmt,
     endDateFmt,
     achievementImage,
-    achievementType
+    achievementType,
+    alignments
   } = credentialSubjectRenderInfoFrom(credentialSubject);
 
   const issuedToName: string = issuedTo || (name as string);
@@ -144,6 +146,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
         </View>
         <CardDetail label="Description" value={description} />
         <CardDetail label="Criteria" value={criteria} isMarkdown={true} />
+        <AlignmentsList alignments={alignments} />
       </View>
     </View>
   );
