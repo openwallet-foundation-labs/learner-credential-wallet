@@ -25,7 +25,7 @@ export default function WasConnectScreen() {
       resetStatus();
 
       navigationRef.navigate('QRScreen', {
-        instructionText: 'Scan QR code from Resume Author to connect your wallet.',
+        instructionText: 'Scan a shared QR code from Resume Author to connect your wallet.',
         onReadQRCode: async (qrText: string) => {
           try {
             const url = new URL(qrText);

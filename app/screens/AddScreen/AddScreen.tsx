@@ -29,7 +29,7 @@ export default function AddScreen(): React.ReactElement {
   function onPressQRScreen() {
     if (navigationRef.isReady()) {
       navigationRef.navigate('QRScreen', {
-        instructionText: 'Scan a QR code from your issuer to request your credentials.',
+        instructionText: 'Scan a shared QR code from your issuer to request your credentials.',
         onReadQRCode,
       });
     }
