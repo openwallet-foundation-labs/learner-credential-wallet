@@ -119,9 +119,28 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
   }
 
   public static async updateProfileRecord(rawProfileRecord: ProfileRecordRaw): Promise<ProfileRecordRaw> {
+    // Prevent duplicate profile names on update (case-insensitive), excluding the current record
+    const existingProfiles = await ProfileRecord.getAllProfileRecords();
+    const isDuplicate = existingProfiles.some((profile) =>
+      profile._id.toHexString?.() !== rawProfileRecord._id.toHexString?.() &&
+      isProfileNameDuplicate(profile.profileName, rawProfileRecord.profileName),
+    );
+
+    if (isDuplicate) {
+      throw new HumanReadableError(
+        `A profile with the name "${rawProfileRecord.profileName}" already exists. Please choose a different name.`,
+      );
+    }
+
+    // Ensure updatedAt is refreshed on rename/update
+    const updated: ProfileRecordRaw = {
+      ...rawProfileRecord,
+      updatedAt: new Date(),
+    };
+
     return db.withInstance((instance) =>
       instance.write(() =>
-        instance.create<ProfileRecord>(ProfileRecord.schema.name, rawProfileRecord, Realm.UpdateMode.Modified).asRaw(),
+        instance.create<ProfileRecord>(ProfileRecord.schema.name, updated, Realm.UpdateMode.Modified).asRaw(),
       ),
     );
   }
