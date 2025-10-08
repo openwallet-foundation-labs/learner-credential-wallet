@@ -101,10 +101,7 @@ export default function ConfirmModal({
                 disabled={confirmButtonDisabled}
                 disabledStyle={mixins.buttonDisabled}
                 disabledTitleStyle={mixins.buttonTitle}
-                onPress={() => {
-                  onRequestClose();
-                  onConfirm();
-                }}
+                onPress={onConfirm}
               />
             ) : null}
           </View>
