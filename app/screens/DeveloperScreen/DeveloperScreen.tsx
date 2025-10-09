@@ -104,9 +104,6 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
   function goWas() {
     navigationRef.navigate('WASScreen' as never);
   }
-  function goQR() {
-    navigationRef.navigate('WasConnect' as never);
-  }
 
   return (
     <>
@@ -119,7 +116,6 @@ export default function DeveloperScreen({ navigation }: DeveloperScreenProps): R
         {WAS.enabled && (
           <>
             <Button {...buttonStyleProps} title={hasWasConnection ? 'W.A.S. Connection' : 'Connect to W.A.S'} onPress={goWas} />
-            <Button {...buttonStyleProps} title="Scan QR Code" onPress={goQR} />
           </>
         )}
         <View style={styles.spacer} />
