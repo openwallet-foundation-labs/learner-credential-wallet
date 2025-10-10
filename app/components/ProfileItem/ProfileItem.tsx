@@ -77,11 +77,18 @@ export default function ProfileItem({ rawProfileRecord }: ProfileItemProps): Rea
 function RenameModal({ rawProfileRecord, onRequestClose }: ActionModalProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const [newName, setNewName] = useState(rawProfileRecord.profileName);
+  const [errorMessage, setErrorMessage] = useState('');
   const dispatch = useAppDispatch();
 
   async function onSave() {
-    await dispatch(updateProfile({ ...rawProfileRecord, profileName: newName }));
-    onRequestClose();
+    if (!newName) return;
+    try {
+      await dispatch(updateProfile({ ...rawProfileRecord, profileName: newName })).unwrap();
+      setErrorMessage('');
+      onRequestClose();
+    } catch (err: any) {
+      setErrorMessage(err?.message || 'Failed to rename profile');
+    }
   }
 
   return (
@@ -94,7 +101,10 @@ function RenameModal({ rawProfileRecord, onRequestClose }: ActionModalProps): Re
     >
       <TextInput
         value={newName}
-        onChangeText={setNewName}
+        onChangeText={(text) => {
+          setNewName(text);
+          setErrorMessage('');
+        }}
         style={styles.input}
         outlineColor={theme.color.textPrimary}
         selectionColor={theme.color.textPrimary}
@@ -111,6 +121,11 @@ function RenameModal({ rawProfileRecord, onRequestClose }: ActionModalProps): Re
         onTextInput={() => {}}
         tvParallaxProperties={undefined}
       />
+      {errorMessage ? (
+        <Text style={{ color: theme.color.error }}>
+          {errorMessage}
+        </Text>
+      ) : null}
     </ConfirmModal>
   );
 }
