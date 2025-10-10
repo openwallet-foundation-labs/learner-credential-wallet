@@ -8,6 +8,10 @@ const packagesToTransformWithBabel = [
   'expo-font',
   'react-native-fs',
   '@digitalcredentials/http-client',
+  '@digitalcredentials/vpqr',
+  '@digitalcredentials/cborld',
+  '@digitalcredentials/verifier-core',
+  'uuid',
   'realm',
   '@realm', // <-- critical for @realm/fetch
   'react-redux',
