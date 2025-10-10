@@ -187,7 +187,7 @@ export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw
   try {
     const publicLinks = await Cache.getInstance()
       .load(CacheKey.PublicLinks, id) as StoreCredentialResult;
-    return `${publicLinks.url.view}`;
+    return `${publicLinks.server}${publicLinks.url.view}`;
   } catch (err) {
     if ((err as Error).name === 'NotFoundError') return null;
     throw err;
