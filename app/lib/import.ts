@@ -5,6 +5,7 @@ import base64 from 'react-native-base64';
 
 import { ProfileRecord } from '../model';
 import { CredentialImportReport } from '../types/credential';
+import { parseWalletContents } from './parseWallet';
 
 // Type augmentation for global object
 declare global {
@@ -200,36 +201,45 @@ export async function importProfileFrom(data: string): Promise<ReportDetails> {
 export async function importWalletFrom(data: string): Promise<ReportDetails> {
   const items: unknown[] = JSON.parse(data);
 
-  const reports = await Promise.all(items.map(async (item) => {
+  const reports = await Promise.all(items.map(async (item, index) => {
     const rawWallet = JSON.stringify(item);
-    return ProfileRecord.importProfileRecord(rawWallet);
+    const report = await ProfileRecord.importProfileRecord(rawWallet);
+    
+    // Extract profile name from the wallet data
+    try {
+      const { profileMetadata } = parseWalletContents(rawWallet);
+      const profileName = profileMetadata?.data?.profileName || 'Untitled Profile';
+      return { ...report, profileName };
+    } catch {
+      return { ...report, profileName: `Profile ${index + 1}` };
+    }
   }));
 
   const credentialReports = reports.map(({ credentials }) => credentials);
   const totalCredentialsReport = aggregateCredentialReports(credentialReports);
   
-  // Count profile import results
-  const profilesImported = reports.filter(r => r.userIdImported).length;
-  const profilesDuplicate = reports.filter(r => r.profileDuplicate).length;
-  const profilesFailed = reports.length - profilesImported - profilesDuplicate;
+  // Collect profile names by import status
+  const profilesImported = reports.filter(r => r.userIdImported).map(r => r.profileName);
+  const profilesDuplicate = reports.filter(r => r.profileDuplicate).map(r => r.profileName);
+  const profilesFailed = reports.filter(r => !r.userIdImported && !r.profileDuplicate).map(r => r.profileName);
   
   const reportDetails: ReportDetails = {
     ...credentialReportDetailsFrom(totalCredentialsReport),
   };
   
-  if (profilesImported > 0) {
-    const plural = profilesImported !== 1 ? 's' : '';
-    reportDetails[`${profilesImported} profile${plural} successfully imported`] = [];
+  if (profilesImported.length > 0) {
+    const plural = profilesImported.length !== 1 ? 's' : '';
+    reportDetails[`${profilesImported.length} profile${plural} successfully imported`] = profilesImported;
   }
   
-  if (profilesDuplicate > 0) {
-    const plural = profilesDuplicate !== 1 ? 's' : '';
-    reportDetails[`${profilesDuplicate} duplicate profile${plural} skipped`] = [];
+  if (profilesDuplicate.length > 0) {
+    const plural = profilesDuplicate.length !== 1 ? 's' : '';
+    reportDetails[`${profilesDuplicate.length} duplicate profile${plural} skipped`] = profilesDuplicate;
   }
   
-  if (profilesFailed > 0) {
-    const plural = profilesFailed !== 1 ? 's' : '';
-    reportDetails[`${profilesFailed} profile${plural} failed to import`] = [];
+  if (profilesFailed.length > 0) {
+    const plural = profilesFailed.length !== 1 ? 's' : '';
+    reportDetails[`${profilesFailed.length} profile${plural} failed to import`] = profilesFailed;
   }
 
   return reportDetails;
