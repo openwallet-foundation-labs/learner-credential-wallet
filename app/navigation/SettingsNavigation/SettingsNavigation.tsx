@@ -17,7 +17,7 @@ import {
   AboutProps,
   SettingsNavigationParamList,
 } from './SettingsNavigation.d';
-import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen } from '../../screens';
+import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, HelpScreen, ManageProfilesScreen, RestoreWalletScreen } from '../../screens';
 import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur, useThemeContext } from '../../hooks';
 import { SettingsNavigationProps } from '../';
 import { exportWallet } from '../../lib/export';
@@ -123,6 +123,7 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
         <SettingsItem key="restore" title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
         <SettingsItem key="backup" title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
         <SettingsItem key="reset" title="Reset wallet" onPress={() => setResetModalOpen(true)} />
+        <SettingsItem key="help" title="Help" onPress={() => navigation.navigate('Help')} />
         <SettingsItem key="about" title="About" onPress={() => navigation.navigate('About')} />
         {FEATURE_FLAGS.passwordProtect && <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />}
       </ScrollView>
@@ -202,6 +203,7 @@ export default function SettingsNavigation({ navigation }: SettingsNavigationPro
       <Stack.Screen name="AddExistingProfileScreen" component={AddExistingProfileScreen} />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
       <Stack.Screen name="RestoreWalletScreen" component={RestoreWalletScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="DeveloperScreen" component={DeveloperScreen} />
       {WAS.enabled && (
