@@ -152,52 +152,15 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
     <>
       <NavHeader title="Settings" testID="Settings" />
       <ScrollView contentContainerStyle={styles.settingsContainer}>
-        <SettingsItem
-          key="biometrics"
-          title="Use biometrics to unlock"
-          onPress={onToggleBiometrics}
-          rightComponent={biometricSwitch}
-          disabled={!isBiometricsSupported}
-        />
-        <SettingsItem
-          key="profiles"
-          title="Manage profiles"
-          onPress={() => navigation.navigate('ManageProfilesScreen')}
-          testID="manage-profiles-button"
-        />
-        <SettingsItem
-          key="register"
-          title="Register wallet"
-          onPress={registerWallet}
-        />
-        <SettingsItem
-          key="restore"
-          title="Restore wallet"
-          onPress={() => navigation.navigate('RestoreWalletScreen')}
-        />
-        <SettingsItem
-          key="backup"
-          title="Backup wallet"
-          onPress={() => setBackupModalOpen(true)}
-        />
-        <SettingsItem
-          key="reset"
-          title="Reset wallet"
-          onPress={() => setResetModalOpen(true)}
-        />
-        <SettingsItem
-          key="about"
-          title="About"
-          onPress={() => navigation.navigate('About')}
-        />
-        {FEATURE_FLAGS.passwordProtect && (
-          <SettingsItem
-            key="signout"
-            title="Sign out"
-            onPress={lockWallet}
-            testID="signout-button"
-          />
-        )}
+        <SettingsItem key="biometrics" title="Use biometrics to unlock" onPress={onToggleBiometrics} rightComponent={biometricSwitch} disabled={!isBiometricsSupported} />
+        <SettingsItem key="profiles" title="Manage profiles" onPress={() => navigation.navigate('ManageProfilesScreen')} />
+        <SettingsItem key="register" title="Register wallet" onPress={registerWallet} />
+        <SettingsItem key="restore" title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
+        <SettingsItem key="backup" title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
+        <SettingsItem key="reset" title="Reset wallet" onPress={() => setResetModalOpen(true)} />
+        <SettingsItem key="help" title="Help" onPress={() => navigation.navigate('Help')} />
+        <SettingsItem key="about" title="About" onPress={() => navigation.navigate('About')} />
+        {FEATURE_FLAGS.passwordProtect && <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />}
       </ScrollView>
       <ConfirmModal
         open={resetModalOpen}
@@ -298,10 +261,8 @@ export default function SettingsNavigation({
       <Stack.Screen name="CredentialScreen" component={CredentialScreen} />
       <Stack.Screen name="PublicLinkScreen" component={PublicLinkScreen} />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
-      <Stack.Screen
-        name="RestoreWalletScreen"
-        component={RestoreWalletScreen}
-      />
+      <Stack.Screen name="RestoreWalletScreen" component={RestoreWalletScreen} />
+      <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="DeveloperScreen" component={DeveloperScreen} />
       {WAS.enabled && (
