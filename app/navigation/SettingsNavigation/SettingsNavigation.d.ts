@@ -16,6 +16,7 @@ export type SettingsNavigationParamList = {
   Settings: undefined
   RestoreWalletScreen: undefined
   About: undefined
+  Help: undefined;
   ManageProfilesScreen: undefined
   AddExistingProfileScreen: undefined
   ProfileCredentialScreen: ProfileCredentialScreenParams
