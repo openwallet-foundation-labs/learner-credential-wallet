@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { View, FlatList } from 'react-native';
 import { Text, Button } from 'react-native-elements';
 import { useSelector } from 'react-redux';
@@ -10,6 +10,8 @@ import type { RenderItemProps } from './CredentialSelectionScreen.d';
 import type { CredentialSelectionScreenProps } from '../../navigation';
 import { selectRawCredentialRecords } from '../../store/slices/credential';
 import { useDynamicStyles } from '../../hooks';
+import { verificationResultFor, VerificationResult } from '../../lib/verifiableObject';
+import { hasPublicLink } from '../../lib/publicLink';
 
 export default function CredentialSelectionScreen({
   navigation,
@@ -22,6 +24,32 @@ export default function CredentialSelectionScreen({
   const allItems = useSelector(selectRawCredentialRecords);
   const filteredItems = useMemo(() => credentialFilter ? allItems.filter(credentialFilter) : allItems, [allItems]);
   const selectedCredentials = useMemo(() => selected.map((i) => filteredItems[i]), [selected, filteredItems]);
+
+  // Pre-verify and cache results for visible credentials to keep rows pure/static
+  const [verifyMap, setVerifyMap] = useState<Record<string, VerificationResult>>({});
+  const [publicMap, setPublicMap] = useState<Record<string, boolean>>({});
+  const loadingRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    (async () => {
+      const entries: Record<string, VerificationResult> = {};
+      const publicEntries: Record<string, boolean> = {};
+      for (const r of filteredItems) {
+        try {
+          const res = await verificationResultFor({ rawCredentialRecord: r, forceFresh: false, registries: undefined as any });
+          entries[String(r._id)] = res;
+          publicEntries[String(r._id)] = await hasPublicLink(r);
+        } catch {
+          // keep empty; rows will handle gracefully
+        }
+      }
+      setVerifyMap(entries);
+      setPublicMap(publicEntries);
+      loadingRef.current = false;
+    })();
+  }, [filteredItems]);
 
   function toggleItem(credentialIndex: number): void {
     if (selected.includes(credentialIndex)) {
@@ -52,7 +80,11 @@ export default function CredentialSelectionScreen({
         hideLeft={false}
         chevron={false}
         rawCredentialRecord={item}
+        precomputedVerification={verifyMap[String(item._id)]}
         showStatusBadges
+        precomputedPublic={publicMap[String(item._id)]}
+        // Disable row press; allow only checkbox to toggle selection
+        onPressDisabled
       />
     );
   }
@@ -60,12 +92,9 @@ export default function CredentialSelectionScreen({
 
 
   function ShareButton(): React.ReactElement | null {
-    if (selected.length === 0) {
-      return null;
-    }
+    if (selected.length === 0) return null;
 
     const buttonTitle = singleSelect ? 'Create Link' : 'Send Selected Credentials';
-
     return (
       <Button
         title={buttonTitle}

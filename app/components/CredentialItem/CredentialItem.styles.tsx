@@ -4,6 +4,9 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
   listItemContainer: {
     ...mixins.button,
     backgroundColor: theme.color.foregroundPrimary,
+    paddingVertical: mixins.button.paddingVertical,
+    paddingHorizontal: mixins.button.paddingHorizontal,
+    minHeight: 72,
   },
   listItemOuterContainer: {
     marginVertical: 8,
@@ -17,6 +20,7 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
   },
   listItemTopContent: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   listItemTitle: {
     color: theme.color.textPrimary,
@@ -35,5 +39,20 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     marginRight: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  checkboxContainer: {
+    marginRight: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxBox: {
+    width: 22,
+    height: 22,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: theme.color.textSecondary,
+    backgroundColor: 'transparent',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 }));

@@ -1,5 +1,6 @@
 import { CredentialRecordRaw } from '../../model';
 import { Credential } from '../../types/credential';
+import { VerificationResult } from '../../lib/verifiableObject';
 
 export type CredentialItemProps = {
   onSelect: () => void;
@@ -11,4 +12,7 @@ export type CredentialItemProps = {
   hideLeft?: boolean
   rawCredentialRecord?: CredentialRecordRaw,
   showStatusBadges?: boolean;
+  precomputedVerification?: VerificationResult;
+  precomputedPublic?: boolean;
+  onPressDisabled?: boolean;
 }
