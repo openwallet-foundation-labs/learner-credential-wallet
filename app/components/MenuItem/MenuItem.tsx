@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, View, Text } from 'react-native';
+import { TouchableHighlight, View, Text } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import dynamicStyleSheet from './MenuItem.styles';
@@ -10,23 +10,23 @@ export default function MenuItem({ icon, title, onPress }: MenuItemProps): React
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
 
   return (
-    <TouchableOpacity
-      style={[
-        styles.menuItemContainer,
-        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 }
-      ]}
+    <TouchableHighlight
+      style={styles.menuItemContainer}
+      underlayColor={theme.color.backgroundSecondary}
       onPress={onPress}
     >
-      { icon && (
-        <MaterialIcons
-          name={icon}
-          size={theme.iconSize}
-          color={theme.color.iconInactive}
-        />
-      )}
-      <View style={{ flex: 1, marginLeft: icon ? 12 : 0 }}>
-        <Text style={styles.menuItemTitle}>{title}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        { icon && (
+          <MaterialIcons
+            name={icon}
+            size={theme.iconSize}
+            color={theme.color.iconInactive}
+          />
+        )}
+        <View style={{ flex: 1, marginLeft: icon ? 12 : 0 }}>
+          <Text style={styles.menuItemTitle}>{title}</Text>
+        </View>
       </View>
-    </TouchableOpacity>
+    </TouchableHighlight>
   );
 }
