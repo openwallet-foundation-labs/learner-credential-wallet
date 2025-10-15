@@ -1,11 +1,9 @@
 import * as DidMethodKey from '@digitalcredentials/did-method-key';
 import { generateSecureRandom } from 'react-native-securerandom';
-import { AddDidRecordParams, DidRecordRaw } from '../model/did';
-import { CredentialRecord } from '../model/credential';
+import { AddDidRecordParams } from '../model/did';
 import { CredentialRecordRaw } from '../types/credential';
 import { DidKey } from '../types/did';
 import { ISigner } from '@digitalcredentials/ssi';
-import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 
 const didKeyDriver = DidMethodKey.driver();
 
@@ -38,23 +36,3 @@ export interface ISelectedProfile {
   loadCredentials: () => Promise<CredentialRecordRaw[]>
 }
 
-export async function profileWithSigners ({ profileName, didRecord }:
-  { profileName : string, didRecord: Partial<DidRecordRaw> }
-): Promise<ISelectedProfile> {
-  return  {
-    name: profileName,
-    did: didRecord.didDocument!.id,
-    signers: await signersFromKey(didRecord.verificationKey!),
-    loadCredentials: CredentialRecord.getAllCredentialRecords
-  } as ISelectedProfile;
-}
-
-export async function signersFromKey (didKey: DidKey): Promise<IProfileSigners> {
-  const keyPair = await Ed25519VerificationKey2020.from(didKey)
-  return {
-    authentication: keyPair.signer(),
-    assertion: keyPair.signer(),
-    zcapDelegation: keyPair.signer(),
-    zcapInvocation: keyPair.signer()
-  } as IProfileSigners
-}

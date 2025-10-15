@@ -9,6 +9,7 @@
     "lint": "eslint ./app ./App.tsx && npm run compile",
     "lint:fix": "eslint --fix ./app ./App.tsx && npm run compile",
     "test": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config jest.config.ts --runInBand --detectOpenHandles --forceExit",
+    "test-node": "node --import=tsx --test test-node/*",
     "coverage": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config jest.config.coverage.ts --runInBand --detectOpenHandles --forceExit",
     "coverage:open": "npm run coverage && open coverage/lcov-report/index.html",
     "compile": "tsc --noEmit -p tsconfig.json && echo ✓ Passed TS compile check",
@@ -161,6 +162,7 @@
     "react-redux": "^9.1.2",
     "stream-browserify": "^3.0.0",
     "ts-node": "^10.9.2",
+    "tsx": "^4.20.6",
     "typescript": "~5.8.3",
     "url": "^0.11.4",
     "util": "^0.12.5"

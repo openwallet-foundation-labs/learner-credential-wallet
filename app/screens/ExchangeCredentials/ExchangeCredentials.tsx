@@ -15,7 +15,8 @@ import { delay } from '../../lib/time';
 import { ExchangeCredentialsProps } from './ExchangeCredentials.d';
 import { HumanReadableError } from '../../lib/error';
 import { useThemeContext } from '../../hooks/useThemeContext';
-import { profileWithSigners } from '../../lib/did';
+
+import { profileWithSigners } from '../../lib/profile';
 
 export default function ExchangeCredentials({ route }: ExchangeCredentialsProps): React.ReactElement {
   const { params } = route;
