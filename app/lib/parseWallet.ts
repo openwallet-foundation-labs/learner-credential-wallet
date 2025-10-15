@@ -1,7 +1,6 @@
 import { ParsedWalletContents, WalletContent, UnlockedWallet } from '../types/wallet';
-import { DidDocument, DidKey } from '../types/did';
 import { ProfileMetadata } from '../types/profile';
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
+import { IDidDocument, IKeyPair, IVerifiableCredential } from '@digitalcredentials/ssi';
 
 function isCredential(item: WalletContent): item is IVerifiableCredential {
   const context = (item as IVerifiableCredential)['@context'];
@@ -9,16 +8,16 @@ function isCredential(item: WalletContent): item is IVerifiableCredential {
          context?.includes('https://www.w3.org/ns/credentials/v2');
 }
 
-function isDidDocument(item: WalletContent): item is DidDocument {
-  return (item as DidDocument)['@context']?.includes('https://www.w3.org/ns/did/v1') ;
+function isDidDocument(item: WalletContent): item is IDidDocument {
+  return (item as IDidDocument)['@context']?.includes('https://www.w3.org/ns/did/v1') ;
 }
 
-function isVerificationKey(item: WalletContent): item is DidKey {
-  return (item as DidKey)?.type === 'Ed25519VerificationKey2020' ;
+function isVerificationKey(item: WalletContent): item is IKeyPair {
+  return (item as IKeyPair)?.type === 'Ed25519VerificationKey2020' ;
 }
 
-function isKeyAgreementKey(item: WalletContent): item is DidKey {
-  return (item as DidKey)?.type === 'X25519KeyAgreementKey2020' ;
+function isKeyAgreementKey(item: WalletContent): item is IKeyPair {
+  return (item as IKeyPair)?.type === 'X25519KeyAgreementKey2020' ;
 }
 
 function isProfileMetadata(item: WalletContent): item is ProfileMetadata {

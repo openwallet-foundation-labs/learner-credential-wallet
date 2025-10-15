@@ -1,9 +1,9 @@
-import { CredentialRecord, DidRecordRaw } from '../model';
+import { CredentialRecord } from '../model/credential';
 import { IProfileSigners, ISelectedProfile } from './did';
-import { DidKey } from '../types/did';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
+import { IDidDocument, IKeyPair } from '@digitalcredentials/ssi';
 
-export async function signersFromKey(didKey: DidKey): Promise<IProfileSigners> {
+export async function signersFromKey(didKey: IKeyPair): Promise<IProfileSigners> {
   const keyPair = await Ed25519VerificationKey2020.from(didKey)
   return {
     authentication: keyPair.signer(),
@@ -13,13 +13,15 @@ export async function signersFromKey(didKey: DidKey): Promise<IProfileSigners> {
   } as IProfileSigners
 }
 
-export async function profileWithSigners({ profileName, didRecord }:
-  { profileName: string, didRecord: Partial<DidRecordRaw> }
+export async function profileWithSigners(
+  { profileName, loadCredentials, didRecord: { didDocument, verificationKey } }:
+  { profileName: string, loadCredentials: () => Promise<any>,
+    didRecord: { didDocument: IDidDocument, verificationKey: IKeyPair } }
 ): Promise<ISelectedProfile> {
   return {
     name: profileName,
-    did: didRecord.didDocument!.id,
-    signers: await signersFromKey(didRecord.verificationKey!),
-    loadCredentials: CredentialRecord.getAllCredentialRecords
+    did: didDocument!.id,
+    signers: await signersFromKey(verificationKey!),
+    loadCredentials
   } as ISelectedProfile;
 }

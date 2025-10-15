@@ -1,14 +1,13 @@
-import { DidDocument, DidKey } from './did';
 import { ProfileMetadata } from './profile';
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
+import { IDidDocument, IKeyPair, IVerifiableCredential } from '@digitalcredentials/ssi';
 
-export type WalletContent = IVerifiableCredential | DidDocument | DidKey | ProfileMetadata;
+export type WalletContent = IVerifiableCredential | IDidDocument | IKeyPair | ProfileMetadata;
 
 export type ParsedWalletContents = {
   credentials: IVerifiableCredential[];
-  didDocument: DidDocument;
-  verificationKey: DidKey;
-  keyAgreementKey: DidKey;
+  didDocument: IDidDocument;
+  verificationKey: IKeyPair;
+  keyAgreementKey: IKeyPair;
   profileMetadata?: ProfileMetadata;
 };
 

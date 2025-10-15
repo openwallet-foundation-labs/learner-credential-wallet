@@ -17,6 +17,7 @@ import { HumanReadableError } from '../../lib/error';
 import { useThemeContext } from '../../hooks/useThemeContext';
 
 import { profileWithSigners } from '../../lib/profile';
+import { CredentialRecord } from '../../model';
 
 export default function ExchangeCredentials({ route }: ExchangeCredentialsProps): React.ReactElement {
   const { params } = route;
@@ -113,8 +114,14 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     // Regardless if request is an offer or a request, select profile
     const rawProfileRecord = await NavigationUtil.selectProfile();
     const selectedDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
-    const selectedProfile = await profileWithSigners(
-      { profileName: rawProfileRecord.profileName, didRecord: selectedDidRecord })
+    const selectedProfile = await profileWithSigners({
+      profileName: rawProfileRecord.profileName,
+      loadCredentials: CredentialRecord.getAllCredentialRecords,
+      didRecord: {
+        didDocument: selectedDidRecord.didDocument,
+        verificationKey: selectedDidRecord.verificationKey
+      }
+    });
 
     // Recursively process exchanges until either:
     //  1) we're issued some credentials, or
