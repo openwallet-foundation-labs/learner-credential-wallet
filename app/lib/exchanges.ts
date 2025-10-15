@@ -6,15 +6,19 @@ import { CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { filterCredentialRecordsByType } from './credentialMatching';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import {
-  isDidAuthRequested, zcapsRequested,
+  delegateZcaps,
+  isDidAuthRequested,
   IVpOffer,
   IVprDetails,
-  IVpRequest, IVprQuery,
-  IZcap, delegateZcaps
+  IVpRequest,
+  IVprQuery,
+  IZcap,
+  zcapsRequested
 } from './walletRequestApi';
 import { extractCredentialsFrom } from './verifiableObject';
 import { selectCredentials } from './selectCredentials';
 import { ISelectedProfile } from './did';
+import { composeVp } from './composeVp';
 
 const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
 
@@ -243,40 +247,6 @@ export async function vcMatchesFor ({ queries, selectedProfile }:
       filterCredentialRecordsByType(allCredentialRecords, query));
   }
   return matches;
-}
-
-/**
- * Creates a Verifiable Presentation, to send back to the
- * requester (an Exchanger instance).
- * The VP is signed if DID Auth was requested, and unsigned otherwise.
- */
-export async function composeVp (
-  { selectedProfile, selectedVcs = [], challenge, domain, didAuthRequested }:
-    { selectedProfile: ISelectedProfile, selectedVcs?: IVerifiableCredential[],
-      challenge?: string, domain?: string, didAuthRequested: boolean }
-): Promise<IVerifiablePresentation> {
-  if (!didAuthRequested && selectedVcs!.length === 0) {
-    throw new Error('A VP requires either credentials or a DID Auth request.');
-  }
-  if (didAuthRequested && !(challenge && domain)) {
-    throw new Error('Both "challenge" and "domain" are required for DID Auth.');
-  }
-
-  if (!didAuthRequested) {
-    // Return an unsigned VP
-    return await vc.createPresentation({ verifiableCredential: selectedVcs, verify: false });
-  }
-
-  // Return a signed VP
-  const presentation = await vc.createPresentation({
-    holder: selectedProfile.did,
-    verifiableCredential: (selectedVcs!.length > 0) ? selectedVcs : undefined,
-    verify: false
-  });
-  return await vc.signPresentation({
-    presentation, challenge, domain, documentLoader,
-    suite: new Ed25519Signature2020({ signer: selectedProfile.signers.authentication })
-  })
 }
 
 /**
