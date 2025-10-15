@@ -56,7 +56,7 @@ export function parseWalletApiMessage ({ messageObject }: { messageObject: objec
   console.log('[parseWalletApiUrl] Unrecognized message type');
 }
 
-export function parseWalletApiUrl ({ url }: { url: string }): object | undefined {
+export function parseWalletApiUrl ({ url }: { url: string }): any | undefined {
   const { query } = qs.parseUrl(url);
   const messageText = query.request;
 

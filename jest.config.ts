@@ -26,7 +26,7 @@ const transformIgnorePatterns = [
 
 const config: Config = {
   preset: 'react-native',
-  extensionsToTreatAsEsm: ['.d.ts'],
+  testPathIgnorePatterns: ['test-node/'],
   transform: {
     '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
   },
