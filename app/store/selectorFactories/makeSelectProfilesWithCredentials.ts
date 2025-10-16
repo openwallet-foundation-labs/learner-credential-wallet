@@ -1,11 +1,11 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { ProfileWithCredentialRecords } from '../../model';
+import { ProfileWithCredentialRecords } from '../../model/profile';
 import { selectRawCredentialRecords } from '../slices/credential';
 import { selectRawProfileRecords } from '../slices/profile';
 import { Selector } from '.';
 
 export const makeSelectProfilesWithCredentials = (): Selector<
-  undefined, 
+  undefined,
   ProfileWithCredentialRecords[]
 > => createSelector(
   [selectRawProfileRecords, selectRawCredentialRecords],

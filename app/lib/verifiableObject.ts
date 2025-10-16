@@ -1,5 +1,4 @@
 import { LruCache } from '@digitalcredentials/lru-memoize';
-import { ChapiCredentialResponse, ChapiDidAuthRequest } from '../types/chapi';
 import { ResultLog, verifyCredential } from './validate';
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { CredentialRecordRaw } from '../model';
@@ -17,14 +16,6 @@ export function isVerifiableCredential(obj: VerifiableObject): obj is IVerifiabl
 
 export function isVerifiablePresentation(obj: VerifiableObject): obj is IVerifiablePresentation {
   return obj.type?.includes('VerifiablePresentation');
-}
-
-export function isChapiCredentialResponse(obj: ChapiCredentialResponse): obj is ChapiCredentialResponse {
-  return obj.credential?.type === 'web';
-}
-
-export function isChapiDidAuthRequest(obj: ChapiDidAuthRequest): obj is ChapiDidAuthRequest {
-  return obj.credentialRequestOptions?.web?.VerifiablePresentation?.query?.type === 'DIDAuthentication';
 }
 
 export function extractCredentialsFrom(obj: IVerifiableCredential | IVerifiablePresentation):

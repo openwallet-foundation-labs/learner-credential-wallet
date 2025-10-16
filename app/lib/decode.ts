@@ -1,19 +1,14 @@
 import qs from 'query-string';
 
-import { ChapiCredentialResponse, ChapiDidAuthRequest } from '../types/chapi';
 import { CredentialRequestParams } from './credentialRequest';
 
 import {
-  isChapiCredentialResponse,
-  isChapiDidAuthRequest,
   isVerifiableCredential,
   isVerifiablePresentation
 } from './verifiableObject';
 import { CredentialRecordRaw } from '../model';
-import { NavigationUtil } from './navigationUtil';
-import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
 
-import { ICredentialSubject, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { IVerifiableCredential } from '@digitalcredentials/ssi';
 import { getSubject } from './credentialDisplay/shared';
 import { isDeepLink } from './walletRequestApi';
 import { credentialsFromVpqr } from './credentialsFromVpqr';
@@ -40,25 +35,6 @@ export function legacyRequestParamsFromUrl(url: string): CredentialRequestParams
   return params as CredentialRequestParams;
 }
 
-function credentialsFromChapiCredentialResponse(chapiCredentialResponse: ChapiCredentialResponse): IVerifiableCredential[] {
-  const { credential } = chapiCredentialResponse;
-  const dataType = credential?.dataType;
-  switch (dataType) {
-  case 'VerifiableCredential':
-    return [credential?.data as IVerifiableCredential];
-  case 'VerifiablePresentation':
-    return credentialsFromPresentation(credential?.data as IVerifiablePresentation);
-  default:
-    return [];
-  }
-}
-
-async function credentialsFromChapiDidAuthRequest(chapiDidAuthRequest: ChapiDidAuthRequest): Promise<IVerifiableCredential[]> {
-  const didAuthRequest = chapiDidAuthRequest.credentialRequestOptions?.web?.VerifiablePresentation as DidAuthRequestParams;
-  const rawProfileRecord = await NavigationUtil.selectProfile();
-  return performDidAuthRequest(didAuthRequest, rawProfileRecord);
-}
-
 async function credentialsFromJson(text: string): Promise<IVerifiableCredential[]> {
   const data = JSON.parse(text);
 
@@ -70,19 +46,13 @@ async function credentialsFromJson(text: string): Promise<IVerifiableCredential[
     return [data];
   }
 
-  if (isChapiCredentialResponse(data)) {
-    return credentialsFromChapiCredentialResponse(data);
-  }
-
-  if (isChapiDidAuthRequest(data)) {
-    return credentialsFromChapiDidAuthRequest(data);
-  }
-
   throw new Error('Credential(s) could not be decoded from the JSON.');
 }
 
 /**
  * A method for decoding credentials from a variety text formats.
+ * Used on the Add Credential screen (when a user scans QR code or pastes
+ * something into the text box).
  *
  * @param text - A string containing a VPQR, URL, or JSON object.
  * @returns {Promise<IVerifiableCredential[]>} - An array of credentials.
