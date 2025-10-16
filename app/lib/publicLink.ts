@@ -187,7 +187,16 @@ export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw
   try {
     const publicLinks = await Cache.getInstance()
       .load(CacheKey.PublicLinks, id) as StoreCredentialResult;
-    return `${publicLinks.server}${publicLinks.url.view}`;
+    
+    // Check if url.view is already a full URL (for WAS links)
+    // or if it needs the server prepended (for verifierInstance links)
+    const viewUrl = publicLinks.url.view;
+    if (viewUrl.startsWith('http://') || viewUrl.startsWith('https://')) {
+      return viewUrl;
+    }
+    
+    // Use URL constructor to handle extra '/' characters properly
+    return (new URL(viewUrl, publicLinks.server)).toString();
   } catch (err) {
     if ((err as Error).name === 'NotFoundError') return null;
     throw err;
