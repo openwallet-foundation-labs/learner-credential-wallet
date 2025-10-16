@@ -73,7 +73,7 @@ describe('AlignmentsList Component Integration', () => {
         id: 'achievement-1',
         name: 'Test Achievement',
         alignment: [
-          { targetName: 'Invalid - No URL' },
+          { targetName: 'Valid - No URL' },
           {
             targetName: 'Valid Alignment',
             targetUrl: 'https://example.com/valid',
@@ -86,9 +86,12 @@ describe('AlignmentsList Component Integration', () => {
     const result = credentialSubjectRenderInfoFrom(subject);
     const validAlignments = getValidAlignments(result.alignments);
     
-    expect(validAlignments).toHaveLength(1);
-    expect(validAlignments[0].targetName).toBe('Valid Alignment');
-    // Component would render "Alignments" header and only the valid item
+    expect(validAlignments).toHaveLength(2);
+    expect(validAlignments[0].targetName).toBe('Valid - No URL');
+    expect(validAlignments[0].targetUrl).toBeUndefined();
+    expect(validAlignments[1].targetName).toBe('Valid Alignment');
+    expect(validAlignments[1].targetUrl).toBe('https://example.com/valid');
+    // Component would render "Alignments" header and both valid items
   });
 
   it('should handle mixed valid and invalid alignments', () => {
@@ -105,17 +108,34 @@ describe('AlignmentsList Component Integration', () => {
 
     const validAlignments = getValidAlignments(alignments);
     
-    expect(validAlignments).toHaveLength(1);
-    expect(validAlignments[0].targetName).toBe('Valid with Description');
-    expect(validAlignments[0].targetDescription).toBe('Valid description');
-    // Component would show header and one valid alignment with description
+    expect(validAlignments).toHaveLength(2);
+    expect(validAlignments[0].targetName).toBe('No URL');
+    expect(validAlignments[0].targetUrl).toBeUndefined();
+    expect(validAlignments[1].targetName).toBe('Valid with Description');
+    expect(validAlignments[1].targetDescription).toBe('Valid description');
+    // Component would show header and two valid alignments
   });
 
-  it('should provide empty array when all alignments are invalid', () => {
+  it('should provide valid alignments when some have no URL', () => {
     const alignments: Alignment[] = [
       { targetName: 'No URL' },
       { targetUrl: 'https://example.com' }, // No targetName
       { targetName: 'Invalid URL', targetUrl: 'not-a-url' },
+    ];
+
+    const validAlignments = getValidAlignments(alignments);
+    
+    expect(validAlignments).toHaveLength(1);
+    expect(validAlignments[0].targetName).toBe('No URL');
+    expect(validAlignments[0].targetUrl).toBeUndefined();
+    // Component would render "Alignments" header and one valid item
+  });
+
+  it('should provide empty array when all alignments lack targetName', () => {
+    const alignments: Alignment[] = [
+      { targetUrl: 'https://example.com' }, // No targetName
+      { targetUrl: 'https://example2.com' }, // No targetName
+      { targetDescription: 'Just description' }, // No targetName
     ];
 
     const validAlignments = getValidAlignments(alignments);

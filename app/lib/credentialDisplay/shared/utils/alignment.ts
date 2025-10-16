@@ -2,7 +2,7 @@ import { Alignment } from '../../../../types/credential';
 
 export type ValidAlignment = {
   targetName: string;
-  targetUrl: string;
+  targetUrl?: string;
   targetDescription?: string;
 };
 
@@ -56,25 +56,34 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
 
   return alignments
     .filter((alignment) => {
-      // Both targetName and targetUrl are required for display (AC4)
-      if (!alignment.targetName || !alignment.targetUrl) {
+      // targetName is required for display
+      if (!alignment.targetName) {
         return false;
       }
       
-      // Normalize and strictly validate URL
-      const normalized = isStrictHttpUrl(alignment.targetUrl);
-      if (!normalized) {
-        return false;
+      // If targetUrl is provided, it must be valid
+      if (alignment.targetUrl) {
+        const normalized = isStrictHttpUrl(alignment.targetUrl);
+        if (!normalized) {
+          return false;
+        }
       }
       
       return true;
     })
     .map(alignment => {
-      const normalizedUrl = isStrictHttpUrl(alignment.targetUrl!) as string;
-      return {
+      const result: ValidAlignment = {
         targetName: alignment.targetName!,
-        targetUrl: normalizedUrl,
         targetDescription: alignment.targetDescription,
       };
+      
+      if (alignment.targetUrl) {
+        const normalizedUrl = isStrictHttpUrl(alignment.targetUrl);
+        if (normalizedUrl) {
+          result.targetUrl = normalizedUrl;
+        }
+      }
+      
+      return result;
     });
 }

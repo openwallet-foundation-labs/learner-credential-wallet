@@ -14,13 +14,19 @@ const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
 
   return (
     <View style={styles.alignmentItem}>
-      <Text
-        style={styles.alignmentLink}
-        accessibilityRole="link"
-        onPress={() => Linking.openURL(alignment.targetUrl)}
-      >
-        {alignment.targetName}
-      </Text>
+      {alignment.targetUrl ? (
+        <Text
+          style={styles.alignmentLink}
+          accessibilityRole="link"
+          onPress={() => Linking.openURL(alignment.targetUrl!)}
+        >
+          {alignment.targetName}
+        </Text>
+      ) : (
+        <Text style={styles.alignmentText}>
+          {alignment.targetName}
+        </Text>
+      )}
       {alignment.targetDescription && (
         <Text style={styles.alignmentDescription}>
           {alignment.targetDescription}
@@ -67,6 +73,11 @@ const alignmentStyleSheet = createDynamicStyleSheet(({ theme }) => ({
     fontSize: theme.fontSize.regular,
     color: theme.color.linkColor,
     textDecorationLine: 'underline',
+  },
+  alignmentText: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.regular,
+    color: theme.color.textPrimary,
   },
   alignmentDescription: {
     fontFamily: theme.fontFamily.regular,
