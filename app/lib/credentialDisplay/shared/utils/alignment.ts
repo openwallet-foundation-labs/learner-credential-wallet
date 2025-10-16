@@ -6,12 +6,46 @@ export type ValidAlignment = {
   targetDescription?: string;
 };
 
-function isValidUrl(url: string): boolean {
+function normalizeUrl(raw: string): string {
+  const trimmed = String(raw).trim();
+  // If it already has a scheme (e.g., http:, https)
+  if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(trimmed)) return trimmed;
+  // Otherwise, assume https
+  return `https://${trimmed}`;
+}
+
+function isStrictHttpUrl(raw: string): string | null {
+  const candidate = String(raw).trim();
+
+  if (candidate.length === 0) return null;
+  if (/\s/.test(candidate)) return null;
+
+  const normalized = normalizeUrl(candidate);
+
+  // Reject strings that embed multiple schemes
+  const firstSchemeIdx = normalized.indexOf('://');
+  if (firstSchemeIdx === -1) return null;
+  if (normalized.indexOf('://', firstSchemeIdx + 3) !== -1) return null;
+
   try {
-    new URL(url);
-    return true;
+    const u = new URL(normalized);
+    // Only allow http(s)
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return null;
+    // Must have a hostname
+    if (!u.hostname) return null;
+    // Forbid credentials/userinfo
+    if (u.username || u.password) return null;
+    // Hostname must be reasonable (letters, numbers, dashes, dots) or be 'localhost' or an IPv4
+    const isHostname = /^[A-Za-z0-9.-]+$/.test(u.hostname);
+    const isLocalhost = u.hostname.toLowerCase() === 'localhost';
+    const isIPv4 = /^(25[0-5]|2[0-4]\d|1?\d?\d)(\.(25[0-5]|2[0-4]\d|1?\d?\d)){3}$/.test(u.hostname);
+    if (!(isHostname || isLocalhost || isIPv4)) return null;
+    // If it's a standard hostname (not localhost/IP), require at least one dot
+    if (isHostname && !isLocalhost && !isIPv4 && !u.hostname.includes('.')) return null;
+
+    return normalized;
   } catch {
-    return false;
+    return null;
   }
 }
 
@@ -21,22 +55,26 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
   }
 
   return alignments
-    .filter((alignment): alignment is ValidAlignment => {
+    .filter((alignment) => {
       // Both targetName and targetUrl are required for display (AC4)
       if (!alignment.targetName || !alignment.targetUrl) {
         return false;
       }
       
-      // targetUrl must be a valid URL (AC7)
-      if (!isValidUrl(alignment.targetUrl)) {
+      // Normalize and strictly validate URL
+      const normalized = isStrictHttpUrl(alignment.targetUrl);
+      if (!normalized) {
         return false;
       }
       
       return true;
     })
-    .map(alignment => ({
-      targetName: alignment.targetName!,
-      targetUrl: alignment.targetUrl!,
-      targetDescription: alignment.targetDescription,
-    }));
+    .map(alignment => {
+      const normalizedUrl = isStrictHttpUrl(alignment.targetUrl!) as string;
+      return {
+        targetName: alignment.targetName!,
+        targetUrl: normalizedUrl,
+        targetDescription: alignment.targetDescription,
+      };
+    });
 }
