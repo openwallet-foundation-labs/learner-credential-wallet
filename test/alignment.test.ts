@@ -24,13 +24,18 @@ describe('getValidAlignments', () => {
     expect(getValidAlignments(alignments)).toEqual([]);
   });
 
-  it('should filter out alignments without targetUrl', () => {
+  it('should include alignments with targetName but no targetUrl', () => {
     const alignments: Alignment[] = [
       {
         targetName: 'Test Name'
       }
     ];
-    expect(getValidAlignments(alignments)).toEqual([]);
+    expect(getValidAlignments(alignments)).toEqual([
+      {
+        targetName: 'Test Name',
+        targetDescription: undefined
+      }
+    ]);
   });
 
   it('should filter out alignments with invalid targetUrl', () => {
@@ -76,6 +81,35 @@ describe('getValidAlignments', () => {
     ]);
   });
 
+  it('should return valid alignments with only targetName and targetDescription', () => {
+    const alignments: Alignment[] = [
+      {
+        targetName: 'Test Name',
+        targetDescription: 'Test description'
+      }
+    ];
+    expect(getValidAlignments(alignments)).toEqual([
+      {
+        targetName: 'Test Name',
+        targetDescription: 'Test description'
+      }
+    ]);
+  });
+
+  it('should handle AC 4: alignment with targetName but no targetUrl should be displayed', () => {
+    const alignments: Alignment[] = [
+      {
+        targetName: 'Requirements Analysis'
+        // No targetUrl - this should still be valid per AC 4
+      }
+    ];
+    const result = getValidAlignments(alignments);
+    expect(result).toHaveLength(1);
+    expect(result[0].targetName).toBe('Requirements Analysis');
+    expect(result[0].targetUrl).toBeUndefined();
+    expect(result[0].targetDescription).toBeUndefined();
+  });
+
   it('should ignore targetCode, targetFramework, and targetType fields', () => {
     const alignments: Alignment[] = [
       {
@@ -106,7 +140,7 @@ describe('getValidAlignments', () => {
         targetUrl: 'https://example.com'
       },
       {
-        targetName: 'Invalid - No URL'
+        targetName: 'Valid - No URL'
       },
       {
         targetUrl: 'https://example2.com'
@@ -126,6 +160,10 @@ describe('getValidAlignments', () => {
       {
         targetName: 'Valid Alignment',
         targetUrl: 'https://example.com',
+        targetDescription: undefined
+      },
+      {
+        targetName: 'Valid - No URL',
         targetDescription: undefined
       },
       {
