@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import { View } from 'react-native';
 import { CredentialStatusBadgesProps } from './CredentialStatusBadges.d';
 import StatusBadge from '../StatusBadge/StatusBadge';
@@ -8,18 +8,25 @@ import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { useFocusEffect } from '@react-navigation/native';
 import { hasPublicLink } from '../../lib/publicLink';
 
-export default function CredentialStatusBadges({
+function CredentialStatusBadges({
   rawCredentialRecord,
   badgeBackgroundColor,
+  precomputedVerification,
+  precomputedPublic,
 }: CredentialStatusBadgesProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const checkPublicLink = useAsyncCallback<boolean>(hasPublicLink);
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  const stablePublicRef = useRef<boolean | undefined>(undefined);
+  const verifyCredential = precomputedVerification
+    ? { loading: false, error: null, result: precomputedVerification }
+    : useVerifyCredential(rawCredentialRecord);
 
   useFocusEffect(
     useCallback(() => {
-      checkPublicLink.execute(rawCredentialRecord);
-    }, [rawCredentialRecord])
+      if (precomputedPublic === undefined) {
+        checkPublicLink.execute(rawCredentialRecord);
+      }
+    }, [rawCredentialRecord, precomputedPublic])
   );
 
   const getVerificationBadge = () => {
@@ -111,12 +118,21 @@ export default function CredentialStatusBadges({
     );
   };
 
-  const verifyBadge = getVerificationBadge();
+  const verifyBadge = useMemo(() => getVerificationBadge(), [verifyCredential?.result?.verified, verifyCredential?.loading, verifyCredential?.result?.log]);
+
+  // Stabilize the Public badge to avoid flash when component re-renders quickly
+  // Keep first resolved value until unmount to avoid flicker during parent re-renders
+  useEffect(() => {
+    const incoming = precomputedPublic ?? checkPublicLink.result;
+    if (stablePublicRef.current === undefined && incoming !== undefined) {
+      stablePublicRef.current = !!incoming;
+    }
+  }, [precomputedPublic, checkPublicLink.result]);
 
   return (
     <View style={styles.container}>
       {verifyBadge}
-      {checkPublicLink.result && (
+      {(stablePublicRef.current ?? precomputedPublic ?? checkPublicLink.result) && (
         <StatusBadge
           label="Public"
           color={theme.color.textSecondary}
@@ -126,3 +142,14 @@ export default function CredentialStatusBadges({
     </View>
   );
 }
+
+export default React.memo(CredentialStatusBadges, (prev, next) => {
+  try {
+    const prevId = (prev.rawCredentialRecord as any)?._id;
+    const nextId = (next.rawCredentialRecord as any)?._id;
+    const sameRecord = typeof prevId?.equals === 'function' ? prevId.equals(nextId) : prevId === nextId;
+    return sameRecord && prev.badgeBackgroundColor === next.badgeBackgroundColor;
+  } catch {
+    return false;
+  }
+});
