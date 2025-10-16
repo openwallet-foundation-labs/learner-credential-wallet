@@ -1,6 +1,5 @@
 import DocumentPicker from 'react-native-document-picker';
 import * as RNFS from 'react-native-fs';
-import { Platform } from 'react-native';
 
 jest.mock('react-native-document-picker', () => ({
   pickSingle: jest.fn(),

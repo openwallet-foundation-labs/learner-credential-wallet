@@ -1,7 +1,7 @@
-// import '@digitalcredentials/data-integrity-rn';
-import { VerifiablePresentation, PresentationError } from '../types/presentation';
-import { Credential, CredentialError } from '../types/credential';
+import { CredentialError, PresentationError } from '../types/credential';
 import * as verifierCore from '@digitalcredentials/verifier-core';
+import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { VerifiableObject } from './verifiableObject';
 
 export type ResultLog = {
   id: string,
@@ -11,7 +11,7 @@ export type ResultLog = {
 
 export type Result = {
   verified: boolean;
-  credential: Credential;
+  credential: IVerifiableCredential;
   error: CredentialError;
   log: ResultLog[];
 }
@@ -22,7 +22,7 @@ export type VerifyResponse = {
 }
 
 export async function verifyPresentation(
-  presentation: VerifiablePresentation,
+  presentation: IVerifiablePresentation
 ): Promise<VerifyResponse> {
   try {
     const result = await verifierCore.verifyPresentation({
@@ -39,10 +39,10 @@ export async function verifyPresentation(
   }
 }
 
-export async function verifyCredential(credential: Credential): Promise<VerifyResponse> {
+export async function verifyCredential(credential: IVerifiableCredential): Promise<VerifyResponse> {
   const response = await fetch('https://digitalcredentials.github.io/dcc-known-registries/known-did-registries.json');
   const knownDIDRegistries = await response.json();
-  
+
   // const isInRegistry = issuerInRegistries({ issuer, registries });
   // if (!isInRegistry) {
   //   throw new Error(CredentialError.DidNotInRegistry);
@@ -102,9 +102,6 @@ export async function verifyCredential(credential: Credential): Promise<VerifyRe
       }
     }
 
-
-
-
     if (!result.verified) {
       console.warn('VC not verified:', JSON.stringify(result, null, 2));
     }
@@ -119,4 +116,29 @@ export async function verifyCredential(credential: Credential): Promise<VerifyRe
 
 function removeStackReplacer(key: string, value: unknown) {
   return key === 'stack' ? '...' : value;
+}
+
+export function isVerifiableCredential(obj: VerifiableObject): obj is IVerifiableCredential {
+  return obj.type?.includes('VerifiableCredential');
+}
+
+export function isVerifiablePresentation(obj: VerifiableObject): obj is IVerifiablePresentation {
+  return obj.type?.includes('VerifiablePresentation');
+}
+
+export async function verifyVerifiableObject(
+  obj: VerifiableObject
+): Promise<boolean> {
+  try {
+    if (isVerifiableCredential(obj)) {
+      return (await verifyCredential(obj)).verified;
+    }
+    if (isVerifiablePresentation(obj)) {
+      return (await verifyPresentation(obj)).verified;
+    }
+  } catch (err) {
+    console.warn('Error while verifying:', err);
+  }
+
+  return false;
 }

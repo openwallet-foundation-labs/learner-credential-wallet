@@ -2,266 +2,206 @@ import uuid from 'react-native-uuid';
 import * as vc from '@digitalcredentials/vc';
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
 import { securityLoader } from '@digitalcredentials/security-document-loader';
-import { ObjectId } from 'bson';
-import store from '../store';
-import validator from 'validator';
-import { CredentialRecord } from '../model';
-import { navigationRef } from '../navigation/navigationRef';
-import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
-import { Credential, CredentialRecordRaw, VcQueryType } from '../types/credential';
-import { VerifiablePresentation } from '../types/presentation';
-import { clearGlobalModal, displayGlobalModal } from './globalModal';
-import { getGlobalModalBody } from './globalModalBody';
-import { delay } from './time';
+import { CredentialRecordRaw, VcQueryType } from '../types/credential';
 import { filterCredentialRecordsByType } from './credentialMatching';
-import handleZcapRequest from './handleZcapRequest';
+import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import {
+  delegateZcaps,
+  isDidAuthRequested,
+  IVpOffer,
+  IVprDetails,
+  IVpRequest,
+  IVprQuery,
+  IZcap,
+  zcapsRequested
+} from './walletRequestApi';
+import { extractCredentialsFrom } from './verifiableObject';
+import { selectCredentials } from './selectCredentials';
+import { ISelectedProfile } from './did';
+import { composeVp } from './composeVp';
 
-const MAX_INTERACTIONS = 10;
-
-// Interact with VC-API exchange
-async function postToExchange (url: string, request: any): Promise<any> {
-  const exchangeResponseRaw = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request)
-  });
-  return exchangeResponseRaw.json();
+type IResponseToExchanger = {
+  verifiablePresentation?: IVerifiablePresentation;
+  zcap?: IZcap[];
 }
 
-// Select credentials to exchange with issuer or verifier
-const selectCredentials = async (credentialRecords: CredentialRecordRaw[]): Promise<CredentialRecordRaw[]> => {
-  // ensure that the selected credentials have been cleared
-  // before subscribing to redux store updates below
-  store.dispatch(clearSelectedExchangeCredentials());
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
-    if (selectedExchangeCredentials.length === 0) {
-      break;
-    } else {
-      await delay(500);
-    }
+/**
+ * Recursively processes one or more VC API exchange messages.
+ * If necessary, prompt the user to select which VCs to send.
+ *
+ * @param exchangeUrl {string}
+ * @param requestOrOffer - Exchange message to process.
+ * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
+ *   key signers used for DIDAuthentication and zCap delegation.
+ * @param [modalsEnabled=true] {boolean} - Whether to present the user
+ *   with an interactive modal popup to confirm sending credentials.
+ *   Disabled for unit testing.
+ * @param modalConfirmZcapRequest
+ */
+export async function processMessageChain (
+  { exchangeUrl, requestOrOffer, selectedProfile,
+    modalsEnabled = true, modalConfirmZcapRequest }:
+  { exchangeUrl?: string, requestOrOffer: IVpRequest | IVpOffer,
+    selectedProfile: ISelectedProfile, modalsEnabled?: boolean,
+    modalConfirmZcapRequest: () => Promise<boolean> }
+): Promise<{ acceptCredentials?: IVerifiableCredential[], redirectUrl?: string }> {
+  const { redirectUrl, credentialRequestOrigin } = requestOrOffer;
+
+  if ('verifiablePresentation' in requestOrOffer) {
+    // This is an offer, return extracted credentials for user approval
+    const offer = requestOrOffer.verifiablePresentation as IVerifiablePresentation;
+    console.log('Extracting VCs from VP offer.');
+    return { acceptCredentials: extractCredentialsFrom(offer)!, redirectUrl }
   }
 
-  let resolvePromise: (value: CredentialRecordRaw[]) => void;
-  const selectionPromise = new Promise((resolve: (value: CredentialRecordRaw[]) => void) => {
-    resolvePromise = resolve;
-  });
+  if ('verifiablePresentationRequest' in requestOrOffer) {
+    const request = requestOrOffer.verifiablePresentationRequest as IVprDetails;
+    await processRequest({ request, exchangeUrl, selectedProfile,
+      modalsEnabled, modalConfirmZcapRequest, credentialRequestOrigin });
+    return { redirectUrl };
+  }
 
-  const unsubscribe = store.subscribe(async () => {
-    // increase likelihood that the selected credentials
-    // have been recorded before processing them
-    await delay(1000);
-    const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
-    if (selectedExchangeCredentials.length > 0) {
-      resolvePromise(selectedExchangeCredentials);
-      unsubscribe();
-      store.dispatch(clearSelectedExchangeCredentials());
-    }
-  });
-
-  clearGlobalModal();
-  const credentialRecordIds = credentialRecords.map((r: CredentialRecordRaw) => r._id);
-  const credentialFilter = (r: CredentialRecordRaw) => {
-    return credentialRecordIds.some((id: ObjectId) => r._id.equals(id));
-  };
-  navigationRef.navigate('CredentialSelectionScreen', {
-    title: 'Share Credentials',
-    instructionText: 'Select credentials to share.',
-    credentialFilter,
-    goBack: () => {
-      const cancelSendModalState = {
-        title: 'Cancel Send',
-        confirmButton: false,
-        cancelButton: false,
-        body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
-      };
-      displayGlobalModal(cancelSendModalState);
-      store.dispatch(clearSelectedExchangeCredentials());
-      navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
-        params: {
-          screen: 'HomeScreen',
-        },
-      });
-      setTimeout(() => {
-        clearGlobalModal();
-      }, 2000);
-    },
-    onSelectCredentials: (s: CredentialRecordRaw[]) => {
-      const dataLoadingPendingModalState = {
-        title: 'Sending Credential',
-        confirmButton: false,
-        cancelButton: false,
-        body: getGlobalModalBody('This will only take a moment.', true)
-      };
-      displayGlobalModal(dataLoadingPendingModalState);
-      store.dispatch(selectExchangeCredentials(s));
-    }
-  });
-
-  return selectionPromise;
-};
-
-// Type definition for constructExchangeRequest function parameters
-type ConstructExchangeRequestParameters = {
-  credentials?: Credential[];
-  challenge?: string | undefined;
-  domain: string | undefined;
-  holder: string;
-  suite: Ed25519Signature2020;
-  signed?: boolean;
-};
-
-// Type definitions for constructExchangeRequest function output
-type ExchangeRequest = {
-  verifiablePresentation: VerifiablePresentation
+  console.log('[processMessageChain] No offer or request found, exiting...');
+  return {};
 }
-type ExchangeResponse = ExchangeRequest;
 
-// Type definition for constructExchangeRequest function parameters
-type CreatePresentationParameters = {
-  verifiableCredential?: any[];
-  id?: string | undefined;
-  now?: string | undefined;
-  holder: string;
-};
-
-// Construct exchange request in the form of a verifiable presentation
-export const constructExchangeRequest = async ({
-  credentials=[],
-  challenge=uuid.v4() as string,
-  domain,
-  holder,
-  suite,
-  signed=true
-}: ConstructExchangeRequestParameters): Promise<ExchangeRequest> => {
-  const presentationOptions: CreatePresentationParameters = { holder };
-  if (credentials.length !== 0) {
-    presentationOptions.verifiableCredential = credentials;
+/**
+ *
+ * @param request
+ * @param exchangeUrl {string}
+ * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
+ *   key signers used for DIDAuthentication and zCap delegation.
+ * @param [modalsEnabled=true] {boolean} - Whether to present the user
+ *   with an interactive modal popup to confirm sending credentials.
+ *   Disabled for unit testing.
+ * @param modalConfirmZcapRequest {function}
+ * @param credentialRequestOrigin {string}
+ */
+export async function processRequest (
+  { request, exchangeUrl, selectedProfile, modalsEnabled = true,
+    modalConfirmZcapRequest, credentialRequestOrigin }:
+  { request: IVprDetails, exchangeUrl?: string, selectedProfile: ISelectedProfile,
+    modalsEnabled?: boolean, credentialRequestOrigin?: string,
+    modalConfirmZcapRequest: () => Promise<boolean> }
+): Promise<void> {
+  if (!exchangeUrl) {
+    throw new Error('Missing exchangeUrl, cannot send response.');
   }
-  const presentation = vc.createPresentation(presentationOptions);
-  let finalPresentation = presentation;
-  if (signed) {
-    const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
-    finalPresentation = await vc.signPresentation({
-      presentation,
-      challenge,
-      domain,
-      suite,
-      documentLoader
+
+  // TODO: Display origin in consent modals
+  console.log('credentialRequestOrigin: ', credentialRequestOrigin);
+
+  const queries = Array.isArray(request.query) ? request.query : [request.query];
+  /**
+   * Queries come in 3 types:
+   * 1. VC "queries by example" - requester wants one or more VCs.
+   * 2. DIDAuth - requester wants a proof of DID Authentication, which is a
+   *    signed VerifiablePresentation.
+   * 3. zCap queries - requester wants permission/capabilities to do something.
+   */
+  const vcMatches = await vcMatchesFor({ queries, selectedProfile });
+
+  const didAuthRequested = isDidAuthRequested({ queries });
+  // challenge and domain are only relevant for DID Auth
+  const { challenge, domain } = request;
+
+  let { zcapRequests } = zcapsRequested({ queries });
+  let zcapUserConsent, zcaps;
+  if (zcapRequests && modalsEnabled) {
+    zcapUserConsent = await modalConfirmZcapRequest();
+  } else {
+    zcapUserConsent = true;
+  }
+  if (zcapRequests && zcapUserConsent) {
+    zcaps = await delegateZcaps({ zcapRequests, selectedProfile });
+  }
+
+  if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {
+    // No matches were found, nothing to send to requester
+    console.log(
+      '[processMessageChain] No zcaps or VCs matched request query, ending exchange.');
+    return;
+    // TODO: At some point, we should probably inform the user that no matches were found
+  }
+
+  // We have zcap or VC matches, compose the response
+  const walletResponse: IResponseToExchanger = {};
+
+  // If any zcaps were requested and granted, add them to response
+  if (zcaps && zcaps.length > 0) {
+    walletResponse.zcap = zcaps;
+  }
+
+  // If there are any VC matches, prompt the user to confirm
+  let selectedVcs: IVerifiableCredential[] = [];
+  if (vcMatches.length > 0 && modalsEnabled) {
+    // Prompt user to confirm / select which VCs to send
+    selectedVcs = (await selectCredentials(vcMatches))
+      .map((r) => r.credential);
+  } else if (vcMatches.length > 0) {
+    // Not prompting the user
+    selectedVcs = vcMatches.map((r) => r.credential);
+  }
+
+  // Compose a VerifiablePresentation (to send to the requester) if appropriate
+  if (didAuthRequested || selectedVcs.length > 0) {
+    walletResponse.verifiablePresentation = await composeVp({
+      selectedProfile, selectedVcs, challenge, domain, didAuthRequested
+    })
+  }
+
+  const responseFromExchanger = await sendToExchanger({ exchangeUrl,
+    payload: walletResponse });
+  console.log('Response from Exchanger: ', responseFromExchanger);
+  // End the exchange
+}
+
+/**
+ * Processes VC "Query by Example" queries against credentials stored in the
+ * selected profile. Returns any matches.
+ */
+export async function vcMatchesFor ({ queries, selectedProfile }:
+  { queries: IVprQuery[], selectedProfile: ISelectedProfile }
+): Promise<CredentialRecordRaw[]> {
+  const vcQueries = queries.filter(q => q.type === VcQueryType.Example);
+  if (vcQueries.length === 0) {
+    console.log('No VCs were requested in the query.');
+    return [];
+  }
+  let matches = [] as CredentialRecordRaw[];
+  const allCredentialRecords = await selectedProfile.loadCredentials();
+  for (const query of vcQueries) {
+    matches = matches.concat(
+      filterCredentialRecordsByType(allCredentialRecords, query));
+  }
+  return matches;
+}
+
+/**
+ * Sends the Wallet Response object (which may contain a VP or zcaps) to the
+ * exchanger.
+ *
+ * @param exchangeUrl
+ * @param payload {{ verifiablePresentation, zcap }}
+ */
+export async function sendToExchanger({ exchangeUrl, payload }:
+  { exchangeUrl: string,
+    payload: {
+      verifiablePresentation?: IVerifiablePresentation, zcap?: IZcap[]
+    } }
+): Promise<any> {
+  try {
+    const exchangeResponseRaw = await fetch(exchangeUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
     });
+    return exchangeResponseRaw.json();
+  } catch (err) {
+    console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`);
+    throw err;
   }
-  return { verifiablePresentation: finalPresentation };
-};
-
-// Type definition for handleVcApiExchangeSimple function parameters
-type HandleVcApiExchangeSimpleParameters = {
-  url: string;
-  request: ExchangeRequest;
-};
-
-// Handle simplified VC-API credential exchange workflow
-export const handleVcApiExchangeSimple = async ({ url, request }: HandleVcApiExchangeSimpleParameters): Promise<ExchangeResponse> => {
-  const exchangeResponseRaw = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(request, undefined, 2)
-  });
-
-  return exchangeResponseRaw.json();
-};
-
-// Type definition for handleVcApiExchangeComplete function parameters
-type HandleVcApiExchangeCompleteParameters = {
-  url: string;
-  request?: any;
-  holder: string;
-  suite: Ed25519Signature2020;
-  interactions?: number;
-  interactive?: boolean;
-};
-
-// Handle complete VC-API credential exchange workflow
-export async function handleVcApiExchangeComplete ({
-  url,
-  request = {},
-  holder,
-  suite,
-  interactions = 0,
-  interactive = true
-}: HandleVcApiExchangeCompleteParameters): Promise<ExchangeResponse> {
-  if (interactions === MAX_INTERACTIONS) {
-    throw new Error(`Request timed out after ${interactions} interactions`);
-  }
-  if (!validator.isURL(url + '')) {
-    throw new Error(`Received invalid interaction URL from issuer: ${url}`);
-  }
-
-  // Start the exchange process - POST an empty {} to the exchange API url
-  const exchangeResponse = await postToExchange(url, request);
-  console.log('Initial exchange response:', JSON.stringify(exchangeResponse, null, 2));
-
-  if (!exchangeResponse.verifiablePresentationRequest) {
-    console.log('No VPR requested from the exchange, returning.');
-    return exchangeResponse;
-  }
-
-  let signed = false;
-  let credentials: Credential[] = [];
-  let filteredCredentialRecords: CredentialRecordRaw[] = [];
-  const { query, challenge, domain, interact } = exchangeResponse.verifiablePresentationRequest;
-
-  let queries = query;
-  if (!Array.isArray(queries)) {
-    queries = [query];
-  }
-  for (const query of queries) {
-    console.log(`Processing query type "${query.type}"`);
-    switch (query.type) {
-    case VcQueryType.DidAuthLegacy:
-    case VcQueryType.DidAuth:
-      signed = true;
-      break;
-    // TODO: Support multi-round interactions for zcaps (currently only supports a single round interaction)
-    case VcQueryType.ZcapQuery: {
-      const vp = await handleZcapRequest({
-        request: exchangeResponse.verifiablePresentationRequest
-      });
-      const interactUrl = exchangeResponse.verifiablePresentationRequest?.interact?.serviceEndpoint;
-      if (!interactUrl) {
-        throw new Error('Missing serviceEndpoint in VPR interact.');
-      }
-
-      const finalResponse = await postToExchange(interactUrl, vp);
-      return finalResponse;
-    }
-    default: {
-      console.log('Querying...');
-      const allRecords = await CredentialRecord.getAllCredentialRecords();
-      const filteredCredentialRecordsGroup: CredentialRecordRaw[] =
-        filterCredentialRecordsByType(allRecords, query);
-      filteredCredentialRecords = filteredCredentialRecords.concat(filteredCredentialRecordsGroup);
-      const filteredCredentials = filteredCredentialRecords.map((r) => r.credential);
-      credentials = credentials.concat(filteredCredentials);
-    }
-    }
-  }
-
-  if (interactive && credentials.length > 0) {
-    const credentialRecords = await selectCredentials(filteredCredentialRecords);
-    credentials = credentialRecords.map((r) => r.credential);
-  }
-
-  const exchangeRequest = await constructExchangeRequest({ credentials, challenge, domain, holder, suite, signed });
-  const exchangeUrl = interact?.service[0]?.serviceEndpoint ?? url;
-  console.log(`Sending request to "${exchangeUrl}":`, exchangeRequest);
-  return handleVcApiExchangeComplete({
-    url: exchangeUrl, request: exchangeRequest, holder, suite,
-    interactions: interactions + 1, interactive
-  });
 }
+
+
+

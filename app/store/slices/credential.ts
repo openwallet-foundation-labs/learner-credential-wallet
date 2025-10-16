@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { RootState } from '..';
-import { AddCredentialRecordParams, CredentialRecord, CredentialRecordRaw } from '../../model';
+import { AddCredentialRecordParams, CredentialRecord } from '../../model/credential';
+import { CredentialRecordRaw } from '../../types/credential';
 
 export type CredentialState = {
   rawCredentialRecords: CredentialRecordRaw[];
