@@ -1,4 +1,4 @@
-name: jest-tests
+name: node-tests
 
 on:
   pull_request:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  jest:
+  test-node:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -21,4 +21,4 @@ jobs:
           node-version: ${{ matrix.node-version }}
           cache: 'npm'
       - run: npm i --legacy-peer-deps
-      - run: npm run test
+      - run: npm run test-node

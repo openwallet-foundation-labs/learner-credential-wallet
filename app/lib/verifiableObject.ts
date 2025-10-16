@@ -1,5 +1,5 @@
 import { LruCache } from '@digitalcredentials/lru-memoize';
-import { ResultLog, verifyCredential } from './validate';
+import { isVerifiableCredential, isVerifiablePresentation, ResultLog, verifyCredential } from './validate';
 import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
 import { CredentialRecordRaw } from '../model';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
@@ -9,14 +9,6 @@ import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredenti
  * Verifiable Credential or Verifiable Presentation.
  */
 export type VerifiableObject = IVerifiableCredential | IVerifiablePresentation;
-
-export function isVerifiableCredential(obj: VerifiableObject): obj is IVerifiableCredential {
-  return obj.type?.includes('VerifiableCredential');
-}
-
-export function isVerifiablePresentation(obj: VerifiableObject): obj is IVerifiablePresentation {
-  return obj.type?.includes('VerifiablePresentation');
-}
 
 export function extractCredentialsFrom(obj: IVerifiableCredential | IVerifiablePresentation):
   IVerifiableCredential[] | null {

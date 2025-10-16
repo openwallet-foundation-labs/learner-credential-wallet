@@ -1,7 +1,7 @@
 import { CredentialError, PresentationError } from '../types/credential';
 import * as verifierCore from '@digitalcredentials/verifier-core';
 import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
-import { isVerifiableCredential, isVerifiablePresentation, VerifiableObject } from './verifiableObject';
+import { VerifiableObject } from './verifiableObject';
 
 export type ResultLog = {
   id: string,
@@ -116,6 +116,14 @@ export async function verifyCredential(credential: IVerifiableCredential): Promi
 
 function removeStackReplacer(key: string, value: unknown) {
   return key === 'stack' ? '...' : value;
+}
+
+export function isVerifiableCredential(obj: VerifiableObject): obj is IVerifiableCredential {
+  return obj.type?.includes('VerifiableCredential');
+}
+
+export function isVerifiablePresentation(obj: VerifiableObject): obj is IVerifiablePresentation {
+  return obj.type?.includes('VerifiablePresentation');
 }
 
 export async function verifyVerifiableObject(

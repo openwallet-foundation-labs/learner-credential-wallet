@@ -2,10 +2,6 @@ import qs from 'query-string';
 
 import { CredentialRequestParams } from './credentialRequest';
 
-import {
-  isVerifiableCredential,
-  isVerifiablePresentation
-} from './verifiableObject';
 import { CredentialRecordRaw } from '../model';
 
 import { IVerifiableCredential } from '@digitalcredentials/ssi';
@@ -13,6 +9,7 @@ import { getSubject } from './credentialDisplay/shared';
 import { isDeepLink } from './walletRequestApi';
 import { credentialsFromVpqr } from './credentialsFromVpqr';
 import { credentialsFromPresentation } from './credentialsFromPresentation';
+import { isVerifiableCredential, isVerifiablePresentation } from './validate';
 
 export const regexPattern = {
   vpqr: /^VP1-[A-Z|0-9]+/,
