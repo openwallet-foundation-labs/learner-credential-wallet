@@ -9,7 +9,7 @@ function generateObjectIdHex(): string {
 }
 
 import { db } from './DatabaseAccess';
-import { IDidDocument, IKeyPair } from '@digitalcredentials/ssi';
+import { IDidDocument, IKeyAgreementKeyPair2020, IKeyPair } from '@digitalcredentials/ssi';
 import { AddDidRecordParams } from '../lib/did';
 
 export type DidRecordRaw = {
@@ -21,7 +21,7 @@ export type DidRecordRaw = {
   readonly rawVerificationKey: string;
   readonly verificationKey: IKeyPair;
   readonly rawKeyAgreementKey: string;
-  readonly keyAgreementKey: IKeyPair;
+  readonly keyAgreementKey: IKeyAgreementKeyPair2020;
 };
 export class DidRecord extends Realm.Object implements DidRecordRaw {
   readonly _id!: Realm.BSON.ObjectId;

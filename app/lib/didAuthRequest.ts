@@ -29,7 +29,9 @@ export async function performDidAuthRequest(params: DidAuthRequestParams, rawPro
   const didRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
   const { challenge, domain, interact } = params;
 
-  const holder = didRecord?.didDocument.authentication[0].split('#')[0] as string;
+  const { didDocument } = didRecord;
+
+  const holder = didDocument.id;
   const key = await Ed25519VerificationKey2020.from(didRecord?.verificationKey);
   const suite = new Ed25519Signature2020({ key });
 

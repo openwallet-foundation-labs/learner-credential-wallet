@@ -1,6 +1,14 @@
 import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react-native';
 
+jest.mock('@digitalcredentials/did-method-key', () => ({
+  DidMethodKey: {
+    driver: jest.fn()
+  }
+}));
+
+jest.mock('@digitalcredentials/ed25519-verification-key-2020', () => {});
+
 // Mock React Native dependencies with a functional FlatList
 jest.mock('react-native', () => {
   const React = require('react');
@@ -18,7 +26,7 @@ jest.mock('react-native', () => {
     View,
     Text,
     FlatList,
-    StyleSheet: { 
+    StyleSheet: {
       create: jest.fn((styles: any) => styles),
       flatten: jest.fn((styles: any) => styles)
     },
@@ -118,10 +126,10 @@ describe('ManageProfilesScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     const { useAppDispatch, useDynamicStyles } = require('../app/hooks');
     const { useSelectorFactory } = require('../app/hooks/useSelectorFactory');
-    
+
     useAppDispatch.mockReturnValue(mockDispatch);
     useDynamicStyles.mockReturnValue({
       styles: { container: {}, input: {} },
@@ -141,7 +149,7 @@ describe('ManageProfilesScreen', () => {
         buttonIconTitle: {},
       },
     });
-    
+
     useSelectorFactory.mockReturnValue(mockProfiles);
   });
 
@@ -259,7 +267,7 @@ describe('ManageProfilesScreen', () => {
   it('handles theme configuration', () => {
     const { useDynamicStyles } = require('../app/hooks');
     const mockTheme = useDynamicStyles();
-    
+
     expect(mockTheme.theme).toHaveProperty('iconSize', 24);
     expect(mockTheme.theme.color).toHaveProperty('iconInactive', '#666');
     expect(mockTheme.theme.color).toHaveProperty('textPrimary', '#000');
