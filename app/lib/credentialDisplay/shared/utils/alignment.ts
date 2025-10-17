@@ -19,32 +19,27 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
         return false;
       }
       
-      // Validate URL (HTTPS only for alignments)
-      const validation = validateUrl(alignment.targetUrl);
-      if (!validation.valid) return false;
+      // If a URL is provided, validate it (HTTPS only for alignments)
+      if (alignment.targetUrl) {
+        const validation = validateUrl(alignment.targetUrl);
+        if (!validation.valid) return false;
+      }
       
       // Warn about suspicious URLs
-      if (isUrlSuspicious(alignment.targetUrl)) {
+      if (alignment.targetUrl && isUrlSuspicious(alignment.targetUrl)) {
         console.warn(`Suspicious alignment URL: ${alignment.targetUrl}`);
       }
       
       return true;
     })
     .map(alignment => {
-      const validation = validateUrl(alignment.targetUrl!);
+      const normalizedUrl = alignment.targetUrl
+        ? validateUrl(alignment.targetUrl).url
+        : undefined;
       return {
         targetName: alignment.targetName!,
-        targetUrl: validation.url!,
+        targetUrl: normalizedUrl,
         targetDescription: alignment.targetDescription,
       };
-      
-      if (alignment.targetUrl) {
-        const normalizedUrl = isStrictHttpUrl(alignment.targetUrl);
-        if (normalizedUrl) {
-          result.targetUrl = normalizedUrl;
-        }
-      }
-      
-      return result;
     });
 }
