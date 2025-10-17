@@ -31,7 +31,7 @@ describe('AlignmentsList Component Integration', () => {
     };
 
     const result = credentialSubjectRenderInfoFrom(subject);
-    const validAlignments = getValidAlignments(result.alignments);
+    const validAlignments = getValidAlignments(result.alignment);
     
     expect(validAlignments).toHaveLength(0);
     // Component would render null (no "Alignments" header)
@@ -58,7 +58,7 @@ describe('AlignmentsList Component Integration', () => {
     };
 
     const result = credentialSubjectRenderInfoFrom(subject);
-    const validAlignments = getValidAlignments(result.alignments);
+    const validAlignments = getValidAlignments(result.alignment);
     
     expect(validAlignments).toHaveLength(2);
     expect(validAlignments[0].targetName).toBe('Requirements Analysis');
@@ -84,7 +84,7 @@ describe('AlignmentsList Component Integration', () => {
     };
 
     const result = credentialSubjectRenderInfoFrom(subject);
-    const validAlignments = getValidAlignments(result.alignments);
+    const validAlignments = getValidAlignments(result.alignment);
     
     expect(validAlignments).toHaveLength(2);
     expect(validAlignments[0].targetName).toBe('Valid - No URL');

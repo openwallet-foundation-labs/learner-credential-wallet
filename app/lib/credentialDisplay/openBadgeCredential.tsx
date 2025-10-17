@@ -56,7 +56,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
     endDateFmt,
     achievementImage,
     achievementType,
-    alignments
+    alignment
   } = credentialSubjectRenderInfoFrom(credentialSubject);
 
   const issuedToName: string = issuedTo || (name as string);
@@ -146,7 +146,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
         </View>
         <CardDetail label="Description" value={description} />
         <CardDetail label="Criteria" value={criteria} isMarkdown={true} />
-        <AlignmentsList alignments={alignments} />
+        <AlignmentsList alignment={alignment} />
       </View>
     </View>
   );

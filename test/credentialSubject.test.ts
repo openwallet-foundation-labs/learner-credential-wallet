@@ -31,7 +31,7 @@ describe('credentialSubjectRenderInfoFrom', () => {
     expect(result.title).toBeNull();
     expect(result.description).toBeNull();
     expect(result.criteria).toBeNull();
-    expect(result.alignments).toBeUndefined();
+    expect(result.alignment).toBeUndefined();
   });
 
   it('should extract achievement information with alignments', () => {
@@ -59,8 +59,8 @@ describe('credentialSubjectRenderInfoFrom', () => {
     expect(result.title).toBe('Test Achievement');
     expect(result.description).toBe('Test Description');
     expect(result.criteria).toBe('Test criteria narrative');
-    expect(result.alignments).toHaveLength(1);
-    expect(result.alignments![0].targetName).toBe('Test Alignment');
+    expect(result.alignment).toHaveLength(1);
+    expect(result.alignment![0].targetName).toBe('Test Alignment');
   });
 
   it('should handle array of achievements', () => {
@@ -158,6 +158,6 @@ describe('credentialSubjectRenderInfoFrom', () => {
     expect(result.endDateFmt).toBeNull();
     expect(result.achievementImage).toBeNull();
     expect(result.achievementType).toBeNull();
-    expect(result.alignments).toBeUndefined();
+    expect(result.alignment).toBeUndefined();
   });
 });

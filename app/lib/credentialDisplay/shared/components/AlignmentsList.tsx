@@ -6,7 +6,7 @@ import { Alignment } from '../../../../types/credential';
 import { createDynamicStyleSheet } from '../../../dynamicStyles';
 
 type AlignmentsListProps = {
-  alignments?: Alignment[];
+  alignment?: Alignment[];
 };
 
 const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
@@ -36,9 +36,9 @@ const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
   );
 };
 
-export default function AlignmentsList({ alignments }: AlignmentsListProps): React.ReactElement | null {
+export default function AlignmentsList({ alignment }: AlignmentsListProps): React.ReactElement | null {
   const { styles } = useDynamicStyles(alignmentStyleSheet);
-  const validAlignments = getValidAlignments(alignments);
+  const validAlignments = getValidAlignments(alignment);
 
   if (validAlignments.length === 0) {
     return null;
