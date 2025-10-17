@@ -17,7 +17,7 @@ type CredentialRenderInfo = {
   numberOfCredits: string | null;
   achievementImage: string | null;
   achievementType: string | null;
-  alignments: Alignment[] | undefined;
+  alignment: Alignment[] | undefined;
 }
 
 export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): CredentialRenderInfo {
@@ -39,7 +39,7 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
   const achievementImage = imageSourceFrom(eoc?.image);
 
   const achievementType = eoc && eoc.achievementType ? eoc.achievementType : null;
-  const alignments = eoc?.alignment;
+  const alignment = eoc?.alignment;
 
   const { startDate, endDate } = eoc?.awardedOnCompletionOf || {};
   const startDateFmt = startDate ? moment.utc(startDate).format(DATE_FORMAT) : null;
@@ -57,6 +57,6 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
     endDateFmt,
     achievementImage,
     achievementType,
-    alignments
+    alignment
   };
 }
