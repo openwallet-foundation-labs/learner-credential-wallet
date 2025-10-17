@@ -19,8 +19,10 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
       return !!alignment.targetName;
     })
     .map(alignment => {
-      const result: ValidAlignment = {
+      const validation = validateUrl(alignment.targetUrl!);
+      return {
         targetName: alignment.targetName!,
+        targetUrl: validation.url!,
         targetDescription: alignment.targetDescription,
       };
 
