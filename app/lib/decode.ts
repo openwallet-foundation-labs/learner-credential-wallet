@@ -13,6 +13,7 @@ import { isChapiCredentialResponse, isChapiDidAuthRequest, isVerifiableCredentia
 import { CredentialRecordRaw } from '../model';
 import { NavigationUtil } from './navigationUtil';
 import { DidAuthRequestParams, performDidAuthRequest } from './didAuthRequest';
+import { validateUrl } from './urlUtils';
 
 import { LinkConfig } from '../../app.config';
 
@@ -22,6 +23,23 @@ export const regexPattern = {
   url: /^https?:\/\/.+/,
   json: /^{.*}$/s,
 };
+
+/**
+ * URL validation for credential fetching
+ */
+function isValidCredentialUrl(text: string): boolean {
+  if (!regexPattern.url.test(text)) {
+    return false;
+  }
+  
+  const validation = validateUrl(text);
+  if (!validation.valid) {
+    console.warn(`Invalid credential URL: ${text} - ${validation.error}`);
+    return false;
+  }
+  
+  return true;
+}
 
 export function isDeepLink(text: string): boolean {
   return text.startsWith(LinkConfig.schemes.universalAppLink) || !!LinkConfig.schemes.customProtocol.find((link) => text.startsWith(link));
@@ -118,6 +136,9 @@ async function credentialsFromJson(text: string): Promise<Credential[]> {
  */
 export async function credentialsFrom(text: string): Promise<Credential[]> {
   if (regexPattern.url.test(text)) {
+    if (!isValidCredentialUrl(text)) {
+      throw new Error('Invalid or potentially unsafe URL provided');
+    }
     const response = await fetch(text);
     text = await response.text().then((t) => t.trim());
   }
