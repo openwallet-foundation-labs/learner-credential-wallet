@@ -4,7 +4,6 @@ import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020
 import { securityLoader } from '@digitalcredentials/security-document-loader';
 import { ObjectId } from 'bson';
 import store from '../store';
-import validator from 'validator';
 import { CredentialRecord } from '../model';
 import { navigationRef } from '../navigation/navigationRef';
 import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
@@ -15,6 +14,7 @@ import { getGlobalModalBody } from './globalModalBody';
 import { delay } from './time';
 import { filterCredentialRecordsByType } from './credentialMatching';
 import handleZcapRequest from './handleZcapRequest';
+import { validateUrl } from './urlUtils';
 
 const MAX_INTERACTIONS = 10;
 
@@ -198,8 +198,9 @@ export async function handleVcApiExchangeComplete ({
   if (interactions === MAX_INTERACTIONS) {
     throw new Error(`Request timed out after ${interactions} interactions`);
   }
-  if (!validator.isURL(url + '')) {
-    throw new Error(`Received invalid interaction URL from issuer: ${url}`);
+  const urlValidation = validateUrl(url, { allowHttp: true });
+  if (!urlValidation.valid) {
+    throw new Error(`Received invalid interaction URL from issuer: ${url} - ${urlValidation.error}`);
   }
 
   // Start the exchange process - POST an empty {} to the exchange API url

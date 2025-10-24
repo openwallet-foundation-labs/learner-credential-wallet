@@ -38,14 +38,21 @@ describe('getValidAlignments', () => {
     ]);
   });
 
-  it('should filter out alignments with invalid targetUrl', () => {
+  it('should include alignments with invalid targetUrl but mark as non-clickable', () => {
     const alignments: Alignment[] = [
       {
         targetName: 'Test Name',
         targetUrl: 'invalid-url'
       }
     ];
-    expect(getValidAlignments(alignments)).toEqual([]);
+    expect(getValidAlignments(alignments)).toEqual([
+      {
+        targetName: 'Test Name',
+        targetUrl: 'invalid-url',
+        targetDescription: undefined,
+        isValidUrl: false
+      }
+    ]);
   });
 
   it('should return valid alignments with both targetName and valid targetUrl', () => {
@@ -60,7 +67,8 @@ describe('getValidAlignments', () => {
       {
         targetName: 'Requirements Analysis',
         targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis',
-        targetDescription: 'This is a description'
+        targetDescription: 'This is a description',
+        isValidUrl: true
       }
     ]);
   });
@@ -76,7 +84,8 @@ describe('getValidAlignments', () => {
       {
         targetName: 'Requirements Analysis',
         targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis',
-        targetDescription: undefined
+        targetDescription: undefined,
+        isValidUrl: true
       }
     ]);
   });
@@ -125,7 +134,8 @@ describe('getValidAlignments', () => {
       {
         targetName: 'Requirements Analysis',
         targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis',
-        targetDescription: undefined
+        targetDescription: undefined,
+        isValidUrl: true
       }
     ]);
     expect(result[0]).not.toHaveProperty('targetCode');
@@ -160,16 +170,24 @@ describe('getValidAlignments', () => {
       {
         targetName: 'Valid Alignment',
         targetUrl: 'https://example.com',
-        targetDescription: undefined
+        targetDescription: undefined,
+        isValidUrl: true
       },
       {
         targetName: 'Valid - No URL',
         targetDescription: undefined
       },
       {
+        targetName: 'Invalid URL',
+        targetUrl: 'not-a-url',
+        targetDescription: undefined,
+        isValidUrl: false
+      },
+      {
         targetName: 'Another Valid',
         targetUrl: 'https://example3.com',
-        targetDescription: 'With description'
+        targetDescription: 'With description',
+        isValidUrl: true
       }
     ]);
   });
