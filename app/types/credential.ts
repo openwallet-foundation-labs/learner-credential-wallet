@@ -30,6 +30,16 @@ export type CompletionDocument = {
   readonly endDate?: string;
 }
 
+export type Alignment = {
+  readonly type?: string[];
+  readonly targetCode?: string;
+  readonly targetFramework?: string;
+  readonly targetName?: string;
+  readonly targetUrl?: string;
+  readonly targetDescription?: string;
+  readonly targetType?: string;
+}
+
 export type EducationalOperationalCredentialExtensions = {
   readonly type?: string[];
   readonly awardedOnCompletionOf?: CompletionDocument;
@@ -38,6 +48,7 @@ export type EducationalOperationalCredentialExtensions = {
     narrative: string;
   };
   readonly image?: ImageObject;
+  readonly alignment?: Alignment[];
 }
 
 // https://schema.org/EducationalOccupationalCredential (this doesn't really conform)
