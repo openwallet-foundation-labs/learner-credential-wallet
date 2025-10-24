@@ -14,18 +14,29 @@ const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
 
   return (
     <View style={styles.alignmentItem}>
-      {alignment.targetUrl ? (
-        <Text
-          style={styles.alignmentLink}
-          accessibilityRole="link"
-          onPress={() => Linking.openURL(alignment.targetUrl!)}
-        >
-          {alignment.targetName}
-        </Text>
-      ) : (
-        <Text style={styles.alignmentText}>
-          {alignment.targetName}
-        </Text>
+      <Text style={styles.alignmentText}>
+        {alignment.targetName}
+      </Text>
+      {alignment.targetUrl && (
+        alignment.isValidUrl ? (
+          <Text
+            style={styles.alignmentLink}
+            accessibilityRole="link"
+            onPress={() => Linking.openURL(alignment.targetUrl!)}
+            numberOfLines={3}
+            ellipsizeMode="tail"
+          >
+            {alignment.targetUrl}
+          </Text>
+        ) : (
+          <Text 
+            style={styles.alignmentUrl}
+            numberOfLines={3}
+            ellipsizeMode="tail"
+          >
+            {alignment.targetUrl}
+          </Text>
+        )
       )}
       {alignment.targetDescription && (
         <Text style={styles.alignmentDescription}>
@@ -66,13 +77,18 @@ const alignmentStyleSheet = createDynamicStyleSheet(({ theme }) => ({
     marginBottom: 8,
   },
   alignmentItem: {
-    marginBottom: 8,
+    marginBottom: 22,
   },
   alignmentLink: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.regular,
     color: theme.color.linkColor,
     textDecorationLine: 'underline',
+  },
+  alignmentUrl: {
+    fontFamily: theme.fontFamily.regular,
+    fontSize: theme.fontSize.regular,
+    color: theme.color.textSecondary,
   },
   alignmentText: {
     fontFamily: theme.fontFamily.regular,

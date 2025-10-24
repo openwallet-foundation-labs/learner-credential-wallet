@@ -66,7 +66,7 @@ describe('AlignmentsList Component Integration', () => {
     // Component would render "Alignments" header and both items
   });
 
-  it('should filter invalid alignments before component rendering', () => {
+  it('should include invalid URLs but mark them as non-clickable', () => {
     const subject: Subject = {
       id: 'did:example:123',
       achievement: {
@@ -86,12 +86,16 @@ describe('AlignmentsList Component Integration', () => {
     const result = credentialSubjectRenderInfoFrom(subject);
     const validAlignments = getValidAlignments(result.alignment);
     
-    expect(validAlignments).toHaveLength(2);
+    expect(validAlignments).toHaveLength(3);
     expect(validAlignments[0].targetName).toBe('Valid - No URL');
     expect(validAlignments[0].targetUrl).toBeUndefined();
     expect(validAlignments[1].targetName).toBe('Valid Alignment');
     expect(validAlignments[1].targetUrl).toBe('https://example.com/valid');
-    // Component would render "Alignments" header and both valid items
+    expect(validAlignments[1].isValidUrl).toBe(true);
+    expect(validAlignments[2].targetName).toBe('Invalid URL');
+    expect(validAlignments[2].targetUrl).toBe('not-a-url');
+    expect(validAlignments[2].isValidUrl).toBe(false);
+    // Component would render "Alignments" header and all three items
   });
 
   it('should handle mixed valid and invalid alignments', () => {
@@ -108,12 +112,16 @@ describe('AlignmentsList Component Integration', () => {
 
     const validAlignments = getValidAlignments(alignments);
     
-    expect(validAlignments).toHaveLength(2);
+    expect(validAlignments).toHaveLength(3);
     expect(validAlignments[0].targetName).toBe('No URL');
     expect(validAlignments[0].targetUrl).toBeUndefined();
     expect(validAlignments[1].targetName).toBe('Valid with Description');
     expect(validAlignments[1].targetDescription).toBe('Valid description');
-    // Component would show header and two valid alignments
+    expect(validAlignments[1].isValidUrl).toBe(true);
+    expect(validAlignments[2].targetName).toBe('Invalid URL');
+    expect(validAlignments[2].targetUrl).toBe('not-a-url');
+    expect(validAlignments[2].isValidUrl).toBe(false);
+    // Component would show header and three alignments
   });
 
   it('should provide valid alignments when some have no URL', () => {
@@ -125,10 +133,13 @@ describe('AlignmentsList Component Integration', () => {
 
     const validAlignments = getValidAlignments(alignments);
     
-    expect(validAlignments).toHaveLength(1);
+    expect(validAlignments).toHaveLength(2);
     expect(validAlignments[0].targetName).toBe('No URL');
     expect(validAlignments[0].targetUrl).toBeUndefined();
-    // Component would render "Alignments" header and one valid item
+    expect(validAlignments[1].targetName).toBe('Invalid URL');
+    expect(validAlignments[1].targetUrl).toBe('not-a-url');
+    expect(validAlignments[1].isValidUrl).toBe(false);
+    // Component would render "Alignments" header and two items
   });
 
   it('should provide empty array when all alignments lack targetName', () => {
