@@ -116,7 +116,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
     return (
       <View style={styles.learnMoreContainer}>
         <Text style={styles.learnMoreText}>
-          Learn more about the LCW&nbsp;
+          Learn more about the LCW{' '}
           <Text
             style={styles.learnMoreLink}
             onPress={() => Linking.openURL(LinkConfig.appWebsite.home)}
