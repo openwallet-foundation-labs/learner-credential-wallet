@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Text, View, FlatList, AccessibilityInfo } from 'react-native';
+import { Text, View, FlatList, AccessibilityInfo, Linking } from 'react-native';
 import { Button } from 'react-native-elements';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSelector } from 'react-redux';
@@ -7,6 +7,7 @@ import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler';
 
 import { CredentialItem, NavHeader, ConfirmModal } from '../../components';
 import { navigationRef } from '../../navigation/navigationRef';
+import { LinkConfig } from '../../../app.config';
 
 import dynamicStyleSheet from './HomeScreen.styles';
 import { HomeScreenProps, RenderItemProps } from './HomeScreen.d';
@@ -111,6 +112,24 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
     AccessibilityInfo.announceForAccessibility('Credential Deleted');
   }
 
+  function LearnMoreLink(): React.ReactElement {
+    return (
+      <View style={styles.learnMoreContainer}>
+        <Text style={styles.learnMoreText}>
+          Learn more about the LCW&nbsp;
+          <Text
+            style={styles.learnMoreLink}
+            onPress={() => Linking.openURL(LinkConfig.appWebsite.home)}
+            accessibilityRole="link"
+            accessibilityLabel="Learn more about the LCW at lcw.app"
+          >
+            here
+          </Text>
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <NavHeader title="Home" />
@@ -118,6 +137,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
         <View style={styles.container}>
           <Text style={styles.header}>Looks like your wallet is empty.</Text>
           <AddCredentialButton />
+          <LearnMoreLink />
         </View>
       ) : (
         <FlatList
@@ -126,6 +146,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
           renderItem={renderItem}
           keyExtractor={(item, index) => `${index}-${item._id}`}
           ListHeaderComponent={<AddCredentialButton />}
+          ListFooterComponent={<LearnMoreLink />}
         />
       )}
       <ConfirmModal

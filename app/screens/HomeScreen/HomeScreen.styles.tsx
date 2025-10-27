@@ -1,6 +1,6 @@
 import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
 
-export default createDynamicStyleSheet(({ mixins }) => ({
+export default createDynamicStyleSheet(({ mixins, theme }) => ({
   container: {
     padding: 16,
     flex: 1,
@@ -35,5 +35,17 @@ export default createDynamicStyleSheet(({ mixins }) => ({
     elevation: 0,
     flex:1,
     marginVertical: 10,
-  }
+  },
+  learnMoreContainer: {
+    marginTop: 24,
+    alignItems: 'center',
+  },
+  learnMoreText: {
+    ...mixins.paragraphText,
+    textAlign: 'center',
+  },
+  learnMoreLink: {
+    color: theme.color.linkColor,
+    textDecorationLine: 'underline',
+  },
 }));
