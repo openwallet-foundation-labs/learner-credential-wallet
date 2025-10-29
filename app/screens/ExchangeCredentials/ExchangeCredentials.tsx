@@ -9,7 +9,7 @@ import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { navigationRef } from '../../navigation/navigationRef';
 import { selectWithFactory } from '../../store/selectorFactories';
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
-import { stageCredentials } from '../../store/slices/credentialFoyer';
+import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 import { handleVcApiExchangeComplete } from '../../lib/exchanges';
 import { displayGlobalModal } from '../../lib/globalModal';
 import GlobalModalBody from '../../lib/globalModalBody';
@@ -74,7 +74,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
 
     if (credentialAvailable && navigationRef.isReady()) {
       const credential = credentialField[0];
-      await dispatch(stageCredentials([credential]));
+      await dispatch(stageCredentialsForProfile({ credentials: [credential], profileRecordId: rawProfileRecord._id }));
       await delay(500);
       navigationRef.navigate('AcceptCredentialsNavigation', {
         screen: 'ApproveCredentialsScreen',

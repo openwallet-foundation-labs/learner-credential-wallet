@@ -3,7 +3,7 @@ import ReceiveSharingIntent from 'react-native-receive-sharing-intent';
 import { ReceivedFilePayload } from '../types/receiveSharingIntent';
 
 import store from '../store';
-import { stageCredentials } from '../store/slices/credentialFoyer';
+import { stageCredentialsForProfile } from '../store/slices/credentialFoyer';
 import { Credential } from '../types/credential';
 import { navigationRef } from '../navigation/navigationRef';
 import { displayGlobalModal } from '../lib/globalModal';
@@ -37,9 +37,8 @@ export async function onShareIntent(): Promise<void> {
       confirmText: 'Close',
     });
   } else {
-    store.dispatch(stageCredentials(credentials));
-
     const rawProfileRecord = await NavigationUtil.selectProfile();
+    await store.dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
     navigationRef.navigate('AcceptCredentialsNavigation', { 
       screen: 'ApproveCredentialsScreen',
       params: {

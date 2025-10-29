@@ -18,7 +18,7 @@ let cachedSigner: ISigner | null = null;
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string> {
-  const id = credentialIdFor(rawCredentialRecord);
+  const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   const wasLink = WAS.enabled ? await createWasPublicLinkIfAvailable(rawCredentialRecord) : null;
 
@@ -138,7 +138,7 @@ async function createWasPublicLinkIfAvailable(
 }
 
 export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw): Promise<void> {
-  const vcId = credentialIdFor(rawCredentialRecord);
+  const vcId = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
     const publicLinks = await Cache.getInstance()
@@ -182,7 +182,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
 }
 
 export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw): Promise<string | null> {
-  const id = credentialIdFor(rawCredentialRecord);
+  const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
     const publicLinks = await Cache.getInstance()

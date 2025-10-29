@@ -7,6 +7,7 @@ import type { Credential } from '../../types/credential';
 import { RootState } from '..';
 import { addCredential } from './credential';
 import { ObjectID } from 'bson';
+import { credentialContentHash } from '../../lib/credentialHash';
 
 export enum ApprovalStatus {
   Pending,
@@ -21,7 +22,7 @@ export enum ApprovalMessage {
   Accepted = 'Added to Wallet',
   Rejected = 'Credential Declined',
   Errored = 'Credential Failed to Add',
-  Duplicate = 'This credential is already in your wallet.'
+  Duplicate = 'This credential already exists in the selected profile and cannot be added again.'
 }
 
 export class PendingCredential {
@@ -67,17 +68,28 @@ function comparableStringFor(credential: Credential): string {
 }
 
 const stageCredentials = createAsyncThunk('credentialFoyer/stageCredentials', async (credentials: Credential[]) => {
+  // Legacy behavior (global duplicate check) for backward compatibility
   const existingCredentialRecords = await CredentialRecord.getAllCredentialRecords();
-  const existingCredentialStrings = existingCredentialRecords.map(({ credential }) => comparableStringFor(credential));
+  const existingHashes = existingCredentialRecords.map(({ credential }) => credentialContentHash(credential));
 
   const pendingCredentials = credentials.map((credential) => {
-    const isDuplicate = existingCredentialStrings.includes(comparableStringFor(credential));
+    const isDuplicate = existingHashes.includes(credentialContentHash(credential));
+    return new PendingCredential(credential, isDuplicate ? ApprovalStatus.PendingDuplicate : ApprovalStatus.Pending);
+  });
 
-    if (isDuplicate) {
-      return new PendingCredential(credential, ApprovalStatus.PendingDuplicate);
-    }
+  return { pendingCredentials };
+});
 
-    return new PendingCredential(credential);
+type StageForProfileParams = { credentials: Credential[]; profileRecordId: ObjectID };
+const stageCredentialsForProfile = createAsyncThunk('credentialFoyer/stageCredentialsForProfile', async ({ credentials, profileRecordId }: StageForProfileParams) => {
+  const existingCredentialRecords = await CredentialRecord.getAllCredentialRecords();
+  const existingHashesInProfile = existingCredentialRecords
+    .filter(({ profileRecordId: pid }) => pid.equals(profileRecordId))
+    .map(({ credential }) => credentialContentHash(credential));
+
+  const pendingCredentials = credentials.map((credential) => {
+    const isDuplicate = existingHashesInProfile.includes(credentialContentHash(credential));
+    return new PendingCredential(credential, isDuplicate ? ApprovalStatus.PendingDuplicate : ApprovalStatus.Pending);
   });
 
   return { pendingCredentials };
@@ -87,11 +99,17 @@ const acceptPendingCredentials = createAsyncThunk('credentialFoyer/stageCredenti
   await Promise.all(
     pendingCredentials.map((pendingCredential) => {
       try {
+        if (pendingCredential.status === ApprovalStatus.PendingDuplicate) {
+          // Skip adding duplicates for this profile
+          dispatch(setCredentialApproval({ ...pendingCredential, status: ApprovalStatus.Rejected, messageOverride: ApprovalMessage.Duplicate }));
+          return;
+        }
+
         const { credential } = pendingCredential;
         dispatch(addCredential({ credential, profileRecordId }));
-        dispatch(setCredentialApproval({...pendingCredential, status: ApprovalStatus.Accepted }));
+        dispatch(setCredentialApproval({ ...pendingCredential, status: ApprovalStatus.Accepted }));
       } catch (err) {
-        dispatch(setCredentialApproval({...pendingCredential, status: ApprovalStatus.Errored }));
+        dispatch(setCredentialApproval({ ...pendingCredential, status: ApprovalStatus.Errored }));
         console.warn('Error while accepting credential:', err);
       }
     })
@@ -102,9 +120,9 @@ const acceptPendingCredentials = createAsyncThunk('credentialFoyer/stageCredenti
 
   const focusedPendingCredentialIds = pendingCredentials.map(({ id }) => id);
   const freshFocusedPendingCredentials = freshPendingCredentials.filter(({ id }) => focusedPendingCredentialIds.includes(id));
-  const notAcceptedCredentialCount = freshFocusedPendingCredentials.filter(({ status }) => status !== ApprovalStatus.Accepted).length;
+  const remainingCount = freshFocusedPendingCredentials.filter(({ status }) => status !== ApprovalStatus.Accepted && status !== ApprovalStatus.Rejected).length;
 
-  if (notAcceptedCredentialCount !== 0) {
+  if (remainingCount !== 0) {
     throw new Error('Unable to accept all credentials');
   }
 });
@@ -152,6 +170,11 @@ const credentialFoyer = createSlice({
       ...action.payload,
     }));
 
+    builder.addCase(stageCredentialsForProfile.fulfilled, (state, action) => ({
+      ...state,
+      ...action.payload,
+    }));
+
     builder.addCase(acceptPendingCredentials.rejected, (_, action) => {
       throw action.error;
     });
@@ -160,7 +183,7 @@ const credentialFoyer = createSlice({
 
 export default credentialFoyer.reducer;
 export const { clearFoyer, setCredentialApproval, selectExchangeCredentials, clearSelectedExchangeCredentials } = credentialFoyer.actions;
-export { stageCredentials, acceptPendingCredentials };
+export { stageCredentials, stageCredentialsForProfile, acceptPendingCredentials };
 
 export const selectPendingCredentials = (state: RootState): PendingCredential[] => (state.credentialFoyer || initialState).pendingCredentials;
 export const selectSelectedExchangeCredentials = (state: RootState): CredentialRecordRaw[] => (state.credentialFoyer || initialState).selectedExchangeCredentials;
