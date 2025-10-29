@@ -84,11 +84,15 @@ const alignmentStyleSheet = createDynamicStyleSheet(({ theme }) => ({
     fontSize: theme.fontSize.regular,
     color: theme.color.linkColor,
     textDecorationLine: 'underline',
+    marginBottom: 4,
+    marginTop: 4,
   },
   alignmentUrl: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.regular,
     color: theme.color.textSecondary,
+    marginBottom: 4,
+    marginTop: 4,
   },
   alignmentText: {
     fontFamily: theme.fontFamily.regular,
