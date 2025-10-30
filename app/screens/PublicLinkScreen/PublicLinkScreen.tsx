@@ -127,6 +127,27 @@ export default function PublicLinkScreen({
     setRenderMethodAvailable('renderMethod' in credential);
   }, [credential]);
 
+  // On mount, defensively clear any stale global modal from previous screens
+  useEffect(() => {
+    clearGlobalModal();
+  }, []);
+
+  // If a link appears (either created now or loaded), ensure any loading modal is closed
+  useEffect(() => {
+    if (publicLink) {
+      clearGlobalModal();
+      void tearDownModalIOS();
+    }
+  }, [publicLink]);
+
+  // Extra safety: if we just created a link, also ensure any modal is closed
+  useEffect(() => {
+    if (justCreated) {
+      clearGlobalModal();
+      void tearDownModalIOS();
+    }
+  }, [justCreated]);
+
   // ---- Status gates ----
   const hasWarningStatus = useMemo(() => {
     const candidates: any[] = [
@@ -165,7 +186,8 @@ export default function PublicLinkScreen({
     return false;
   }, [rawCredentialRecord, credential]);
 
-  const isBlocked = hasWarningStatus || isExpired;
+  // Block when the credential is Expired (ignore Warning-only)
+  const isBlocked = isExpired;
 
   // Load/create share URL on mount (respect block)
   useEffect(() => {
@@ -335,6 +357,10 @@ export default function PublicLinkScreen({
 
       setPublicLink(createdLink);
       setJustCreated(true);
+
+      // Belt-and-suspenders: ensure any lingering modal is cleared after UI settles
+      setTimeout(() => clearGlobalModal(), 0);
+      setTimeout(() => clearGlobalModal(), 300);
     } catch (err) {
       clearGlobalModal();
       await tearDownModalIOS();
@@ -384,6 +410,8 @@ export default function PublicLinkScreen({
     }
 
     // 🔑 Swap existing confirm modal → loading (no close/open → no flash)
+    clearGlobalModal();
+    await tearDownModalIOS();
     swapModalToLoading();
 
     try {
@@ -393,6 +421,10 @@ export default function PublicLinkScreen({
 
       clearGlobalModal(); // close after success
       await tearDownModalIOS();
+
+      // Extra safety to avoid stuck spinner in edge cases
+      setTimeout(() => clearGlobalModal(), 0);
+      setTimeout(() => clearGlobalModal(), 300);
     } catch (err) {
       clearGlobalModal(); // close loading first
       await tearDownModalIOS();
