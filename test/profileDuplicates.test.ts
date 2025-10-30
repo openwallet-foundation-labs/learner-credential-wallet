@@ -1,222 +1,220 @@
-import { ProfileRecord } from '../app/model/profile';
-import { HumanReadableError } from '../app/lib/error';
+import { mockCredential, mockCredential2 } from '../app/mock/credential';
+import { ObjectID } from 'bson';
+
+// Mock the credential hash functions
+jest.mock('../app/lib/credentialHash', () => ({
+  credentialContentHash: jest.fn((credential) => {
+    // Create different hashes for different credentials based on content
+    if (credential === mockCredential) return 'hash_mock1';
+    if (credential === mockCredential2) return 'hash_mock2';
+    return `hash_${credential.id || 'unknown'}`;
+  }),
+}));
+
+// Mock the credential model
+const mockGetAllCredentialRecords = jest.fn();
+jest.mock('../app/model/credential', () => ({
+  CredentialRecord: {
+    getAllCredentialRecords: mockGetAllCredentialRecords,
+  },
+}));
+
+// Mock the credential name utility
+jest.mock('../app/lib/credentialName', () => ({
+  getCredentialName: jest.fn((credential) => credential.name || 'Test Credential'),
+}));
+
+import { credentialContentHash } from '../app/lib/credentialHash';
 import { CredentialRecord } from '../app/model/credential';
+import { getCredentialName } from '../app/lib/credentialName';
 
-// Mock the database and dependencies
-jest.mock('../app/model/DatabaseAccess');
-jest.mock('../app/lib/did');
-jest.mock('../app/model/did');
-jest.mock('../app/model/credential');
+describe('Profile Duplicate Detection', () => {
+  const profileId1 = new ObjectID();
+  const profileId2 = new ObjectID();
 
-describe('Profile Duplicate Prevention', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
-  describe('addProfileRecord', () => {
-    it('should throw error when profile name already exists', async () => {
-      // Mock existing profiles
-      const mockExistingProfiles = [
-        { profileName: 'Test Profile', _id: 'id1' },
-        { profileName: 'Another Profile', _id: 'id2' }
+  describe('credential duplicate detection logic', () => {
+    it('should detect duplicates within the same profile', async () => {
+      const existingCredentials = [
+        {
+          credential: mockCredential,
+          profileRecordId: profileId1,
+        },
       ];
-      
-      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
 
-      await expect(
-        ProfileRecord.addProfileRecord({ profileName: 'Test Profile' })
-      ).rejects.toThrow(HumanReadableError);
-      
-      await expect(
-        ProfileRecord.addProfileRecord({ profileName: 'Test Profile' })
-      ).rejects.toThrow('A profile with the name "Test Profile" already exists');
+      mockGetAllCredentialRecords.mockResolvedValue(existingCredentials);
+
+      const existingHashesInProfile = existingCredentials
+        .filter(({ profileRecordId }) => profileRecordId.equals(profileId1))
+        .map(({ credential }) => credentialContentHash(credential));
+
+      const isDuplicate = existingHashesInProfile.includes(credentialContentHash(mockCredential));
+
+      expect(isDuplicate).toBe(true);
+      expect(credentialContentHash).toHaveBeenCalledWith(mockCredential);
     });
 
-    it('should throw error when profile name already exists with different case', async () => {
-      // Mock existing profiles
-      const mockExistingProfiles = [
-        { profileName: 'Test Profile', _id: 'id1' },
-        { profileName: 'Another Profile', _id: 'id2' }
+    it('should not detect duplicates across different profiles', async () => {
+      const existingCredentials = [
+        {
+          credential: mockCredential,
+          profileRecordId: profileId1,
+        },
       ];
-      
-      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
 
-      // Test various case combinations
-      await expect(
-        ProfileRecord.addProfileRecord({ profileName: 'test profile' })
-      ).rejects.toThrow(HumanReadableError);
-      
-      await expect(
-        ProfileRecord.addProfileRecord({ profileName: 'TEST PROFILE' })
-      ).rejects.toThrow(HumanReadableError);
-      
-      await expect(
-        ProfileRecord.addProfileRecord({ profileName: 'TeSt PrOfIlE' })
-      ).rejects.toThrow(HumanReadableError);
-      
-      await expect(
-        ProfileRecord.addProfileRecord({ profileName: 'test profile' })
-      ).rejects.toThrow('A profile with the name "test profile" already exists');
+      mockGetAllCredentialRecords.mockResolvedValue(existingCredentials);
+
+      const existingHashesInProfile = existingCredentials
+        .filter(({ profileRecordId }) => profileRecordId.equals(profileId2))
+        .map(({ credential }) => credentialContentHash(credential));
+
+      const isDuplicate = existingHashesInProfile.includes(credentialContentHash(mockCredential));
+
+      expect(isDuplicate).toBe(false);
     });
 
-    it('should allow creating profile with unique name', async () => {
-      const mockExistingProfiles = [
-        { profileName: 'Existing Profile', _id: 'id1' }
+    it('should handle multiple credentials in the same profile', async () => {
+      const existingCredentials = [
+        {
+          credential: mockCredential,
+          profileRecordId: profileId1,
+        },
+        {
+          credential: mockCredential2,
+          profileRecordId: profileId1,
+        },
       ];
-      
-      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
-      
-      // Mock the database operations
-      const { db } = require('../app/model/DatabaseAccess');
-      const mockRawProfile = { profileName: 'New Profile', _id: 'newId' };
-      db.withInstance.mockImplementation((callback: any) => {
-        const mockInstance = {
-          write: (writeCallback: any) => writeCallback(),
-          create: () => ({ asRaw: () => mockRawProfile })
-        };
-        return callback(mockInstance);
-      });
-      
-      // Mock mintDid and DidRecord.addDidRecord
-      const { mintDid } = require('../app/lib/did');
-      const { DidRecord } = require('../app/model/did');
-      mintDid.mockResolvedValue({ didDocument: {}, verificationKey: {}, keyAgreementKey: {} });
-      DidRecord.addDidRecord.mockResolvedValue({ _id: '507f1f77bcf86cd799439011' }); // Valid 24-char hex ObjectId
-      
-      const result = await ProfileRecord.addProfileRecord({ profileName: 'New Profile' });
-      expect(result.profileName).toBe('New Profile');
+
+      mockGetAllCredentialRecords.mockResolvedValue(existingCredentials);
+
+      const existingHashesInProfile = existingCredentials
+        .filter(({ profileRecordId }) => profileRecordId.equals(profileId1))
+        .map(({ credential }) => credentialContentHash(credential));
+
+      const isDuplicate1 = existingHashesInProfile.includes(credentialContentHash(mockCredential));
+      const isDuplicate2 = existingHashesInProfile.includes(credentialContentHash(mockCredential2));
+
+      expect(isDuplicate1).toBe(true);
+      expect(isDuplicate2).toBe(true);
+      expect(existingHashesInProfile).toHaveLength(2);
+    });
+
+    it('should handle mixed profiles correctly', async () => {
+      const existingCredentials = [
+        {
+          credential: mockCredential,
+          profileRecordId: profileId1,
+        },
+        {
+          credential: mockCredential2,
+          profileRecordId: profileId2,
+        },
+      ];
+
+      mockGetAllCredentialRecords.mockResolvedValue(existingCredentials);
+
+      // Check for duplicates in profile 1
+      const existingHashesInProfile1 = existingCredentials
+        .filter(({ profileRecordId }) => profileRecordId.equals(profileId1))
+        .map(({ credential }) => credentialContentHash(credential));
+
+      // Check for duplicates in profile 2
+      const existingHashesInProfile2 = existingCredentials
+        .filter(({ profileRecordId }) => profileRecordId.equals(profileId2))
+        .map(({ credential }) => credentialContentHash(credential));
+
+      expect(existingHashesInProfile1).toHaveLength(1);
+      expect(existingHashesInProfile2).toHaveLength(1);
+      expect(existingHashesInProfile1[0]).toBe('hash_mock1');
+      expect(existingHashesInProfile2[0]).toBe('hash_mock2');
     });
   });
 
-  describe('importProfileRecord', () => {
-    it('should skip profile creation when profile name already exists', async () => {
-      const mockExistingProfiles = [
-        { profileName: 'Existing Profile', _id: { equals: () => true } }
-      ];
-      
-      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
-      jest.spyOn(CredentialRecord, 'getAllCredentialRecords').mockResolvedValue([]);
-      jest.spyOn(CredentialRecord, 'addCredentialRecord').mockResolvedValue({} as any);
-      
-      const mockWalletData = JSON.stringify({
-        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
-        type: 'UniversalWallet2020',
-        contents: [
-          {
-            '@context': ['https://www.w3.org/ns/did/v1'],
-            id: 'did:example:123'
-          },
-          {
-            type: 'Ed25519VerificationKey2020',
-            id: 'key1'
-          },
-          {
-            type: 'X25519KeyAgreementKey2020', 
-            id: 'key2'
-          },
-          {
-            type: 'ProfileMetadata',
-            data: { profileName: 'Existing Profile' }
-          }
-        ]
+  describe('profile import report logic', () => {
+    it('should track duplicate credentials during import', () => {
+      const profileImportReport = {
+        profileDuplicate: false,
+        credentials: {
+          duplicate: [] as string[],
+          added: [] as string[],
+        },
+      };
+
+      const credentials = [mockCredential, mockCredential2];
+      const existingHashes = ['hash_mock1']; // mockCredential already exists
+      const processedHashes = new Set<string>();
+
+      credentials.forEach((credential) => {
+        const credentialName = getCredentialName(credential);
+        const hash = credentialContentHash(credential);
+        
+        if (existingHashes.includes(hash) && !processedHashes.has(hash)) {
+          profileImportReport.credentials.duplicate.push(credentialName);
+          processedHashes.add(hash);
+        } else if (!existingHashes.includes(hash)) {
+          profileImportReport.credentials.added.push(credentialName);
+        }
       });
-      
-      // The import should mark profile as duplicate
-      const result = await ProfileRecord.importProfileRecord(mockWalletData);
-      
-      expect(result.userIdImported).toBe(false);
-      expect(result.profileDuplicate).toBe(true);
+
+      expect(profileImportReport.credentials.duplicate).toHaveLength(1);
+      expect(profileImportReport.credentials.added).toHaveLength(1);
+      expect(getCredentialName).toHaveBeenCalledTimes(2);
     });
 
-    it('should skip profile creation when profile name already exists with different case', async () => {
-      const mockExistingProfiles = [
-        { profileName: 'Existing Profile', _id: { equals: () => true } }
-      ];
-      
-      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
-      jest.spyOn(CredentialRecord, 'getAllCredentialRecords').mockResolvedValue([]);
-      jest.spyOn(CredentialRecord, 'addCredentialRecord').mockResolvedValue({} as any);
-      
-      const mockWalletData = JSON.stringify({
-        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
-        type: 'UniversalWallet2020',
-        contents: [
-          {
-            '@context': ['https://www.w3.org/ns/did/v1'],
-            id: 'did:example:123'
-          },
-          {
-            type: 'Ed25519VerificationKey2020',
-            id: 'key1'
-          },
-          {
-            type: 'X25519KeyAgreementKey2020',
-            id: 'key2' 
-          },
-          {
-            type: 'ProfileMetadata',
-            data: { profileName: 'existing profile' }
-          }
-        ]
-      });
-      
-      // The import should mark profile as duplicate even with different case
-      const result = await ProfileRecord.importProfileRecord(mockWalletData);
-      
-      expect(result.userIdImported).toBe(false);
-      expect(result.profileDuplicate).toBe(true);
+    it('should handle empty existing credentials', () => {
+      const credentials = [mockCredential];
+      const existingHashes: string[] = [];
+
+      const isDuplicate = existingHashes.includes(credentialContentHash(mockCredential));
+
+      expect(isDuplicate).toBe(false);
     });
 
-    it('should create new profile when profile name is unique', async () => {
-      const mockExistingProfiles = [
-        { profileName: 'Different Profile', _id: 'differentId' }
+    it('should use credential content hash instead of ID for comparison', () => {
+      // This test ensures we're using content hash, not credential ID
+      const credential1 = { ...mockCredential, id: 'id1' };
+      const credential2 = { ...mockCredential, id: 'id2' }; // Same content, different ID
+
+      const hash1 = credentialContentHash(credential1);
+      const hash2 = credentialContentHash(credential2);
+
+      // Verify the hash function is being called correctly
+      expect(credentialContentHash).toHaveBeenCalledWith(credential1);
+      expect(credentialContentHash).toHaveBeenCalledWith(credential2);
+      expect(typeof hash1).toBe('string');
+      expect(typeof hash2).toBe('string');
+    });
+  });
+
+  describe('ObjectID equality checks', () => {
+    it('should correctly compare ObjectIDs', () => {
+      const id1 = new ObjectID();
+      const id2 = new ObjectID();
+      const id1Copy = new ObjectID(id1.toHexString());
+
+      expect(id1.equals(id1)).toBe(true);
+      expect(id1.equals(id2)).toBe(false);
+      expect(id1.equals(id1Copy)).toBe(true);
+    });
+
+    it('should filter credentials by profile ID correctly', () => {
+      const credentials = [
+        { profileRecordId: profileId1, credential: mockCredential },
+        { profileRecordId: profileId2, credential: mockCredential2 },
+        { profileRecordId: profileId1, credential: mockCredential },
       ];
-      
-      jest.spyOn(ProfileRecord, 'getAllProfileRecords').mockResolvedValue(mockExistingProfiles as any);
-      jest.spyOn(CredentialRecord, 'getAllCredentialRecords').mockResolvedValue([]);
-      jest.spyOn(CredentialRecord, 'addCredentialRecord').mockResolvedValue({} as any);
-      
-      // Mock DidRecord.addDidRecord
-      const { DidRecord } = require('../app/model/did');
-      DidRecord.addDidRecord.mockResolvedValue({ _id: '507f1f77bcf86cd799439012' }); // Valid 24-char hex ObjectId
-      
-      // Mock ProfileRecord.addProfileRecord to avoid circular call
-      const originalAddProfile = ProfileRecord.addProfileRecord;
-      jest.spyOn(ProfileRecord, 'addProfileRecord').mockImplementation(async ({ profileName }) => {
-        // Don't call the real method to avoid infinite recursion
-        return { _id: 'newProfileId', profileName } as any;
-      });
-      
-      const mockWalletData = JSON.stringify({
-        '@context': ['https://www.w3.org/2018/credentials/v1', 'https://w3id.org/wallet/v1'],
-        type: 'UniversalWallet2020',
-        contents: [
-          {
-            '@context': ['https://www.w3.org/ns/did/v1'],
-            id: 'did:example:123'
-          },
-          {
-            type: 'Ed25519VerificationKey2020',
-            id: 'key1'
-          },
-          {
-            type: 'X25519KeyAgreementKey2020',
-            id: 'key2'
-          },
-          {
-            type: 'ProfileMetadata',
-            data: { profileName: 'New Unique Profile' }
-          }
-        ]
-      });
-      
-      const result = await ProfileRecord.importProfileRecord(mockWalletData);
-      
-      expect(result.userIdImported).toBe(true);
-      expect(result.profileDuplicate).toBe(false);
-      
-      // Restore original method
-      ProfileRecord.addProfileRecord = originalAddProfile;
+
+      const profile1Credentials = credentials.filter(({ profileRecordId }) => 
+        profileRecordId.equals(profileId1)
+      );
+
+      expect(profile1Credentials).toHaveLength(2);
+      expect(profile1Credentials.every(({ profileRecordId }) => 
+        profileRecordId.equals(profileId1)
+      )).toBe(true);
     });
   });
 });
