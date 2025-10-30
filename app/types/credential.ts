@@ -74,6 +74,7 @@ type SubjectExtensions = {
 export type OBV3IdentifierObject = {
   readonly identityType?: string;
   readonly identityHash?: string;
+  readonly hashed?: boolean;
 }
 
 export type Subject = SubjectExtensions & {
