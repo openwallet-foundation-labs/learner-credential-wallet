@@ -81,5 +81,14 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
   },
   dateStyles: {
     flexDirection: 'row',
-  }
+  },
+  warningText: {
+    fontSize: theme.fontSize.small,
+    fontFamily: theme.fontFamily.regular,
+    color: '#856404',
+    backgroundColor: '#FFF3CD',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
 }));
