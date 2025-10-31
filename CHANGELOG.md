@@ -1,5 +1,32 @@
 # learner-credential-wallet Changelog
 
+## 2.2.6 - build 96-99
+### Added
+- Upgrade to Expo SDK 53 #777
+- React(19) and RN(0.79) Upgrade #758
+- "Scan a shared QR code" text and UI consistency #855
+- Encourage devs to use their own verifier instance on LCW #843
+- Runtime Warning – Credential Verification lacks log value #838
+- Require Cycle Warnings across model, store, components, and navigation #837
+- Disable coverage by default when running npm tests #828
+- Remove Accept All Button When Only One Credential in Available Credentials Screen #738
+- Update Instructions at Top of Add Credential Screen #735
+- Update README #665
+- LCW: Set up test coverage #616
+- "Scan a shared QR code" text consistency #494
+- Users confused about shared link expiration #446
+
+### Fixed
+- Issue with share credentials option - cannot select credential to create public link #860
+- LCW: Coverage command failing while tests pass under npm test #854
+- UI Overlap on Manage Profiles screen #853
+- Wallet restore creates duplicate profiles & app allows duplicate profile names #836
+- Enable scrolling on Manage Profile screen #831
+- Issuer logo should pull from registry first, then fallback to VC logo second, default stock photo third #795
+- Some Credly Badges Fail Verify - Special Characters Issue? #768
+- Navigation order is inconsistent on two different pages - accessibility issue #534
+
+
 ## 2.2.5 - build 95
 ### Added
 - [EPIC] Wallet attached storage #668
