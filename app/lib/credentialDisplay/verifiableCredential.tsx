@@ -1,5 +1,5 @@
 import moment from 'moment';
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, ImageSourcePropType } from 'react-native';
 import { Button } from 'react-native-elements';
 import { mixins } from '../../styles';
@@ -11,6 +11,8 @@ import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';
 import defaultIssuerImage from '../../assets/defaultIssuer.png';
+import { DidRegistryContext } from '../../init/registries';
+import { shouldDisableUrls } from '../credentialSecurity';
 import {
   CardLink,
   CardDetail,
@@ -33,6 +35,8 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const { credential } = rawCredentialRecord;
   const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  const registries = useContext(DidRegistryContext);
+  const urlsDisabled = shouldDisableUrls(credential, registries);
   const navigation = useNavigation<NavigationProp>();
   const { credentialSubject, issuer } = credential;
 
@@ -63,6 +67,11 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
           rawCredentialRecord={rawCredentialRecord}
           badgeBackgroundColor={theme.color.backgroundPrimary}
         />
+        {urlsDisabled && (
+          <Text style={styles.warningText}>
+            ⚠️ Links disabled - unverified issuer
+          </Text>
+        )}
         <Text style={styles.header} accessibilityRole="header">{title}</Text>
         <Text style={styles.dataLabel}>Issuer</Text>
         <View style={styles.flexRow}>
@@ -83,7 +92,7 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
               }}
             />
             <View style={styles.issuerContent}>
-              <CardLink url={issuerUrl} />
+              <CardLink url={issuerUrl} disabled={urlsDisabled} />
             </View>
           </View>
         </View>

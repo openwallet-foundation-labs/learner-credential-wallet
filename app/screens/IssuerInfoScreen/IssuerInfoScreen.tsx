@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, Linking, Image } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
 import { NavHeader } from '../../components';
@@ -7,6 +7,8 @@ import { IssuerInfoScreenProps } from './IssuerInfoScreen.d';
 import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import defaultIssuerImage from '../../assets/defaultIssuer.png';
 import { issuerRenderInfoWithVerification } from '../../lib/credentialDisplay/shared/utils/issuer';
+import { DidRegistryContext } from '../../init/registries';
+import { shouldDisableUrls } from '../../lib/credentialSecurity';
 
 const NO_URL = 'None';
 
@@ -18,6 +20,8 @@ export default function IssuerInfoScreen({
   const { styles } = useDynamicStyles(dynamicStyleSheet);
   const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const credential = rawCredentialRecord.credential;
+  const registries = useContext(DidRegistryContext);
+  const urlsDisabled = shouldDisableUrls(credential, registries);
 
   const getImageUri = (img?: string | { id?: string }): string | undefined => {
     if (!img) return undefined;
@@ -34,6 +38,13 @@ export default function IssuerInfoScreen({
 
   const renderLink = (url?: string, label?: string) => {
     if (!url) return <Text style={styles.dataValue}>{NO_URL}</Text>;
+    if (urlsDisabled) {
+      return (
+        <Text style={styles.disabledLink}>
+          {label || url}
+        </Text>
+      );
+    }
     return (
       <Text style={styles.link} onPress={() => Linking.openURL(url)}>
         {label || url}
@@ -48,6 +59,11 @@ export default function IssuerInfoScreen({
       <NavHeader title="Issuer Info" goBack={navigation.goBack}
       />
       <ScrollView style={styles.bodyContainer}>
+        {urlsDisabled && (
+          <Text style={styles.warningText}>
+            ⚠️ Links disabled - unverified issuer
+          </Text>
+        )}
         <Text style={styles.sectionTitle}>Information from Known Registries</Text>
 
         {matchingIssuers.length > 0 ? (
@@ -66,12 +82,18 @@ export default function IssuerInfoScreen({
                 <Text style={styles.registryTitle}>
                   {registryName}{' '}
                   {governanceUrl && (
-                    <Text
-                      style={styles.link}
-                      onPress={() => Linking.openURL(governanceUrl)}
-                    >
-                      (More info on governance)
-                    </Text>
+                    urlsDisabled ? (
+                      <Text style={styles.disabledLink}>
+                        (More info on governance)
+                      </Text>
+                    ) : (
+                      <Text
+                        style={styles.link}
+                        onPress={() => Linking.openURL(governanceUrl)}
+                      >
+                        (More info on governance)
+                      </Text>
+                    )
                   )}
                 </Text>
 

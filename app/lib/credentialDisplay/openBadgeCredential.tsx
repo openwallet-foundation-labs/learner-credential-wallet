@@ -1,5 +1,5 @@
 import moment from 'moment';
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, ImageSourcePropType } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -12,6 +12,8 @@ import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { getExpirationDate, getIssuanceDate } from '../credentialValidityPeriod';
 import type { CredentialCardProps, CredentialDisplayConfig } from '.';
 import defaultIssuerImage from '../../assets/defaultIssuer.png';
+import { DidRegistryContext } from '../../init/registries';
+import { shouldDisableUrls } from '../credentialSecurity';
 
 import {
   CardLink,
@@ -37,6 +39,8 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const { credential } = rawCredentialRecord;
   const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  const registries = useContext(DidRegistryContext);
+  const urlsDisabled = shouldDisableUrls(credential, registries);
 
   const navigation = useNavigation<NavigationProp>();
 
@@ -76,6 +80,11 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
           rawCredentialRecord={rawCredentialRecord}
           badgeBackgroundColor={theme.color.backgroundPrimary}
         />
+        {urlsDisabled && (
+          <Text style={styles.warningText}>
+            ⚠️ Links disabled - unverified issuer
+          </Text>
+        )}
 
         <View style={[styles.flexRow, styles.dataContainer]}>
           <View>
@@ -112,7 +121,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
               }}
             />
             <View style={styles.issuerContent}>
-              <CardLink url={issuerUrl} />
+              <CardLink url={issuerUrl} disabled={urlsDisabled} />
             </View>
           </View>
         </View>
@@ -146,7 +155,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
         </View>
         <CardDetail label="Description" value={description} />
         <CardDetail label="Criteria" value={criteria} isMarkdown={true} />
-        <AlignmentsList alignment={alignment} />
+        <AlignmentsList alignment={alignment} disabled={urlsDisabled} />
       </View>
     </View>
   );

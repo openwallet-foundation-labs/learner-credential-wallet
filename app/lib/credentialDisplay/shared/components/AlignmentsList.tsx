@@ -7,9 +7,10 @@ import { createDynamicStyleSheet } from '../../../dynamicStyles';
 
 type AlignmentsListProps = {
   alignment?: Alignment[];
+  disabled?: boolean;
 };
 
-const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
+const AlignmentItem = ({ alignment, disabled }: { alignment: ValidAlignment; disabled: boolean }) => {
   const { styles } = useDynamicStyles(alignmentStyleSheet);
 
   return (
@@ -18,7 +19,7 @@ const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
         {alignment.targetName}
       </Text>
       {alignment.targetUrl && (
-        alignment.isValidUrl ? (
+        alignment.isValidUrl && !disabled ? (
           <Text
             style={styles.alignmentLink}
             accessibilityRole="link"
@@ -47,7 +48,7 @@ const AlignmentItem = ({ alignment }: { alignment: ValidAlignment }) => {
   );
 };
 
-export default function AlignmentsList({ alignment }: AlignmentsListProps): React.ReactElement | null {
+export default function AlignmentsList({ alignment, disabled = false }: AlignmentsListProps): React.ReactElement | null {
   const { styles } = useDynamicStyles(alignmentStyleSheet);
   const validAlignments = getValidAlignments(alignment);
 
@@ -59,7 +60,7 @@ export default function AlignmentsList({ alignment }: AlignmentsListProps): Reac
     <View style={styles.alignmentsContainer}>
       <Text style={styles.alignmentsHeader}>Alignments</Text>
       {validAlignments.map((alignment, index) => (
-        <AlignmentItem key={index} alignment={alignment} />
+        <AlignmentItem key={index} alignment={alignment} disabled={disabled} />
       ))}
     </View>
   );
