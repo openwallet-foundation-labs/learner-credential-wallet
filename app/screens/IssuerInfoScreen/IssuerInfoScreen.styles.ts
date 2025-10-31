@@ -27,6 +27,20 @@ export default createDynamicStyleSheet(({ theme }) => ({
     color: theme.color.linkColor,
     textDecorationLine: 'underline',
   },
+  disabledLink: {
+    fontFamily: theme.fontFamily.regular,
+    color: theme.color.textSecondary,
+    textDecorationLine: 'none',
+  },
+  warningText: {
+    fontSize: theme.fontSize.small,
+    fontFamily: theme.fontFamily.regular,
+    color: '#856404',
+    backgroundColor: '#FFF3CD',
+    padding: 8,
+    borderRadius: 4,
+    marginBottom: 12,
+  },
   bulletList: {
     marginTop: -4,
   },
