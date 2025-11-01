@@ -10,11 +10,13 @@ import {
   PendingCredential,
   setCredentialApproval,
   acceptPendingCredentials,
+  clearFoyer,
 } from '../../store/slices/credentialFoyer';
 import { Color, ThemeType } from '../../styles';
 import dynamicStyleSheet from './ApprovalControls.styles';
 import { useAccessibilityFocus } from '../../hooks';
 import { ObjectID } from 'bson';
+import { navigationRef } from '../../navigation/navigationRef';
 
 enum StatusIcon {
   Schedule = 'schedule',
@@ -90,6 +92,19 @@ export default function ApprovalControls({ pendingCredential, profileRecordId }:
     focusStatus();
   }
 
+  async function rejectAndExit() {
+    setApprovalStatus(ApprovalStatus.Rejected);
+    await dispatch(clearFoyer());
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'CredentialNavigation',
+        params: {
+          screen: 'HomeScreen',
+        },
+      });
+    }
+  }
+
   useEffect(focusStatus, []);
 
   async function accept() {
@@ -110,9 +125,7 @@ export default function ApprovalControls({ pendingCredential, profileRecordId }:
     return (
       <>
         <View style={styles.approvalContainer}>
-          <ApprovalButton title="Skip" onPress={reject} primary />
-          <View style={styles.buttonSpacer} />
-          <ApprovalButton title="Accept" onPress={accept} />
+          <ApprovalButton title="Close" onPress={rejectAndExit} primary />
         </View>
         <Text style={styles.statusTextOutside}>{message}</Text>
       </>

@@ -5,13 +5,14 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { TextInput } from 'react-native-paper';
 
 import dynamicStyleSheet from './AddScreen.styles';
-import { stageCredentials } from '../../store/slices/credentialFoyer';
+import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 import { NavHeader } from '../../components';
 import { credentialRequestParamsFromQrText, credentialsFrom, isDeepLink } from '../../lib/decode';
 import { PresentationError } from '../../types/presentation';
 import { errorMessageMatches, HumanReadableError } from '../../lib/error';
 import { navigationRef } from '../../navigation/navigationRef';
 import { CredentialRequestParams } from '../../lib/credentialRequest';
+import type { Credential } from '../../types/credential';
 import { pickAndReadFile } from '../../lib/import';
 import { displayGlobalModal } from '../../lib/globalModal';
 import { useAppDispatch, useDynamicStyles } from '../../hooks';
@@ -46,6 +47,17 @@ export default function AddScreen(): React.ReactElement {
     });
   }
 
+  async function goToCredentialFoyerWith(credentials: Credential[]) {
+    const rawProfileRecord = await NavigationUtil.selectProfile();
+    await dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
+    navigationRef.navigate('AcceptCredentialsNavigation', {
+      screen: 'ApproveCredentialsScreen',
+      params: {
+        rawProfileRecord,
+      }
+    });
+  }
+
   async function addCredentialsFrom(text: string) {
     text = text.trim();
 
@@ -54,8 +66,7 @@ export default function AddScreen(): React.ReactElement {
       goToCredentialFoyer(cleanCopy(params));
     } else {
       const credentials = await credentialsFrom(text);
-      dispatch(stageCredentials(credentials));
-      goToCredentialFoyer();
+      await goToCredentialFoyerWith(credentials);
     }
   }
 

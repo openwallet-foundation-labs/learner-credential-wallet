@@ -11,7 +11,7 @@ import { selectWithFactory } from '../../store/selectorFactories';
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
 import dynamicStyleSheet from './CredentialRequestHandler.styles';
 import { Credential } from '../../types/credential';
-import { stageCredentials } from '../../store/slices/credentialFoyer';
+import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 //import { DidRegistryContext } from '../../init/registries';
 
 type CredentialRequestHandlerProps = {
@@ -33,7 +33,7 @@ export default function CredentialRequestHandler({
 
   async function onFinish(credentials: Credential[]) {
     setModalIsOpen(false);
-    await dispatch(stageCredentials(credentials));
+    await dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
   }
 
   function onRequestClose() {

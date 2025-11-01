@@ -13,6 +13,7 @@ import { HumanReadableError } from '../lib/error';
 import { CredentialRecord } from './credential';
 import { DidRecord, DidRecordRaw } from './did';
 import { CredentialRecordRaw } from '../types/credential';
+import { credentialContentHash } from '../lib/credentialHash';
 
 const ObjectId = Realm.BSON.ObjectId;
 
@@ -246,14 +247,14 @@ export class ProfileRecord extends Realm.Object implements ProfileRecordRaw {
         profileImportReport.profileDuplicate = true;
         
         const existingCredentials = await CredentialRecord.getAllCredentialRecords();
-        const profileCredentialIds = existingCredentials
+        const profileCredentialHashes = existingCredentials
           .filter(({ profileRecordId: credProfileId }) => credProfileId.equals(profileRecordId))
-          .map(({ credential }) => credential.id);
+          .map(({ credential }) => credentialContentHash(credential));
 
         await Promise.all(
           credentials.map(async (credential) => {
             const credentialName = getCredentialName(credential);
-            if (profileCredentialIds.includes(credential.id)) {
+            if (profileCredentialHashes.includes(credentialContentHash(credential))) {
               profileImportReport.credentials.duplicate.push(credentialName);
               return;
             }

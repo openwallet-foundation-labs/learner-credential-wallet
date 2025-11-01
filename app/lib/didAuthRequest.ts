@@ -6,7 +6,7 @@ import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { constructExchangeRequest, handleVcApiExchangeSimple } from './exchanges';
 import store from '../store';
-import { stageCredentials } from '../store/slices/credentialFoyer';
+import { stageCredentialsForProfile } from '../store/slices/credentialFoyer';
 import { Credential } from '../types/credential';
 import { extractCredentialsFrom } from './verifiableObject';
 
@@ -46,7 +46,7 @@ export async function performDidAuthRequest(params: DidAuthRequestParams, rawPro
   const credentials = extractCredentialsFrom(verifiablePresentation);
 
   if (credentials) {
-    await store.dispatch(stageCredentials(credentials));
+    await store.dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
     return credentials;
   }
 
