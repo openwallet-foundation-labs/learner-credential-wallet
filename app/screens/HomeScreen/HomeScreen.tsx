@@ -34,7 +34,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
 
     return (
       <View style={styles.swipeItemOuter}>
-        
+
         <View>
           <Swipeable
             renderLeftActions={() => (

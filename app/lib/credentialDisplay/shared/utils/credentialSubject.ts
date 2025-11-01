@@ -1,15 +1,13 @@
 import moment from 'moment';
-import { Subject, Alignment } from '../../../../types/credential';
-import { educationalOperationalCredentialFrom } from '../../../decode';
 import { extractNameFromOBV3Identifier } from '../../../extractNameFromOBV3Identifier';
 import { imageSourceFrom } from './image';
 import { DATE_FORMAT } from '../../../../../app.config';
+import { ICredentialSubject, IVerifiableCredential } from '@digitalcredentials/ssi';
 
 type CredentialRenderInfo = {
   subjectName: string | null;
   degreeName: string | null;
   issuedTo : string | null;
-  title: string | null;
   description: string | null;
   criteria: string | null;
   startDateFmt: string | null;
@@ -20,7 +18,20 @@ type CredentialRenderInfo = {
   alignment: Alignment[] | undefined;
 }
 
-export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): CredentialRenderInfo {
+/**
+ * Partially supports VCs with multiple credentialSubject entries,
+ * by just picking the first one.
+ * @param vc
+ */
+export function getSubject (vc: IVerifiableCredential): ICredentialSubject {
+  const { credentialSubject } = vc;
+  if (Array.isArray(credentialSubject)) {
+    return credentialSubject[0];
+  }
+  return credentialSubject;
+}
+
+export function credentialSubjectRenderInfoFrom(credentialSubject: ICredentialSubject): CredentialRenderInfo {
 
   // Same as "issuedTo", below, but used in non-OBv3 components
   const subjectName = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
@@ -28,20 +39,18 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
   const issuedTo = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
   const degreeName = credentialSubject.degree?.name ?? null;
 
-  const eoc = educationalOperationalCredentialFrom(credentialSubject);
+  const [achievement] = Array.isArray(credentialSubject.achievement) ? credentialSubject.achievement : [credentialSubject.achievement];
 
-  const title = eoc?.name ?? null;
-  const description = eoc?.description ?? null;
-  const criteria = eoc?.criteria?.narrative ?? null;
+  const description = achievement?.description ?? null;
+  const criteria = achievement?.criteria?.narrative ?? null;
 
-  const numberOfCredits = eoc?.awardedOnCompletionOf?.numberOfCredits?.value ?? null;
+  const numberOfCredits = achievement?.awardedOnCompletionOf?.numberOfCredits?.value ?? null;
 
-  const achievementImage = imageSourceFrom(eoc?.image);
+  const achievementImage = imageSourceFrom(achievement?.image);
 
-  const achievementType = eoc && eoc.achievementType ? eoc.achievementType : null;
-  const alignment = eoc?.alignment;
-
-  const { startDate, endDate } = eoc?.awardedOnCompletionOf || {};
+  const achievementType = achievement?.achievementType ? achievement.achievementType : null;
+  const alignment = achievement?.alignment
+  const { startDate, endDate } = achievement?.awardedOnCompletionOf || {};
   const startDateFmt = startDate ? moment.utc(startDate).format(DATE_FORMAT) : null;
   const endDateFmt = endDate ? moment.utc(endDate).format(DATE_FORMAT) : null;
 
@@ -49,7 +58,6 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
     subjectName,
     issuedTo,
     degreeName,
-    title,
     description,
     criteria,
     numberOfCredits,

@@ -6,12 +6,12 @@ declare module '@digitalcredentials/vc-bitstring-status-list';
 declare module '@digitalcredentials/vc-status-list';
 declare module '@digitalcredentials/vpqr';
 declare module '@digitalcredentials/jsonld-signatures';
+declare module '@digitalcredentials/x25519-key-agreement-key-2020';
 declare module '@digitalcredentials/ed25519-signature-2020' {
   export class Ed25519Signature2020 {
     constructor(options?: unknown)
   }
 }
-declare module '@digitalcredentials/ed25519-verification-key-2020';
 declare module '@digitalcredentials/data-integrity';
 declare module '@digitalcredentials/eddsa-rdfc-2022-cryptosuite';
 declare module '@digitalcredentials/lru-memoize';
