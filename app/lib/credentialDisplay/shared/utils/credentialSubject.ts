@@ -24,8 +24,9 @@ export function credentialSubjectRenderInfoFrom(credentialSubject: Subject): Cre
 
   // Same as "issuedTo", below, but used in non-OBv3 components
   const subjectName = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
-  // Used in OBv3 components only
-  const issuedTo = credentialSubject?.name ?? extractNameFromOBV3Identifier(credentialSubject) ?? null;
+  // Used in OBv3 components only - prioritize identityHash over credentialSubject.name for Open Badges
+  const identityHashName = extractNameFromOBV3Identifier(credentialSubject);
+  const issuedTo = identityHashName ?? credentialSubject?.name ?? null;
   const degreeName = credentialSubject.degree?.name ?? null;
 
   const eoc = educationalOperationalCredentialFrom(credentialSubject);

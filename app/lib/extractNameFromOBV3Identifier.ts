@@ -12,7 +12,9 @@ export function extractNameFromOBV3Identifier (credentialSubject: Subject): stri
     identifiers = credentialSubject.identifier;
   }
 
-  const nameIdentifier = identifiers.find(i => i.identityType === 'name');
+  const identifierWithHash = identifiers.find(
+    i => i.identityHash && (i?.hashed === false || i?.hashed === undefined)
+  )
     
-  return nameIdentifier?.identityHash || undefined;
+  return identifierWithHash?.identityHash || undefined;
 }
