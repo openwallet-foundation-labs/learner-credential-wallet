@@ -82,7 +82,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
         />
         {urlsDisabled && (
           <Text style={styles.warningText}>
-            ⚠️ Links disabled - unverified issuer
+            ⚠️ Links disabled - unrecognized issuer
           </Text>
         )}
 

@@ -40,7 +40,7 @@ export default function ApproveCredentialScreen({ navigation, route }: ApproveCr
         <View style={styles.container}>
           {urlsDisabled && (
             <Text style={styles.warningText}>
-              ⚠️ Links disabled - unverified issuer
+              ⚠️ Links disabled - unrecognized issuer
             </Text>
           )}
           <CredentialCard rawCredentialRecord={rawCredentialRecord} onPressIssuer={goToIssuerInfo} />
