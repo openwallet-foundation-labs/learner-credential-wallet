@@ -27,6 +27,18 @@ export default function ProfileItem({ rawProfileRecord }: ProfileItemProps): Rea
   const { styles, } = useDynamicStyles(dynamicStyleSheet);
   const [activeModal, setActiveModal] = useState<ActiveModal | null>(null);
 
+  function goToCredentials() {
+    if (navigationRef.isReady()) {
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'SettingsNavigation',
+        params: {
+          screen: 'ProfileCredentialsScreen',
+          params: { rawProfileRecord }
+        }
+      });
+    }
+  }
+
   function goToSource() {
     if (navigationRef.isReady()) {
       navigationRef.navigate('ViewSourceScreen', {
@@ -63,6 +75,7 @@ export default function ProfileItem({ rawProfileRecord }: ProfileItemProps): Rea
           </Text>
         </View>
         <MoreMenuButton>
+          <MenuItem title="Credentials" onPress={goToCredentials} />
           <MenuItem title="Rename" onPress={() => setActiveModal(ActiveModal.Rename)} />
           <MenuItem title="Backup" onPress={() => setActiveModal(ActiveModal.Backup)} />
           <MenuItem title="View Source" onPress={goToSource} />

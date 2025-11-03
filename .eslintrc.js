@@ -28,6 +28,8 @@ module.exports = {
                 '@typescript-eslint/indent': 'off',
                 '@typescript-eslint/no-unused-vars': 'off',
                 '@typescript-eslint/no-redeclare': 'off',
+                // Disable prop-types for TypeScript files since TS provides type checking
+                'react/prop-types': 'off',
             },
         },
         {
