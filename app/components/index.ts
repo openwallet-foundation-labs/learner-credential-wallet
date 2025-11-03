@@ -23,6 +23,7 @@ export { default as CredentialRequestHandler } from './CredentialRequestHandler/
 export { default as ThemeProvider } from './ThemeProvider/ThemeProvider';
 export { default as GlobalConfirmModal } from './GlobalConfirmModal/GlobalConfirmModal';
 export { default as BulletList } from './BulletList/BulletList';
+export { default as CredentialListItem } from './CredentialListItem/CredentialListItem';
 
 export * from './ImportFileModal/ImportFileModal.d';
 export * from './CredentialCard/CredentialCard.d';

@@ -1,6 +1,7 @@
 export * from './useAnimation';
 export * from './usePendingCredential';
 export * from './useVerifyCredential';
+export * from './useProfileCredentials';
 export * from './useAppLoading';
 export * from './useAccessibilityFocus';
 export * from './useResetNavigationOnBlur';
