@@ -32,7 +32,7 @@ export default function ProfileItem({ rawProfileRecord }: ProfileItemProps): Rea
       navigationRef.navigate('HomeNavigation', {
         screen: 'SettingsNavigation',
         params: {
-          screen: 'ProfileCredentialsScreen',
+          screen: 'ProfileCredentialScreen',
           params: { rawProfileRecord }
         }
       });
