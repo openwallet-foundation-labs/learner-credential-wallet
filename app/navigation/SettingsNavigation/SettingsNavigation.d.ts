@@ -1,7 +1,7 @@
 import { StackScreenProps } from '@react-navigation/stack';
 import { ReactNode } from 'react';
 import { DetailsScreenParams } from '../../screens';
-import { ProfileCredentialsScreenParams } from '../../screens/ProfileCredentialsScreen/ProfileCredentialsScreen.d';
+import { ProfileCredentialScreenParams } from '../../screens/ProfileCredentialScreen/ProfileCredentialScreen.d';
 
 export type SettingsItemProps = {
   readonly title: string;
@@ -16,7 +16,7 @@ export type SettingsNavigationParamList = {
   About: undefined;
   ManageProfilesScreen: undefined;
   AddExistingProfileScreen: undefined;
-  ProfileCredentialsScreen: ProfileCredentialsScreenParams;
+  ProfileCredentialScreen: ProfileCredentialScreenParams;
   DetailsScreen: DetailsScreenParams;
   DeveloperScreen: undefined;
   WASScreen: undefined;

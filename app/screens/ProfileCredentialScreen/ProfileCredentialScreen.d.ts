@@ -2,11 +2,11 @@ import { StackScreenProps } from '@react-navigation/stack';
 import { SettingsNavigationParamList } from '../../navigation/SettingsNavigation/SettingsNavigation.d';
 import { ProfileRecordRaw } from '../../model';
 
-export type ProfileCredentialsScreenProps = StackScreenProps<
+export type ProfileCredentialScreenProps = StackScreenProps<
   SettingsNavigationParamList,
-  'ProfileCredentialsScreen'
+  'ProfileCredentialScreen'
 >;
 
-export type ProfileCredentialsScreenParams = {
+export type ProfileCredentialScreenParams = {
   rawProfileRecord: ProfileRecordRaw;
 };

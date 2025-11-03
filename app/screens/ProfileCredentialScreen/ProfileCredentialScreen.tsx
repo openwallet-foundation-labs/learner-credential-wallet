@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Text, View, FlatList, AccessibilityInfo } from 'react-native';
 import { NavHeader, ConfirmModal, CredentialListItem } from '../../components';
-import { ProfileCredentialsScreenProps } from './ProfileCredentialsScreen.d';
+import { ProfileCredentialScreenProps } from './ProfileCredentialScreen.d';
 import { CredentialRecordRaw } from '../../model';
 import { useAppDispatch, useDynamicStyles, useProfileCredentials } from '../../hooks';
 import { useShareCredentials } from '../../hooks/useShareCredentials';
@@ -9,7 +9,7 @@ import { deleteCredential } from '../../store/slices/credential';
 import { getCredentialName } from '../../lib/credentialName';
 import dynamicStyleSheet from '../HomeScreen/HomeScreen.styles';
 
-export default function ProfileCredentialsScreen({ navigation, route }: ProfileCredentialsScreenProps): React.ReactElement {
+export default function ProfileCredentialScreen({ navigation, route }: ProfileCredentialScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
   const { rawProfileRecord } = route.params;
   const profileCredentials = useProfileCredentials(rawProfileRecord._id.toHexString());
