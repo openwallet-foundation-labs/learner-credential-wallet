@@ -27,3 +27,10 @@ export function getExpirationDate(credential: Credential): string | undefined {
   const expirationDateV2 = getExpirationDateV2(credential);
   return expirationDateV2 ?? expirationDateV1;
 }
+
+export function isExpired(credential: Credential): boolean {
+  const expiration = getExpirationDate(credential);
+  if (!expiration) return false;
+  const t = Date.parse(String(expiration));
+  return !Number.isNaN(t) && t < Date.now();
+}
