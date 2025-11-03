@@ -6,7 +6,7 @@ import { useAppDispatch } from '../../hooks';
 import { selectWalletState, updateThemeName } from '../../store/slices/wallet';
 import { defaultTheme, ThemeContext, ThemeContextValue, themes } from '../../styles';
 import { findThemeBy } from '../../styles/theme/themeName';
-import { useSystemTheme } from './useSystemThme';
+import { useSystemTheme } from './useSystemTheme';
 
 export default function ThemeProvider({ children }: ThemeProviderProps): React.ReactElement {
   const dispatch = useAppDispatch();
@@ -15,8 +15,8 @@ export default function ThemeProvider({ children }: ThemeProviderProps): React.R
   // Use custom hook instead of broken useColorScheme
   const colorScheme = useSystemTheme();
 
-  console.log('🚀 ~ colorScheme from OS:', colorScheme);
-  console.log('🚀 ~ themeName from storage:', themeName);
+  console.log('colorScheme from OS:', colorScheme);
+  console.log('themeName from storage:', themeName);
 
   // ALWAYS sync with OS theme - remove the themeName === null check
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function ThemeProvider({ children }: ThemeProviderProps): React.R
 
       // Only update if different to avoid unnecessary dispatches
       if (themeName !== osThemeName) {
-        console.log('🔄 Syncing theme to match OS:', osThemeName);
+        console.log('Syncing theme to match OS:', osThemeName);
         dispatch(updateThemeName(osThemeName));
       }
     }
