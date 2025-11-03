@@ -61,7 +61,7 @@ export default function IssuerInfoScreen({
       <ScrollView style={styles.bodyContainer}>
         {urlsDisabled && (
           <Text style={styles.warningText}>
-            ⚠️ Links disabled - unverified issuer
+            ⚠️ Links disabled - unrecognized issuer
           </Text>
         )}
         <Text style={styles.sectionTitle}>Information from Known Registries</Text>

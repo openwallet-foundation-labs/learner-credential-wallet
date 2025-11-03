@@ -69,7 +69,7 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
         />
         {urlsDisabled && (
           <Text style={styles.warningText}>
-            ⚠️ Links disabled - unverified issuer
+           ⚠️ Links disabled - unrecognized issuer
           </Text>
         )}
         <Text style={styles.header} accessibilityRole="header">{title}</Text>

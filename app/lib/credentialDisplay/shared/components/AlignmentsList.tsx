@@ -10,7 +10,7 @@ type AlignmentsListProps = {
   disabled?: boolean;
 };
 
-const AlignmentItem = ({ alignment, disabled }: { alignment: ValidAlignment; disabled: boolean }) => {
+const AlignmentItem = ({ alignment, disabled }: { alignment: ValidAlignment, disabled: boolean }) => {
   const { styles } = useDynamicStyles(alignmentStyleSheet);
 
   return (
