@@ -32,6 +32,7 @@ import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
 import { navigationRef } from '../../navigation/navigationRef';
 
 import { convertSVGtoPDF } from '../../lib/svgToPdf';
+import { isExpired as credentialIsExpired } from '../../lib/credentialValidityPeriod';
 import { PDF } from '../../types/pdf';
 import { LinkConfig } from '../../../app.config';
 
@@ -162,29 +163,7 @@ export default function PublicLinkScreen({
     return candidates.some((v) => String(v).toLowerCase() === 'warning');
   }, [rawCredentialRecord, credential]);
 
-  const isExpired = useMemo(() => {
-    // explicit status
-    const sCandidates: any[] = [
-      (rawCredentialRecord as any)?.status,
-      (rawCredentialRecord as any)?.status?.status,
-      (credential as any)?.status,
-    ].filter(Boolean);
-    if (sCandidates.some((v) => String(v).toLowerCase() === 'expired')) return true;
-
-    // date-based
-    const d =
-      (credential as any)?.expirationDate ||
-      (credential as any)?.expiryDate ||
-      (credential as any)?.expires ||
-      (credential as any)?.validUntil ||
-      (rawCredentialRecord as any)?.expirationDate;
-
-    if (d) {
-      const t = Date.parse(String(d));
-      if (!Number.isNaN(t)) return t < Date.now();
-    }
-    return false;
-  }, [rawCredentialRecord, credential]);
+  const isExpired = useMemo(() => credentialIsExpired(credential as any), [credential]);
 
   // Block when the credential is Expired (ignore Warning-only)
   const isBlocked = isExpired;

@@ -11,6 +11,7 @@ import { useShareCredentials } from '../../hooks/useShareCredentials';
 import { PublicLinkScreenMode } from '../PublicLinkScreen/PublicLinkScreen';
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal';
 import { createPublicLinkFor, getPublicViewLink } from '../../lib/publicLink';
+import { isExpired as credentialIsExpired } from '../../lib/credentialValidityPeriod';
 import { LinkConfig } from '../../../app.config';
 
 export default function PresentationPreviewScreen({
@@ -64,30 +65,8 @@ export default function PresentationPreviewScreen({
         // non-fatal: fall through to creation flow
       }
 
-      // Match PublicLinkScreen gating: block only for expired or warning status
-      const candidates: any[] = [
-        (rawCredentialRecord as any)?.status,
-        (rawCredentialRecord as any)?.status?.type,
-        (rawCredentialRecord as any)?.status?.state,
-        (rawCredentialRecord as any)?.status?.status,
-        (rawCredentialRecord as any)?.credentialStatus,
-        (rawCredentialRecord as any)?.credentialStatus?.status,
-        (rawCredentialRecord as any)?.credential?.status,
-      ].filter(Boolean);
-      const hasWarningStatus = candidates.some((v) => String(v).toLowerCase() === 'warning');
-
-      const credential: any = (rawCredentialRecord as any)?.credential ?? {};
-      const expiryCandidate =
-        credential?.expirationDate ||
-        credential?.expiryDate ||
-        credential?.expires ||
-        credential?.validUntil ||
-        (rawCredentialRecord as any)?.expirationDate;
-      const isExpired = (() => {
-        if (!expiryCandidate) return false;
-        const t = Date.parse(String(expiryCandidate));
-        return !Number.isNaN(t) && t < Date.now();
-      })();
+      // Block when expired (spec keys only via shared helper)
+      const isExpired = credentialIsExpired(rawCredentialRecord.credential as any);
 
       // Block when expired (ignore Warning-only)
       if (isExpired) {
