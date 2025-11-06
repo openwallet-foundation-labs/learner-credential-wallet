@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { Button } from 'react-native-elements';
 
@@ -68,14 +68,13 @@ export default function ProfileItem({ rawProfileRecord }: ProfileItemProps): Rea
   return (
     <>
       <View style={styles.container}>
-        <View style={styles.textContainer}>
+        <TouchableOpacity style={styles.textContainer} onPress={goToCredentials}>
           <Text style={styles.titleText}>{rawProfileRecord.profileName}</Text>
           <Text style={styles.subtitleText}>
             {fmtCredentialCount(rawProfileRecord.rawCredentialRecords.length)}
           </Text>
-        </View>
+        </TouchableOpacity>
         <MoreMenuButton>
-          <MenuItem title="Credentials" onPress={goToCredentials} />
           <MenuItem title="Rename" onPress={() => setActiveModal(ActiveModal.Rename)} />
           <MenuItem title="Backup" onPress={() => setActiveModal(ActiveModal.Backup)} />
           <MenuItem title="View Source" onPress={goToSource} />
