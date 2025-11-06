@@ -22,6 +22,7 @@ jest.mock('../app/navigation/navigationRef', () => {
 jest.mock('react-native', () => ({
   View: 'View',
   Text: 'Text',
+  TouchableOpacity: 'TouchableOpacity',
   StyleSheet: { 
     create: jest.fn((styles: any) => styles),
     flatten: jest.fn((styles: any) => styles)
@@ -287,5 +288,18 @@ describe('ProfileItem Component', () => {
 
     fireEvent.press(getByTestId('menu-View Source'));
     expect((global as any).__mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('navigates to credentials when profile is clicked', () => {
+    const { getByText } = render(<ProfileItem rawProfileRecord={mockProfileRecord} />);
+
+    fireEvent.press(getByText('Test Profile'));
+    expect((global as any).__mockNavigate).toHaveBeenCalledWith('HomeNavigation', {
+      screen: 'SettingsNavigation',
+      params: {
+        screen: 'ProfileCredentialScreen',
+        params: { rawProfileRecord: mockProfileRecord }
+      }
+    });
   });
 });
