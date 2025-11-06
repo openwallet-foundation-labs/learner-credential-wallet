@@ -19,18 +19,23 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
       return !!alignment.targetName;
     })
     .map(alignment => {
-      const validation = alignment.targetUrl ? validateUrl(alignment.targetUrl) : null;
-      
-      // Warn about suspicious URLs
-      if (alignment.targetUrl && validation?.valid && isUrlSuspicious(alignment.targetUrl)) {
-        console.warn(`Suspicious alignment URL: ${alignment.targetUrl}`);
+      const result: ValidAlignment = {
+        targetName: alignment.targetName!,
+        targetDescription: alignment.targetDescription,
+      };
+
+      if (alignment.targetUrl) {
+        const validation = validateUrl(alignment.targetUrl);
+        
+        // Warn about suspicious URLs
+        if (validation?.valid && isUrlSuspicious(alignment.targetUrl)) {
+          console.warn(`Suspicious alignment URL: ${alignment.targetUrl}`);
+        }
+
+        result.targetUrl = alignment.targetUrl;
+        result.isValidUrl = validation?.valid ?? false;
       }
 
-      return {
-        targetName: alignment.targetName!,
-        targetUrl: alignment.targetUrl,
-        targetDescription: alignment.targetDescription,
-        isValidUrl: validation?.valid ?? false,
-      };
+      return result;
     });
 }
