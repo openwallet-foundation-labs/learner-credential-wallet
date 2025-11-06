@@ -1,3 +1,13 @@
+import { Alignment } from '../../../../types/credential';
+import { validateUrl, isUrlSuspicious } from '../../../urlUtils';
+
+export type ValidAlignment = {
+  targetName: string;
+  targetUrl?: string;
+  targetDescription?: string;
+  isValidUrl?: boolean;
+};
+
 export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
   if (!alignments || !Array.isArray(alignments)) {
     return [];
@@ -6,31 +16,21 @@ export function getValidAlignments(alignments?: Alignment[]): ValidAlignment[] {
   return alignments
     .filter((alignment) => {
       // targetName is required for display
-      if (!alignment.targetName) {
-        return false;
-      }
-
-      // If a URL is provided, validate it (HTTPS only for alignments)
-      if (alignment.targetUrl) {
-        const validation = validateUrl(alignment.targetUrl);
-        if (!validation.valid) return false;
-      }
-
+      return !!alignment.targetName;
+    })
+    .map(alignment => {
+      const validation = alignment.targetUrl ? validateUrl(alignment.targetUrl) : null;
+      
       // Warn about suspicious URLs
-      if (alignment.targetUrl && isUrlSuspicious(alignment.targetUrl)) {
+      if (alignment.targetUrl && validation?.valid && isUrlSuspicious(alignment.targetUrl)) {
         console.warn(`Suspicious alignment URL: ${alignment.targetUrl}`);
       }
 
-      return true;
-    })
-    .map(alignment => {
-      const normalizedUrl = alignment.targetUrl
-        ? validateUrl(alignment.targetUrl).url
-        : undefined;
       return {
         targetName: alignment.targetName!,
-        targetUrl: normalizedUrl,
+        targetUrl: alignment.targetUrl,
         targetDescription: alignment.targetDescription,
+        isValidUrl: validation?.valid ?? false,
       };
     });
 }
