@@ -33,14 +33,8 @@ export default function ThemeProvider({ children }: ThemeProviderProps): React.R
   const theme = useMemo(() => findThemeBy(themeName) || defaultTheme, [themeName]);
   const isDarkTheme = useMemo(() => theme === themes.darkTheme, [theme]);
 
-  async function toggleTheme() {
-    const nextThemeName = isDarkTheme ? themes.lightTheme.name : themes.darkTheme.name;
-    await dispatch(updateThemeName(nextThemeName));
-  }
-
   const value: ThemeContextValue = {
     theme,
-    toggleTheme,
     isDarkTheme,
   };
 
