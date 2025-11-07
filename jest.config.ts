@@ -7,7 +7,9 @@ const packagesToTransformWithBabel = [
   'expo-modules-core',
   'expo-font',
   'react-native-fs',
-  '@digitalcredentials/http-client',
+  'base58-universal',
+  'base64url-universal',
+  '@digitalcredentials/*',
   'realm',
   '@realm', // <-- critical for @realm/fetch
   'react-redux',
