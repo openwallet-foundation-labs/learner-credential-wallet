@@ -12,6 +12,7 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
   // ensure that the selected credentials have been cleared
   // before subscribing to redux store updates below
   store.dispatch(clearSelectedExchangeCredentials());
+  console.log('Store dispatch cleared..')
   // eslint-disable-next-line no-constant-condition
   while (true) {
     const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
@@ -44,29 +45,33 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
   const credentialFilter = (r: CredentialRecordRaw) => {
     return credentialRecordIds.some((id: ObjectId) => r._id.equals(id));
   };
+
+  console.log('Navigating to Share Credentials')
+
   navigationRef.navigate('CredentialSelectionScreen', {
     title: 'Share Credentials',
     instructionText: 'Select credentials to share.',
     credentialFilter,
-    goBack: () => {
-      const cancelSendModalState = {
-        title: 'Cancel Send',
-        confirmButton: false,
-        cancelButton: false,
-        body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
-      };
-      displayGlobalModal(cancelSendModalState);
-      store.dispatch(clearSelectedExchangeCredentials());
-      navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
-        params: {
-          screen: 'HomeScreen',
-        },
-      });
-      setTimeout(() => {
-        clearGlobalModal();
-      }, 2000);
-    },
+    // goBack: () => {
+    //   const cancelSendModalState = {
+    //     title: 'Cancel Send',
+    //     confirmButton: false,
+    //     cancelButton: false,
+    //     body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
+    //   };
+    //   console.log('CANCELING...')
+    //   displayGlobalModal(cancelSendModalState);
+    //   store.dispatch(clearSelectedExchangeCredentials());
+    //   navigationRef.navigate('HomeNavigation', {
+    //     screen: 'CredentialNavigation',
+    //     params: {
+    //       screen: 'HomeScreen',
+    //     },
+    //   });
+    //   setTimeout(() => {
+    //     clearGlobalModal();
+    //   }, 10000);
+    // },
     onSelectCredentials: (s: CredentialRecordRaw[]) => {
       const dataLoadingPendingModalState = {
         title: 'Sending Credential',
@@ -74,6 +79,7 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
         cancelButton: false,
         body: getGlobalModalBody('This will only take a moment.', true)
       };
+      console.log('SELECTED:', s)
       displayGlobalModal(dataLoadingPendingModalState);
       store.dispatch(selectExchangeCredentials(s));
     }
