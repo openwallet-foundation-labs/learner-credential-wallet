@@ -51,6 +51,7 @@ export async function processMessageChain (
   }
 
   if ('verifiablePresentationRequest' in requestOrOffer) {
+    console.log('Processing request...')
     const request = requestOrOffer.verifiablePresentationRequest as IVprDetails;
     await processRequest({ request, exchangeUrl, selectedProfile,
       modalsEnabled, modalConfirmZcapRequest, credentialRequestOrigin });
@@ -97,11 +98,18 @@ export async function processRequest (
    */
   const vcMatches = await vcMatchesFor({ queries, selectedProfile });
 
+  console.log('VC MATCHES:', vcMatches)
+
   const didAuthRequested = isDidAuthRequested({ queries });
   // challenge and domain are only relevant for DID Auth
   const { challenge, domain } = request;
 
+  console.log('isDidAuthRequested', didAuthRequested, challenge, domain)
+
   let { zcapRequests } = zcapsRequested({ queries });
+
+  console.log('zcapRequests:', zcapRequests)
+
   let zcapUserConsent, zcaps;
   if (zcapRequests && modalsEnabled) {
     zcapUserConsent = await modalConfirmZcapRequest();
@@ -128,6 +136,8 @@ export async function processRequest (
     walletResponse.zcap = zcaps;
   }
 
+  console.log('About to select...')
+
   // If there are any VC matches, prompt the user to confirm
   let selectedVcs: IVerifiableCredential[] = [];
   if (vcMatches.length > 0 && modalsEnabled) {
@@ -138,6 +148,8 @@ export async function processRequest (
     // Not prompting the user
     selectedVcs = vcMatches.map((r) => r.credential);
   }
+
+  console.log('SELECTED VCS:', selectedVcs)
 
   // Compose a VerifiablePresentation (to send to the requester) if appropriate
   if (didAuthRequested || selectedVcs.length > 0) {
@@ -198,6 +210,3 @@ export async function sendToExchanger({ exchangeUrl, payload }:
     throw err;
   }
 }
-
-
-
