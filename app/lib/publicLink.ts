@@ -8,7 +8,7 @@ import { StoreCredentialResult } from './verifierInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
-import { getStorageClient } from './storageClient';
+import { getStorageClient } from './walletAttachedStorage';
 import { getRootSigner } from './getRootSigner';
 import { ISigner } from '@digitalcredentials/ssi';
 import { getCredentialName } from './credentialName';
@@ -191,14 +191,14 @@ export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw
   try {
     const publicLinks = await Cache.getInstance()
       .load(CacheKey.PublicLinks, id) as StoreCredentialResult;
-    
+
     // Check if url.view is already a full URL (for WAS links)
     // or if it needs the server prepended (for verifierInstance links)
     const viewUrl = publicLinks.url.view;
     if (viewUrl.startsWith('http://') || viewUrl.startsWith('https://')) {
       return viewUrl;
     }
-    
+
     // Use URL constructor to handle extra '/' characters properly
     return (new URL(viewUrl, publicLinks.server)).toString();
   } catch (err) {
