@@ -1,5 +1,20 @@
 # learner-credential-wallet Changelog
 
+## 2.2.8 - build 102
+### Added
+- Visualizing credentials for different profiles #885
+- New display rule for open badges #641
+- Disable url links for credentials from non DCC-supported registries #881
+- Better handling of duplicate credentials #857
+- Use external VC type definitions #295
+- Support VC-API Interaction URL format in QR Code scanning #764
+- Refactor handling of VPR requests from deep links etc #808
+
+### Fixed
+- VC-API mismatch on exchange participation response #763
+- Issues with PresentationPreview screen from PublicLink creation work #893
+
+
 ## 2.2.7 - build 100-101
 ### Added
 - Add Alignments to Open Badges 3.0 Display #681
