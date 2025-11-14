@@ -3,6 +3,8 @@ import { WAS } from '../../app.config';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { v4 as uuidv4 } from 'uuid';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getRootSigner } from './getRootSigner';
+import { removeWasPublicLink } from './removeWasPublicLink';
 
 // Create a singleton instance of StorageClient
 let storageClientInstance: InstanceType<typeof StorageClient> | null = null;
@@ -63,10 +65,10 @@ export async function provisionWasSpace(): Promise<{ spaceId: string, controller
   });
 
   if (!response.ok) {
-    throw new Error(`Failed to initialize space. Status: ${response.status}`);
+    throw new Error(`Failed to initialize space. Status: ${ response.status }`);
   }
 
-  const signerJson = await key.export({publicKey: true, privateKey: true});
+  const signerJson = await key.export({ publicKey: true, privateKey: true });
   // Store the signer for future connections
   await AsyncStorage.setItem(
     WAS.KEYS.SIGNER_KEYPAIR,
@@ -80,5 +82,40 @@ export async function provisionWasSpace(): Promise<{ spaceId: string, controller
   return { spaceId, controllerDid };
 }
 
-// export async function deleteWasSpace({ }) {}
+export async function deleteWasSpace({ spaceId }: { spaceId: string }): Promise<void> {
+  // Get the stored signer
+  const signer = await getRootSigner();
+  const storage = getStorageClient();
+  const space = storage.space({
+    signer,
+    id: spaceId as `urn:uuid:${string}`,
+  });
+
+  // Delete the space
+  const response = await space.delete({
+    signer,
+  });
+
+  if (!response.ok) {
+    throw new Error(`Failed to delete space. Status: ${ response.status }`);
+  }
+
+  const mapData = await AsyncStorage.getItem('map');
+  if (mapData) {
+    const map = JSON.parse(mapData);
+    // Get all keys that start with 'publiclinks_'
+    const publicLinkKeys = Object.keys(map)
+      .filter(key => key.startsWith('publiclinks_'))
+      .map(key => key.replace('publiclinks_', ''));
+
+    // Process each public link
+    for (const key of publicLinkKeys) {
+      await removeWasPublicLink(key, map);
+    }
+  }
+
+  // Clear stored items
+  await AsyncStorage.removeItem(WAS.KEYS.SIGNER_KEYPAIR);
+  await AsyncStorage.removeItem(WAS.KEYS.SPACE_ID);
+}
 
