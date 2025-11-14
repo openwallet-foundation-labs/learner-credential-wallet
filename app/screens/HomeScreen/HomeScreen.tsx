@@ -115,17 +115,17 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
   function LearnMoreLink(): React.ReactElement {
     return (
       <View style={styles.learnMoreContainer}>
-        <Text style={styles.learnMoreText}>
-          Learn more about the LCW{' '}
+         <Text style={styles.learnMoreText}>
           <Text
             style={styles.learnMoreLink}
             onPress={() => Linking.openURL(LinkConfig.appWebsite.home)}
             accessibilityRole="link"
             accessibilityLabel="Learn more about the LCW at lcw.app"
           >
-            here
+           Learn more
           </Text>
-        </Text>
+          {' '}about LCW
+          </Text>
       </View>
     );
   }

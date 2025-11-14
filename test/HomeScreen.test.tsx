@@ -138,14 +138,14 @@ describe('HomeScreen', () => {
   it('renders learn more link when wallet is empty', () => {
     const { getByText } = render(<HomeScreen navigation={mockNavigation} route={mockRoute} />);
     
-    expect(getByText('here')).toBeTruthy();
+    expect(getByText('Learn more')).toBeTruthy();
     expect(getByText('Looks like your wallet is empty.')).toBeTruthy();
   });
 
   it('opens lcw.app when learn more link is pressed', () => {
     const { getByText } = render(<HomeScreen navigation={mockNavigation} route={mockRoute} />);
     
-    const linkText = getByText('here');
+    const linkText = getByText('Learn more');
     fireEvent.press(linkText);
     
     expect(Linking.openURL).toHaveBeenCalledWith('https://lcw.app');
@@ -157,7 +157,7 @@ describe('HomeScreen', () => {
 
     const { getByText } = render(<HomeScreen navigation={mockNavigation} route={mockRoute} />);
     
-    expect(getByText('here')).toBeTruthy();
+    expect(getByText('Learn more')).toBeTruthy();
   });
 
   it('handles delete credential flow', () => {
@@ -168,7 +168,7 @@ describe('HomeScreen', () => {
     const { getByText } = render(<HomeScreen navigation={mockNavigation} route={mockRoute} />);
     
     // Component should render without errors
-    expect(getByText('here')).toBeTruthy();
+    expect(getByText('Learn more')).toBeTruthy();
   });
 
   it('navigates to add credential screen', () => {
@@ -199,7 +199,7 @@ describe('HomeScreen', () => {
     useAppDispatch.mockReturnValue(mockDispatch);
 
     const { getByText } = render(<HomeScreen navigation={mockNavigation} route={mockRoute} />);
-    expect(getByText('here')).toBeTruthy();
+    expect(getByText('Learn more')).toBeTruthy();
   });
 
   it('handles navigation when not ready', () => {
