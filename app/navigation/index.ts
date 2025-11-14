@@ -22,7 +22,8 @@ export { navigationRef } from './navigationRef';
  */
 import { CredentialScreenHomeProps } from './CredentialNavigation/CredentialNavigation.d';
 import { CredentialScreenShareProps } from './ShareNavigation/ShareNavigation.d';
-export type CredentialScreenProps = CredentialScreenHomeProps | CredentialScreenShareProps;
+import { CredentialScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d';
+export type CredentialScreenProps = CredentialScreenHomeProps | CredentialScreenShareProps | CredentialScreenSettingsProps;
 
 import { DetailsScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d';
 import { DetailsScreenSetupProps } from './SetupNavigation/SetupNavigation.d';
@@ -30,7 +31,8 @@ export type DetailsScreenProps = DetailsScreenSettingsProps | DetailsScreenSetup
 
 import { PublicLinkScreenCredentialProps } from './CredentialNavigation/CredentialNavigation.d';
 import { PublicLinkScreenShareProps } from './ShareNavigation/ShareNavigation.d';
-export type PublicLinkScreenProps = PublicLinkScreenCredentialProps | PublicLinkScreenShareProps;
+import { PublicLinkScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d';
+export type PublicLinkScreenProps = PublicLinkScreenCredentialProps | PublicLinkScreenShareProps | PublicLinkScreenSettingsProps;
 
 import { IssuerInfoScreenCredentialProps } from './CredentialNavigation/CredentialNavigation.d';
 import { IssuerInfoScreenAddProps } from './AcceptCredentialsNavigation/AcceptCredentialsNavigation.d';
