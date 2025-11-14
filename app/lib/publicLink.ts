@@ -10,7 +10,7 @@ import { v4 as uuidv4 } from 'uuid'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - app.config.js doesn't have type declarations
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config'
-import { getStorageClient } from './storageClient'
+import { getStorageClient } from './walletAttachedStorage'
 import { getRootSigner } from './getRootSigner'
 import { ISigner } from '@digitalcredentials/ssi'
 import { getCredentialName } from './credentialName'
