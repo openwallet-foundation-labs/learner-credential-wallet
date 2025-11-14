@@ -57,6 +57,7 @@ export const LinkConfig = {
 export default {
   displayName: "Learner Credential Wallet",
   expo: {
+    systemUIAppearance: "automatic",
     runtimeVersion: VERSION_NUMBER,
     version: VERSION_NUMBER,
     name: "Learner Credential Wallet",
@@ -75,6 +76,7 @@ export default {
     },
     assetBundlePatterns: ["**/*"],
     ios: {
+      userInterfaceStyle: "automatic",
       buildNumber: BUILD_NUMBER.toString(),
       supportsTablet: true,
       bundleIdentifier: "edu.mit.eduwallet",
@@ -92,6 +94,7 @@ export default {
       },
     },
     android: {
+      userInterfaceStyle: "automatic",
       versionCode: BUILD_NUMBER,
       adaptiveIcon: {
         foregroundImage: "./app/assets/adaptive-icon.png",

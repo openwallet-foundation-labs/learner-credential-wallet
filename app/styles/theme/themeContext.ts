@@ -3,7 +3,6 @@ import { ThemeType } from '.';
 
 export type ThemeContextValue = {
   theme: ThemeType,
-  toggleTheme: () => void;
   isDarkTheme: boolean;
 }
 

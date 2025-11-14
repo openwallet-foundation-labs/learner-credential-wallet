@@ -19,7 +19,7 @@ import {
 } from './SettingsNavigation.d';
 import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen } from '../../screens';
 import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen';
-import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur, useThemeContext } from '../../hooks';
+import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur } from '../../hooks';
 import { SettingsNavigationProps } from '../';
 import { exportWallet } from '../../lib/export';
 import { registerWallet } from '../../lib/registerWallet';
@@ -67,7 +67,6 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
   const { isBiometricsSupported } = useSelector(selectWalletState);
   const { isBiometricsEnabled: initialBiometryValue } = useSelector(selectWalletState);
   const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(initialBiometryValue);
-  const { isDarkTheme, toggleTheme } = useThemeContext();
 
   async function resetWallet() {
     dispatch(reset());
@@ -102,23 +101,11 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
     />
   );
 
-  const themeSwitch = (
-    <Switch
-      style={styles.switch}
-      thumbColor={isDarkTheme ? theme.color.backgroundSecondary : theme.color.backgroundPrimary}
-      trackColor={{ true: theme.color.switchActive, false: theme.color.iconInactive }}
-      ios_backgroundColor={theme.color.iconInactive}
-      value={isDarkTheme}
-      onValueChange={toggleTheme}
-    />
-  );
-
   return (
     <>
       <NavHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.settingsContainer}>
         <SettingsItem key="biometrics" title="Use biometrics to unlock" onPress={onToggleBiometrics} rightComponent={biometricSwitch} disabled={!isBiometricsSupported} />
-        <SettingsItem key="darkmode" title="Dark mode" onPress={toggleTheme} rightComponent={themeSwitch} />
         <SettingsItem key="profiles" title="Manage profiles" onPress={() => navigation.navigate('ManageProfilesScreen')} />
         <SettingsItem key="register" title="Register wallet" onPress={registerWallet} />
         <SettingsItem key="restore" title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
