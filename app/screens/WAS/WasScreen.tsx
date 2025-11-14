@@ -7,11 +7,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // import FileReader from 'react-native-filereader';
 import { WAS } from '../../../app.config';
 import { useThemeContext } from '../../hooks';
-import { removeWasPublicLink } from '../../lib/removeWasPublicLink';
 import { shareBinaryFile } from '../../lib/shareData';
 import { displayGlobalModal } from '../../lib/globalModal';
-import { getRootSigner } from '../../lib/getRootSigner';
-import { getStorageClient, provisionWasSpace } from '../../lib/walletAttachedStorage';
+import { deleteWasSpace, provisionWasSpace } from '../../lib/walletAttachedStorage';
 
 const WASScreen = () => {
   const { theme } = useThemeContext();
@@ -34,40 +32,7 @@ const WASScreen = () => {
         throw new Error('No connection details found');
       }
 
-      // Get the stored signer
-      const signer = await getRootSigner();
-      const storage = getStorageClient();
-      const space = storage.space({
-        signer,
-        id: connectionDetails.spaceId as `urn:uuid:${string}`,
-      });
-
-      // Delete the space
-      const response = await space.delete({
-        signer,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete space. Status: ${response.status}`);
-      }
-
-      const mapData = await AsyncStorage.getItem('map');
-      if (mapData) {
-        const map = JSON.parse(mapData);
-        // Get all keys that start with 'publiclinks_'
-        const publicLinkKeys = Object.keys(map)
-          .filter(key => key.startsWith('publiclinks_'))
-          .map(key => key.replace('publiclinks_', ''));
-
-        // Process each public link
-        for (const key of publicLinkKeys) {
-          await removeWasPublicLink(key, map);
-        }
-      }
-
-      // Clear stored items
-      await AsyncStorage.removeItem(WAS.KEYS.SIGNER_KEYPAIR);
-      await AsyncStorage.removeItem(WAS.KEYS.SPACE_ID);
+      await deleteWasSpace({ spaceId: connectionDetails.spaceId });
 
       setStatus('success');
       setMessage('Space successfully deleted');
