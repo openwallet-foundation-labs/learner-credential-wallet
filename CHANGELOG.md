@@ -1,5 +1,22 @@
 # learner-credential-wallet Changelog
 
+## 2.2.7 - build 100-101
+### Added
+- Add Alignments to Open Badges 3.0 Display #681
+- Android: Support 16KB memory page sizes #840
+ - Show duplicate profiles skipped when restoring wallet #852
+- Remove Scan QR code button on Developer menu #856
+- Link to LCW app page (for trying it) #883
+
+### Fixed
+- Credential Details Page – Options menu becomes transparent on click #875
+- OWF: Fix warnings #564
+- View Link becomes invalid after first use on Share Credential screen #865
+- Duplicate profile names allowed when renaming existing profile #866
+- Public Link Page – Unnecessary status refetch causing UI flicker #876
+- “Unable to Create Public Link” Modal “Close” button is not responsive #888
+
+
 ## 2.2.6 - build 96-99
 ### Added
 - Upgrade to Expo SDK 53 #777
