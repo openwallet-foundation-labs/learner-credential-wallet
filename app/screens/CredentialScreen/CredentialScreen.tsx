@@ -33,7 +33,7 @@ export default function CredentialScreen({ navigation, route }: CredentialScreen
   function onPressShare() {
     if (navigationRef.isReady()) {
       navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
+        screen: 'SettingsNavigation',
         params: {
           screen: 'PublicLinkScreen',
           params: {
