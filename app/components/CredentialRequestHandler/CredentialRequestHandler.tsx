@@ -12,6 +12,7 @@ import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSele
 import dynamicStyleSheet from './CredentialRequestHandler.styles';
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 import { IVerifiableCredential } from '@digitalcredentials/ssi';
+import {navigationRef} from '../../navigation';
 
 type CredentialRequestHandlerProps = {
   credentialRequestParams: Record<string, unknown> | undefined;
@@ -26,7 +27,18 @@ export default function CredentialRequestHandler({
   const dispatch = useAppDispatch();
   const [modalIsOpen, setModalIsOpen] = useState(false);
 
-  const credentialRequest = useAsyncCallback(requestCredential, { onSuccess: onFinish });
+  const credentialRequest = useAsyncCallback(requestCredential, { onSuccess: onFinish,
+    onError: () => {
+      setModalIsOpen(false);
+      if (navigationRef.isReady()) {
+        navigationRef.navigate('HomeNavigation', {
+          screen: 'CredentialNavigation',
+          params: {
+            screen: 'HomeScreen',
+          },
+        });
+      }
+    }});
   const errorMessage = credentialRequest.error?.message;
 
   async function onFinish(credentials: IVerifiableCredential[]) {
