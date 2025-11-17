@@ -5,8 +5,9 @@ import { navigationRef } from '../navigation/navigationRef';
 import { encodeQueryParams } from './encode';
 
 import { LinkConfig } from '../../app.config';
-import { parseWalletApiMessage, parseWalletApiUrl, WalletApiMessage } from './walletRequestApi';
 import { redirectRequestRoute } from './navigationUtil';
+import { legacyRequestParamsFromUrl } from './decode';
+import { goToCredentialFoyer } from '../screens/AddScreen/AddScreen';
 
 const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol
   .concat(LinkConfig.schemes.universalAppLink);
@@ -49,6 +50,11 @@ export const deepLinkConfig = {
       if (url.includes('request=')) {
         redirectRequestRoute(url);
       }
+      if (url.includes('request?')) {
+        const params = legacyRequestParamsFromUrl(url);
+        return goToCredentialFoyer(params);
+      }
+
       return listener(encodeQueryParams(url));
     };
 

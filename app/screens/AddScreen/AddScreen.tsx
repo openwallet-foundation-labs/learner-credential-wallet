@@ -21,6 +21,17 @@ import { NavigationUtil, redirectRequestRoute } from '../../lib/navigationUtil';
 import { CANCEL_PICKER_MESSAGES } from '../../../app.config';
 import { isDeepLink, isWalletApiMessage, parseWalletApiMessage } from '../../lib/walletRequestApi';
 
+export async function goToCredentialFoyer(credentialRequestParams?: CredentialRequestParams) {
+  const rawProfileRecord = await NavigationUtil.selectProfile();
+  navigationRef.navigate('AcceptCredentialsNavigation', {
+    screen: 'ApproveCredentialsScreen',
+    params: {
+      rawProfileRecord,
+      credentialRequestParams
+    }
+  });
+}
+
 export default function AddScreen(): React.ReactElement {
   const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
   const [inputValue, setInputValue] = useState('');
@@ -34,17 +45,6 @@ export default function AddScreen(): React.ReactElement {
         onReadQRCode
       });
     }
-  }
-
-  async function goToCredentialFoyer(credentialRequestParams?: CredentialRequestParams) {
-    const rawProfileRecord = await NavigationUtil.selectProfile();
-    navigationRef.navigate('AcceptCredentialsNavigation', {
-      screen: 'ApproveCredentialsScreen',
-      params: {
-        rawProfileRecord,
-        credentialRequestParams
-      }
-    });
   }
 
   async function goToCredentialFoyerWith(credentials: IVerifiableCredential[]) {
