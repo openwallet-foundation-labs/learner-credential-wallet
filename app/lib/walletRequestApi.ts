@@ -15,7 +15,7 @@
  * - Deep links / universal app links
  * - JSON objects fetched or pasted into the Add screen
  */
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { ISigner, IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
 import qs from 'query-string';
 import { LinkConfig } from '../../app.config';
 import { HumanReadableError } from './error';
@@ -102,9 +102,10 @@ export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): bool
 }
 
 /**
- * Delegates requested zcaps. Assumes user consent was already prompted for.
+ * Assembles and signs requested zcaps. Assumes user consent was already
+ * prompted for.
  *
- * Example zcap request:
+ * Example zcap query from the requests array:
  * {
  *   capabilityQuery: {
  *     reason: '...',
@@ -119,10 +120,37 @@ export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): bool
  * @param zcapRequests - One or more requests containing a capabilityQuery.
  * @param selectedProfile - Selected user DID profile, with signers.
  */
-export async function delegateZcaps({ zcapRequests, selectedProfile }:
-  { zcapRequests: IVprQuery[], selectedProfile: ISelectedProfile }
+export async function processZcaps({ zcapRequests, selectedProfile }:
+  { zcapRequests: IZcapQuery[], selectedProfile: ISelectedProfile }
 ): Promise<IZcap[]> {
-  return []
+  const zcaps: IZcap[] = [];
+  for (const { capabilityQuery } of zcapRequests) {
+    const { invocationTarget: target, controller, allowedAction } = capabilityQuery;
+    if (typeof target === 'string') {
+      continue; // skip URL-only invocationTarget zcap requests for now
+    }
+    if (!controller) {
+      console.warn('Skipping zCap query - missing controller:',
+        JSON.stringify(capabilityQuery));
+      continue;
+    }
+    if (!allowedAction) {
+      console.warn('Skipping zCap query - missing allowedAction:',
+        JSON.stringify(capabilityQuery));
+      continue;
+    }
+    if (target.type === 'urn:was:collection' && target.contentType === 'application/vc') {
+      zcaps.push(await zcapForVcCollection({ controller, allowedAction,
+        signer: selectedProfile.signers.zcapDelegation}));
+    }
+  }
+  return zcaps;
+}
+
+export async function zcapForVcCollection({ controller, allowedAction }:
+  { controller: string, allowedAction: IAllowedAction | IAllowedAction[], signer: ISigner }
+): Promise<IZcap> {
+
 }
 
 export type WalletApiMessage = IExchangeInvitation
@@ -213,6 +241,15 @@ export type IDidAuthenticationQuery = {
   acceptedCryptosuites?: Array<{ cryptosuite: string }>;
 }
 
+export type IInvocationTarget = {
+  type?: string;
+  contentType?: string;
+  name?: string;
+  [x: string]: any;
+}
+
+export type IAllowedAction = string | object;
+
 /**
  * @see https://w3c-ccg.github.io/vp-request-spec/#authorization-capability-request
  */
@@ -221,9 +258,9 @@ export type IZcapQuery = {
   capabilityQuery: {
     referenceId?: string;
     reason?: string;
-    allowedAction?: string | object | Array<string | object>;
-    controller: string | string[];
-    invocationTarget: string | object | Array<string | object>;
+    allowedAction?: IAllowedAction | IAllowedAction[];
+    controller: string;
+    invocationTarget: string | IInvocationTarget;
   };
   challenge?: string;
 }
@@ -231,10 +268,10 @@ export type IZcapQuery = {
 export type IZcap = {
   "@context"?: string | object | Array<string | object>;
   id: `urn:zcap:${string}`;
-  controller: string | string[];
-  invocationTarget: string | object | Array<string | object>;
+  controller: string;
+  invocationTarget: string | object;
   referenceId?: string;
-  allowedAction?: string | object | Array<string | object>;
+  allowedAction?: IAllowedAction | IAllowedAction[];
   parentCapability?: string | Array<string | object>;
   expires?: string;
   proof: any;
