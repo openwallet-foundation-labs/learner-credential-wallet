@@ -5,7 +5,7 @@ import {
   IVerifiablePresentation
 } from '@digitalcredentials/ssi'
 import {
-  delegateZcaps,
+  processZcaps,
   isDidAuthRequested,
   IVpOffer,
   IVprDetails,
@@ -149,7 +149,7 @@ export async function processRequest({
     zcapUserConsent = true
   }
   if (zcapRequests && zcapUserConsent) {
-    zcaps = await delegateZcaps({ zcapRequests, selectedProfile })
+    zcaps = await processZcaps({ zcapRequests, selectedProfile })
   }
 
   if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {
