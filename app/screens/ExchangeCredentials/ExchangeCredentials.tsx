@@ -57,7 +57,7 @@ export default function ExchangeCredentials({
     )
   }
 
-  const modalConfirmZcapRequest = async () => {
+  const confirmZcapRequest = async () => {
     const confirmed = await displayGlobalModal({
       title: 'Storage Access Request',
       confirmText: 'Grant',
@@ -167,13 +167,9 @@ export default function ExchangeCredentials({
     //  1) we're issued some credentials, or
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
-    const { acceptCredentials } = await processMessageChain({
-      exchangeUrl,
-      requestOrOffer,
-      selectedProfile,
-      modalConfirmZcapRequest,
-      profileRecordId: rawProfileRecord._id.toHexString()
-    })
+    const modals = { enabled: true, confirmZcapRequest }
+    const { acceptCredentials } = await processMessageChain(
+      { exchangeUrl, requestOrOffer, selectedProfile, modals })
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {
