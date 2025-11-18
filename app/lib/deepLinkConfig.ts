@@ -6,7 +6,7 @@ import { encodeQueryParams } from './encode';
 
 import { LinkConfig } from '../../app.config';
 import { redirectRequestRoute } from './navigationUtil';
-import { legacyRequestParamsFromUrl } from './decode';
+import { isLegacyCredentialRequest, legacyRequestParamsFromUrl } from './decode';
 import { goToCredentialFoyer } from '../screens/AddScreen/AddScreen';
 
 const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol
@@ -47,12 +47,12 @@ export const deepLinkConfig = {
   subscribe: (listener: (url: string) => void) => {
     const onReceiveURL = ({ url }: { url: string }) => {
       console.log('deepLink "subscribe" event for url:', url);
-      if (url.includes('request=')) {
-        redirectRequestRoute(url);
-      }
-      if (url.includes('request?')) {
+      if (isLegacyCredentialRequest(url)) {
         const params = legacyRequestParamsFromUrl(url);
         return goToCredentialFoyer(params);
+      }
+      if (url.includes('request=')) {
+        redirectRequestRoute(url);
       }
 
       return listener(encodeQueryParams(url));
