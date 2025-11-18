@@ -6,13 +6,16 @@ import { CredentialItem, NavHeader, LoadingIndicatorDots } from '../../component
 import dynamicStyleSheet from './PresentationPreviewScreen.styles';
 import type { PresentationPreviewScreenProps } from '../../navigation';
 import type { RenderItemProps } from './PresentationPreviewScreen.d';
-import { useDynamicStyles } from '../../hooks';
+import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { useShareCredentials } from '../../hooks/useShareCredentials';
 import { PublicLinkScreenMode } from '../PublicLinkScreen/PublicLinkScreen';
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal';
 import { createPublicLinkFor, getPublicViewLink } from '../../lib/publicLink';
-import { isExpired as credentialIsExpired } from '../../lib/credentialValidityPeriod';
 import { LinkConfig } from '../../../app.config';
+import { canShareCredential } from '../../lib/credentialVerificationStatus';
+import { verificationResultFor } from '../../lib/verifiableObject';
+import { useContext } from 'react';
+import { DidRegistryContext } from '../../init/registries';
 
 export default function PresentationPreviewScreen({
   navigation,
@@ -21,9 +24,15 @@ export default function PresentationPreviewScreen({
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
   const { selectedCredentials, mode = 'send' } = route.params;
   const share = useShareCredentials();
+  const registries = useContext(DidRegistryContext);
 
   const isCreateLinkMode = mode === 'createLink';
   const buttonTitle = isCreateLinkMode ? 'Create Public Link' : 'Send';
+
+  // Get verification status for the first selected credential (for create link mode)
+  const firstCredential = selectedCredentials.length > 0 ? selectedCredentials[0] : undefined;
+  const verifyPayload = useVerifyCredential(firstCredential);
+  const canShare = canShareCredential(verifyPayload);
 
   const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
   const tearDownModalIOS = async () => {
@@ -49,6 +58,33 @@ export default function PresentationPreviewScreen({
     if (isCreateLinkMode && selectedCredentials.length > 0) {
       const rawCredentialRecord = selectedCredentials[0];
 
+      // Check if credential can be shared
+      if (!canShare) {
+        await displayGlobalModal({
+          title: 'Unable to Create Public Link',
+          cancelButton: false,
+          confirmText: 'Close',
+          cancelOnBackgroundPress: true,
+          body: (
+            <>
+              <Text style={mixins.modalBodyText}>
+                This credential has not been verified (invalid signature or revoked status), so this action is not allowed.
+              </Text>
+              <Button
+                buttonStyle={mixins.buttonClear}
+                titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
+                containerStyle={mixins.buttonClearContainer}
+                title="What does this mean?"
+                onPress={async () => {
+                  await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`);
+                }}
+              />
+            </>
+          ),
+        });
+        return;
+      }
+
       // If a public link already exists, navigate directly to PublicLinkScreen
       try {
         const existing = await getPublicViewLink(rawCredentialRecord);
@@ -63,35 +99,6 @@ export default function PresentationPreviewScreen({
         }
       } catch (_) {
         // non-fatal: fall through to creation flow
-      }
-
-      // Block when expired (spec keys only via shared helper)
-      const isExpired = credentialIsExpired(rawCredentialRecord.credential as any);
-
-      // Block when expired (ignore Warning-only)
-      if (isExpired) {
-        const reason = 'This credential has expired, so this action is not allowed.';
-        await displayGlobalModal({
-          title: 'Unable to Create Public Link',
-          cancelButton: false,
-          confirmText: 'Close',
-          cancelOnBackgroundPress: true,
-          body: (
-            <>
-              <Text style={mixins.modalBodyText}>{reason}</Text>
-              <Button
-                buttonStyle={mixins.buttonClear}
-                titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
-                containerStyle={mixins.buttonClearContainer}
-                title="What does this mean?"
-                onPress={async () => {
-                  await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`);
-                }}
-              />
-            </>
-          ),
-        });
-        return;
       }
 
       // Show confirmation modal (reusing the same modal from PublicLinkScreen)
@@ -156,7 +163,67 @@ export default function PresentationPreviewScreen({
         });
       }
     } else {
-      share(selectedCredentials);
+      // Send mode - check if all selected credentials can be shared
+      try {
+        // Check verification status for all selected credentials
+        for (const credential of selectedCredentials) {
+          const verificationResult = await verificationResultFor({ 
+            rawCredentialRecord: credential, 
+            forceFresh: false, 
+            registries 
+          });
+          
+          const credentialVerifyPayload = { 
+            loading: false, 
+            error: null, 
+            result: verificationResult 
+          };
+          
+          const canShareThis = canShareCredential(credentialVerifyPayload);
+          
+          if (!canShareThis) {
+            await displayGlobalModal({
+              title: 'Unable to Send Credential(s)',
+              cancelButton: false,
+              confirmText: 'Close',
+              cancelOnBackgroundPress: true,
+              body: (
+                <>
+                  <Text style={mixins.modalBodyText}>
+                    One or more credentials have not been verified (invalid signature or revoked status), so this action is not allowed.
+                  </Text>
+                  <Button
+                    buttonStyle={mixins.buttonClear}
+                    titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
+                    containerStyle={mixins.buttonClearContainer}
+                    title="What does this mean?"
+                    onPress={async () => {
+                      await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`);
+                    }}
+                  />
+                </>
+              ),
+            });
+            return;
+          }
+        }
+        
+        // All credentials are verified or have warnings, allow sharing
+        share(selectedCredentials);
+      } catch (error) {
+        console.error('Error checking verification status:', error);
+        await displayGlobalModal({
+          title: 'Unable to Verify Credential(s)',
+          cancelButton: false,
+          confirmText: 'Close',
+          cancelOnBackgroundPress: true,
+          body: (
+            <Text style={mixins.modalBodyText}>
+              An error occurred while checking credential verification status. Please try again.
+            </Text>
+          ),
+        });
+      }
     }
   }
 

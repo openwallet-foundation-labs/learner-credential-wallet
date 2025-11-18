@@ -17,9 +17,21 @@ function CredentialStatusBadges({
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
   const checkPublicLink = useAsyncCallback<boolean>(hasPublicLink);
   const stablePublicRef = useRef<boolean | undefined>(undefined);
+  const currentCredentialIdRef = useRef<string | null>(null);
   const verifyCredential = precomputedVerification
     ? { loading: false, error: null, result: precomputedVerification }
     : useVerifyCredential(rawCredentialRecord);
+
+  // Get credential ID for comparison
+  const credentialId = (rawCredentialRecord as any)?._id?.toHexString?.() ?? (rawCredentialRecord as any)?._id;
+
+  // Reset stable ref when credential changes to prevent stale data when component is reused
+  useEffect(() => {
+    if (currentCredentialIdRef.current !== credentialId) {
+      currentCredentialIdRef.current = credentialId;
+      stablePublicRef.current = undefined;
+    }
+  }, [credentialId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -121,7 +133,7 @@ function CredentialStatusBadges({
   const verifyBadge = useMemo(() => getVerificationBadge(), [verifyCredential?.result?.verified, verifyCredential?.loading, verifyCredential?.result?.log]);
 
   // Stabilize the Public badge to avoid flash when component re-renders quickly
-  // Keep first resolved value until unmount to avoid flicker during parent re-renders
+  // Keep first resolved value until credential changes to avoid flicker during parent re-renders
   useEffect(() => {
     const incoming = precomputedPublic ?? checkPublicLink.result;
     if (stablePublicRef.current === undefined && incoming !== undefined) {

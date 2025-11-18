@@ -33,7 +33,25 @@ export async function createVerifiablePresentation({
   const suite = new Ed25519Signature2020({ key: verificationKeyPair });
 
   const holder = didRecord.didDocument.id;
-  const presentation = vc.createPresentation({ verifiableCredential, holder });
+  
+  // Create presentation - will throw error if credential is expired
+  let presentation;
+  try {
+    presentation = vc.createPresentation({ verifiableCredential, holder });
+  } catch (error) {
+    // If expired, create presentation manually to bypass validation
+    if (error instanceof Error && error.message.includes('validUntil')) {
+      console.log('[present.ts] Bypassing expiration check for presentation creation');
+      presentation = {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiablePresentation'],
+        holder,
+        verifiableCredential: Array.isArray(verifiableCredential) ? verifiableCredential : [verifiableCredential]
+      };
+    } else {
+      throw error;
+    }
+  }
 
   return await vc.signPresentation({
     presentation,
@@ -44,7 +62,21 @@ export async function createVerifiablePresentation({
 }
 
 export function createUnsignedPresentation(verifiableCredential: IVerifiableCredential[] | IVerifiableCredential): IVerifiablePresentation {
-  return vc.createPresentation({ verifiableCredential });
+  // Create presentation - will throw error if credential is expired
+  try {
+    return vc.createPresentation({ verifiableCredential });
+  } catch (error) {
+    // If expired, create presentation manually to bypass validation
+    if (error instanceof Error && error.message.includes('validUntil')) {
+      console.log('[present.ts] Bypassing expiration check for unsigned presentation creation');
+      return {
+        '@context': ['https://www.w3.org/2018/credentials/v1'],
+        type: ['VerifiablePresentation'],
+        verifiableCredential: Array.isArray(verifiableCredential) ? verifiableCredential : [verifiableCredential]
+      } as any as IVerifiablePresentation;
+    }
+    throw error;
+  }
 }
 
 export async function sharePresentation(verifiablePresentation: IVerifiablePresentation): Promise<void> {
