@@ -80,8 +80,8 @@ export function parseWalletApiUrl ({ url }: { url: string }): any | undefined {
  */
 export function zcapsRequested ({ queries }:
   { queries: IVprQuery[] }
-): { zcapRequests?: IVprQuery[] } {
-  const zcapRequests = queries.filter(q => q.type === 'ZcapQuery');
+): { zcapRequests?: IZcapQuery[] } {
+  const zcapRequests = queries.filter(q => q.type === 'ZcapQuery') as IZcapQuery[];
   if (zcapRequests.length > 0) {
     return { zcapRequests };
   }
