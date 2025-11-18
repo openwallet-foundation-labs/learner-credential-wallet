@@ -11,7 +11,7 @@ import { v4 as uuidv4 } from 'uuid'
 // @ts-ignore - app.config.js doesn't have type declarations
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config'
 import { getStorageClient } from './walletAttachedStorage'
-import { getRootSigner } from './getRootSigner'
+import { getWasController } from './getWasController'
 import { ISigner } from '@digitalcredentials/ssi'
 import { getCredentialName } from './credentialName'
 
@@ -60,7 +60,7 @@ async function createWasPublicLinkIfAvailable(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string | null> {
   try {
-    const signer = await getRootSigner()
+    const { signer } = await getWasController()
     if (!signer) {
       console.log('Cannot create public link, root signer not found.')
       return null
@@ -170,7 +170,7 @@ export async function unshareCredential(
       console.log('Unsharing WAS credential')
 
       if (!cachedSigner) {
-        cachedSigner = await getRootSigner()!
+        cachedSigner = (await getWasController()).signer
       }
 
       if (cachedSigner) {

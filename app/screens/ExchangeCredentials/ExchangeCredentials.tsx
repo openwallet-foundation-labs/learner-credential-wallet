@@ -18,6 +18,7 @@ import { useThemeContext } from '../../hooks/useThemeContext'
 
 import { profileWithSigners } from '../../lib/profile'
 import { CredentialRecord } from '../../model'
+import { getWasController } from '../../lib/getWasController'
 
 export default function ExchangeCredentials({
   route
@@ -162,14 +163,22 @@ export default function ExchangeCredentials({
         verificationKey: selectedDidRecord.verificationKey
       }
     })
+    // Get the root WAS / zcap signer. For the moment, the WAS connection
+    // is shared for the whole wallet (between all the profiles)
+    const wasController = await getWasController()
 
     // Recursively process exchanges until either:
     //  1) we're issued some credentials, or
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const modals = { enabled: true, confirmZcapRequest }
-    const { acceptCredentials } = await processMessageChain(
-      { exchangeUrl, requestOrOffer, selectedProfile, modals })
+    const { acceptCredentials } = await processMessageChain({
+      exchangeUrl,
+      requestOrOffer,
+      selectedProfile,
+      wasController,
+      modals
+    })
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {

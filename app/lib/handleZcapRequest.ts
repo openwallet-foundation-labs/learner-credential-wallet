@@ -4,7 +4,7 @@ import { ZcapClient } from '@digitalcredentials/ezcap'
 import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020'
 
 import { displayGlobalModal } from './globalModal'
-import { getRootSigner } from './getRootSigner'
+import { getWasController } from './getWasController'
 import { IZcapQuery } from './walletRequestApi'
 
 // export default async function handleZcapRequest({
