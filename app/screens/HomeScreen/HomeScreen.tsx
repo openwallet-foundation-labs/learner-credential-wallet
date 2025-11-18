@@ -16,6 +16,11 @@ import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { useShareCredentials } from '../../hooks/useShareCredentials';
 import { deleteCredential, selectRawCredentialRecords } from '../../store/slices/credential';
 import { getCredentialName } from '../../lib/credentialName';
+import { verificationResultFor } from '../../lib/verifiableObject';
+import { canShareCredential } from '../../lib/credentialVerificationStatus';
+import { displayGlobalModal } from '../../lib/globalModal';
+import { useContext } from 'react';
+import { DidRegistryContext } from '../../init/registries';
 
 
 export default function HomeScreen({ navigation }: HomeScreenProps): React.ReactElement {
@@ -25,8 +30,71 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
   const [itemToDelete, setItemToDelete] = useState<CredentialRecordRaw|null>(null);
   const dispatch = useAppDispatch();
   const share = useShareCredentials();
+  const registries = useContext(DidRegistryContext);
 
   const itemToDeleteName = itemToDelete ? getCredentialName(itemToDelete.credential) : '';
+
+  async function handleShareFromSwipe(item: CredentialRecordRaw) {
+    // Check if credential can be shared
+    try {
+      const verificationResult = await verificationResultFor({ 
+        rawCredentialRecord: item, 
+        forceFresh: false, 
+        registries 
+      });
+      
+      const verifyPayload = { 
+        loading: false, 
+        error: null, 
+        result: verificationResult 
+      };
+      
+      const canShare = canShareCredential(verifyPayload);
+      
+      if (!canShare) {
+        await displayGlobalModal({
+          title: 'Unable to Share Credential',
+          cancelButton: false,
+          confirmText: 'Close',
+          cancelOnBackgroundPress: true,
+          body: (
+            <>
+              <Text style={mixins.modalBodyText}>
+                This credential has not been verified (invalid signature or revoked status), so this action is not allowed.
+              </Text>
+              <Button
+                buttonStyle={mixins.buttonClear}
+                titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
+                containerStyle={mixins.buttonClearContainer}
+                title="What does this mean?"
+                onPress={async () => {
+                  await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`);
+                }}
+              />
+            </>
+          ),
+        });
+        return;
+      }
+      
+      // Credential is verified or has warnings, allow sharing
+      await share([item]);
+    } catch (error) {
+      console.error('Error checking verification status:', error);
+      // If verification check fails, show error instead of allowing share
+      await displayGlobalModal({
+        title: 'Unable to Verify Credential',
+        cancelButton: false,
+        confirmText: 'Close',
+        cancelOnBackgroundPress: true,
+        body: (
+          <Text style={mixins.modalBodyText}>
+            An error occurred while checking credential verification status. Please try again.
+          </Text>
+        ),
+      });
+    }
+  }
 
   function renderItem({ item }: RenderItemProps) {
     const { credential } = item;
@@ -38,7 +106,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
         <View>
           <Swipeable
             renderLeftActions={() => (
-              <TouchableOpacity onPress={() => share([item])} style={[mixins.buttonIconContainer, styles.noShadow]}>
+              <TouchableOpacity onPress={() => handleShareFromSwipe(item)} style={[mixins.buttonIconContainer, styles.noShadow]}>
                 <View style={[styles.swipeButton, mixins.buttonPrimary]}>
                   <MaterialIcons
                     name="share"
