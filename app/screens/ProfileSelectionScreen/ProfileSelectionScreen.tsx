@@ -18,7 +18,7 @@ export default function ProfileSelectionScreen({ navigation, route }: ProfileSel
 
   const {
     onSelectProfile,
-    instructionText = 'Issue the credential(s) to the selected profile.',
+    instructionText = 'Please select a profile.',
     goBack = navigation.goBack,
   } = route.params || {};
 
