@@ -3,7 +3,7 @@ import { WAS } from '../../app.config';
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
 import { v4 as uuidv4 } from 'uuid';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getRootSigner } from './getRootSigner';
+import { getWasController } from './getWasController';
 import { removeWasPublicLink } from './removeWasPublicLink';
 
 // Create a singleton instance of StorageClient
@@ -78,13 +78,14 @@ export async function provisionWasSpace(): Promise<{ spaceId: string, controller
   // Store the space UUID for future connections
   await AsyncStorage.setItem(WAS.KEYS.SPACE_ID, spaceUUID);
   console.log('Stored space ID in AsyncStorage:', spaceUUID);
+  await AsyncStorage.setItem(WAS.KEYS.SIGNER_CONTROLLER, controllerDid);
 
   return { spaceId, controllerDid };
 }
 
 export async function deleteWasSpace({ spaceId }: { spaceId: string }): Promise<void> {
   // Get the stored signer
-  const signer = await getRootSigner();
+  const { signer } = await getWasController();
   const storage = getStorageClient();
   const space = storage.space({
     signer,
@@ -117,5 +118,6 @@ export async function deleteWasSpace({ spaceId }: { spaceId: string }): Promise<
   // Clear stored items
   await AsyncStorage.removeItem(WAS.KEYS.SIGNER_KEYPAIR);
   await AsyncStorage.removeItem(WAS.KEYS.SPACE_ID);
+  await AsyncStorage.removeItem(WAS.KEYS.SIGNER_CONTROLLER);
 }
 

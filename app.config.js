@@ -8,7 +8,7 @@ const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 101;
 const VERSION_NUMBER = env.APP_VERSION_NUMBER || "2.2.7";
 
 // Used by the 'Create Public Link' functionality
-// If you have forked the LCW and are creating your own wallet app version, 
+// If you have forked the LCW and are creating your own wallet app version,
 // please supply your own verifier instance below
 export const VERIFIER_INSTANCE_URL =
   env["VERIFIER_INSTANCE_URL"] || "https://verifierplus.org";
@@ -19,6 +19,7 @@ export const WAS = {
   KEYS: {
     SPACE_ID: "was_space_id",
     SIGNER_KEYPAIR: "was_signer_json",
+    SIGNER_CONTROLLER: "was_signer_controller"
   },
 };
 export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10); // 10 days

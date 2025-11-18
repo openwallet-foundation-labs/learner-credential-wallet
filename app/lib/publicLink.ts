@@ -9,9 +9,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
 import { getStorageClient } from './walletAttachedStorage';
-import { getRootSigner } from './getRootSigner';
+import { getWasController } from './getWasController';
 import { ISigner } from '@digitalcredentials/ssi';
 import { getCredentialName } from './credentialName';
+import { cache } from 'react';
 
 let cachedSigner: ISigner | undefined;
 
@@ -55,7 +56,7 @@ async function createWasPublicLinkIfAvailable(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string | null> {
   try {
-    const signer = await getRootSigner();
+    const { signer } = await getWasController();
     if (!signer) {
       console.log('Cannot create public link, root signer not found.');
       return null;
@@ -153,7 +154,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
       console.log('Unsharing WAS credential');
 
       if (!cachedSigner) {
-        cachedSigner = await getRootSigner()!;
+        cachedSigner = (await getWasController()).signer;
       }
 
       if (cachedSigner) {

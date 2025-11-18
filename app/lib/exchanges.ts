@@ -15,6 +15,7 @@ import { extractCredentialsFrom } from './verifiableObject';
 import { selectCredentials } from './selectCredentials';
 import { ISelectedProfile } from './did';
 import { composeVp } from './composeVp';
+import { IController } from './getWasController';
 
 type IResponseToExchanger = {
   verifiablePresentation?: IVerifiablePresentation;
@@ -34,6 +35,8 @@ type IModalOptions = {
  * @param requestOrOffer - Exchange message to process.
  * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
  *   key signers used for DIDAuthentication and zCap delegation.
+ * @param wasController {IController} - Root zcap controller and signer for
+ *   Wallet Attached Storage.
  * @param modals {object} - Options for popup modal windows.
  * @param modals.enabled {boolean} - Whether to present the user
  *   with an interactive modal popup to confirm sending credentials.
@@ -41,9 +44,9 @@ type IModalOptions = {
  * @param modals.confirmZcapRequest {function}
  */
 export async function processMessageChain (
-  { exchangeUrl, requestOrOffer, selectedProfile, modals }:
+  { exchangeUrl, requestOrOffer, selectedProfile, wasController, modals }:
   { exchangeUrl?: string, requestOrOffer: IVpRequest | IVpOffer,
-    selectedProfile: ISelectedProfile, modals: IModalOptions }
+    selectedProfile: ISelectedProfile, wasController: IController, modals: IModalOptions }
 ): Promise<{ acceptCredentials?: IVerifiableCredential[], redirectUrl?: string }> {
   const { redirectUrl, credentialRequestOrigin } = requestOrOffer;
 
@@ -58,7 +61,7 @@ export async function processMessageChain (
     console.log('Processing request...')
     const request = requestOrOffer.verifiablePresentationRequest as IVprDetails;
     await processRequest({ request, exchangeUrl, selectedProfile, modals,
-      credentialRequestOrigin });
+      credentialRequestOrigin, wasController });
     return { redirectUrl };
   }
 
@@ -73,6 +76,8 @@ export async function processMessageChain (
  * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
  *   key signers used for DIDAuthentication and zCap delegation.
  * @param credentialRequestOrigin {string}
+ * @param wasController {IController} - Root zcap controller and signer for
+ *   Wallet Attached Storage.
  * @param modals {object} - Options for popup modal windows.
  * @param modals.enabled {boolean} - Whether to present the user
  *   with an interactive modal popup to confirm sending credentials.
@@ -80,9 +85,9 @@ export async function processMessageChain (
  * @param modals.confirmZcapRequest {function}
  */
 export async function processRequest (
-  { request, exchangeUrl, selectedProfile, credentialRequestOrigin, modals }:
+  { request, exchangeUrl, selectedProfile, credentialRequestOrigin, wasController, modals }:
   { request: IVprDetails, exchangeUrl?: string, selectedProfile: ISelectedProfile,
-    credentialRequestOrigin?: string, modals: IModalOptions }
+    credentialRequestOrigin?: string, wasController: IController, modals: IModalOptions }
 ): Promise<void> {
   if (!exchangeUrl) {
     throw new Error('Missing exchangeUrl, cannot send response.');
@@ -120,7 +125,7 @@ export async function processRequest (
     zcapUserConsent = true;
   }
   if (zcapRequests && zcapUserConsent) {
-    zcaps = await processZcaps({ zcapRequests, selectedProfile });
+    zcaps = await processZcaps({ zcapRequests, wasController });
   }
 
   if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {

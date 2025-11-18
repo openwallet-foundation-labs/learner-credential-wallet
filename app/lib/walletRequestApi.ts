@@ -20,6 +20,7 @@ import qs from 'query-string';
 import { LinkConfig } from '../../app.config';
 import { HumanReadableError } from './error';
 import { ISelectedProfile } from './did';
+import { IController } from './getWasController';
 
 export function isDeepLink (text: string): boolean {
   return text.startsWith(LinkConfig.schemes.universalAppLink) ||
@@ -118,10 +119,10 @@ export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): bool
  *   }
  * }
  * @param zcapRequests - One or more requests containing a capabilityQuery.
- * @param selectedProfile - Selected user DID profile, with signers.
+ * @param wasController - WAS zcap controller for the wallet.
  */
-export async function processZcaps({ zcapRequests, selectedProfile }:
-  { zcapRequests: IZcapQuery[], selectedProfile: ISelectedProfile }
+export async function processZcaps({ zcapRequests, wasController }:
+  { zcapRequests: IZcapQuery[], wasController: IController }
 ): Promise<IZcap[]> {
   const zcaps: IZcap[] = [];
   for (const { capabilityQuery } of zcapRequests) {
@@ -134,21 +135,25 @@ export async function processZcaps({ zcapRequests, selectedProfile }:
         JSON.stringify(capabilityQuery));
       continue;
     }
+    if (controller !== wasController.did) {
+      console.warn('Skipping zCap query - asking for the wrong controller.',
+        `  zCap is asking for "${controller}", current wallet controller: "${wasController.did}"`);
+      continue;
+    }
     if (!allowedAction) {
       console.warn('Skipping zCap query - missing allowedAction:',
         JSON.stringify(capabilityQuery));
       continue;
     }
     if (target.type === 'urn:was:collection' && target.contentType === 'application/vc') {
-      zcaps.push(await zcapForVcCollection({ controller, allowedAction,
-        signer: selectedProfile.signers.zcapDelegation}));
+      zcaps.push(await zcapForVcCollection({ allowedAction, wasController }));
     }
   }
   return zcaps;
 }
 
-export async function zcapForVcCollection({ controller, allowedAction }:
-  { controller: string, allowedAction: IAllowedAction | IAllowedAction[], signer: ISigner }
+export async function zcapForVcCollection({ allowedAction, wasController }:
+  { allowedAction: IAllowedAction | IAllowedAction[], wasController: IController }
 ): Promise<IZcap> {
 
 }
