@@ -30,8 +30,20 @@ export default function RootNavigation(): React.ReactElement {
         options={{
           presentation: 'modal'
         }} />
-      <Stack.Screen name="ProfileSelectionScreen" component={ProfileSelectionScreen} />
-      <Stack.Screen name="CredentialSelectionScreen" component={CredentialSelectionScreen} />
+      <Stack.Screen 
+        name="ProfileSelectionScreen" 
+        component={ProfileSelectionScreen}
+        options={{
+          unmountOnBlur: true
+        }}
+      />
+      <Stack.Screen 
+        name="CredentialSelectionScreen" 
+        component={CredentialSelectionScreen}
+        options={{
+          unmountOnBlur: true
+        }}
+      />
       <Stack.Screen name="ViewSourceScreen" component={ViewSourceScreen} />
     </Stack.Navigator>
   );

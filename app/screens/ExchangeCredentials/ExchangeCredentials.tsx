@@ -128,7 +128,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const { acceptCredentials } = await processMessageChain(
-      { exchangeUrl, requestOrOffer, selectedProfile, modalConfirmZcapRequest });
+      { exchangeUrl, requestOrOffer, selectedProfile, modalConfirmZcapRequest, profileRecordId: rawProfileRecord._id.toHexString() });
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {

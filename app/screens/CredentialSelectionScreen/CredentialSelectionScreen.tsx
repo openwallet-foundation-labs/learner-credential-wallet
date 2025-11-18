@@ -22,7 +22,10 @@ export default function CredentialSelectionScreen({
 
   const [selected, setSelected] = useState<number[]>([]);
   const allItems = useSelector(selectRawCredentialRecords);
-  const filteredItems = useMemo(() => credentialFilter ? allItems.filter(credentialFilter) : allItems, [allItems]);
+  const filteredItems = useMemo(() => {
+    const filtered = credentialFilter ? allItems.filter(credentialFilter) : allItems;
+    return filtered;
+  }, [allItems, credentialFilter]);
   const selectedCredentials = useMemo(() => selected.map((i) => filteredItems[i]), [selected, filteredItems]);
 
   // Pre-verify and cache results for visible credentials to keep rows pure/static
@@ -83,8 +86,7 @@ export default function CredentialSelectionScreen({
         precomputedVerification={verifyMap[String(item._id)]}
         showStatusBadges
         precomputedPublic={publicMap[String(item._id)]}
-        // Disable row press; allow only checkbox to toggle selection
-        onPressDisabled
+
       />
     );
   }
@@ -102,7 +104,6 @@ export default function CredentialSelectionScreen({
         titleStyle={mixins.buttonTitle}
         onPress={() => {
           onSelectCredentials(selectedCredentials);
-          goBack();
         }}
       />
     );
