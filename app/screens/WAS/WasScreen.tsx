@@ -15,7 +15,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 // import FileReader from 'react-native-filereader'
 import { WAS } from '../../../app.config'
 import { useThemeContext } from '../../hooks'
-import { deleteWasSpace, provisionWasSpace } from '../../lib/walletAttachedStorage'
+import {
+  deleteWasSpace,
+  provisionWasSpace
+} from '../../lib/walletAttachedStorage'
 
 const WASScreen = () => {
   const { theme } = useThemeContext()
@@ -38,7 +41,7 @@ const WASScreen = () => {
         throw new Error('No connection details found')
       }
 
-      await deleteWasSpace({ spaceId: connectionDetails.spaceId });
+      await deleteWasSpace({ spaceId: connectionDetails.spaceId })
 
       setStatus('success')
       setMessage('Space successfully deleted')

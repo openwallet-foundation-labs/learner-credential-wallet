@@ -24,6 +24,7 @@ import qs from 'query-string'
 import { LinkConfig } from '../../app.config'
 import { HumanReadableError } from './error'
 import { ISelectedProfile } from './did'
+import { IController } from './getWasController'
 
 export function isDeepLink(text: string): boolean {
   return (
@@ -95,7 +96,9 @@ export function parseWalletApiUrl({ url }: { url: string }): any | undefined {
 export function zcapsRequested({ queries }: { queries: IVprQuery[] }): {
   zcapRequests?: IZcapQuery[]
 } {
-  const zcapRequests = queries.filter((q) => q.type === 'ZcapQuery') as IZcapQuery[]
+  const zcapRequests = queries.filter(
+    (q) => q.type === 'ZcapQuery'
+  ) as IZcapQuery[]
   if (zcapRequests.length > 0) {
     return { zcapRequests }
   }
@@ -137,40 +140,63 @@ export function isDidAuthRequested({
  *   }
  * }
  * @param zcapRequests - One or more requests containing a capabilityQuery.
- * @param selectedProfile - Selected user DID profile, with signers.
+ * @param wasController - WAS zcap controller for the wallet.
  */
-export async function processZcaps({ zcapRequests, selectedProfile }:
-  { zcapRequests: IZcapQuery[], selectedProfile: ISelectedProfile }
-): Promise<IZcap[]> {
-  const zcaps: IZcap[] = [];
+export async function processZcaps({
+  zcapRequests,
+  wasController
+}: {
+  zcapRequests: IZcapQuery[]
+  wasController: IController
+}): Promise<IZcap[]> {
+  const zcaps: IZcap[] = []
   for (const { capabilityQuery } of zcapRequests) {
-    const { invocationTarget: target, controller, allowedAction } = capabilityQuery;
+    const {
+      invocationTarget: target,
+      controller,
+      allowedAction
+    } = capabilityQuery
     if (typeof target === 'string') {
-      continue; // skip URL-only invocationTarget zcap requests for now
+      continue // skip URL-only invocationTarget zcap requests for now
     }
     if (!controller) {
-      console.warn('Skipping zCap query - missing controller:',
-        JSON.stringify(capabilityQuery));
-      continue;
+      console.warn(
+        'Skipping zCap query - missing controller:',
+        JSON.stringify(capabilityQuery)
+      )
+      continue
+    }
+    if (controller !== wasController.did) {
+      console.warn(
+        'Skipping zCap query - asking for the wrong controller.',
+        `  zCap is asking for "${controller}", current wallet controller: "${wasController.did}"`
+      )
+      continue
     }
     if (!allowedAction) {
-      console.warn('Skipping zCap query - missing allowedAction:',
-        JSON.stringify(capabilityQuery));
-      continue;
+      console.warn(
+        'Skipping zCap query - missing allowedAction:',
+        JSON.stringify(capabilityQuery)
+      )
+      continue
     }
-    if (target.type === 'urn:was:collection' && target.contentType === 'application/vc') {
-      zcaps.push(await zcapForVcCollection({ controller, allowedAction,
-        signer: selectedProfile.signers.zcapDelegation}));
+    if (
+      target.type === 'urn:was:collection' &&
+      target.contentType === 'application/vc'
+    ) {
+      zcaps.push(await zcapForVcCollection({ allowedAction, wasController }))
     }
   }
-  return zcaps;
+  return zcaps
 }
 
-export async function zcapForVcCollection({ controller, allowedAction }:
-  { controller: string, allowedAction: IAllowedAction | IAllowedAction[], signer: ISigner }
-): Promise<IZcap> {
-
-}
+export async function zcapForVcCollection({
+  allowedAction,
+  wasController
+}: {
+  allowedAction: IAllowedAction | IAllowedAction[]
+  wasController: IController
+}): Promise<IZcap> {}
 
 export type WalletApiMessage =
   | IExchangeInvitation
@@ -260,13 +286,13 @@ export type IDidAuthenticationQuery = {
 }
 
 export type IInvocationTarget = {
-  type?: string;
-  contentType?: string;
-  name?: string;
-  [x: string]: any;
+  type?: string
+  contentType?: string
+  name?: string
+  [x: string]: any
 }
 
-export type IAllowedAction = string | object;
+export type IAllowedAction = string | object
 
 /**
  * @see https://w3c-ccg.github.io/vp-request-spec/#authorization-capability-request
@@ -284,7 +310,7 @@ export type IZcapQuery = {
 }
 
 export type IZcap = {
-  "@context"?: string | object | Array<string | object>
+  '@context'?: string | object | Array<string | object>
   id: `urn:zcap:${string}`
   controller: string
   invocationTarget: string | object

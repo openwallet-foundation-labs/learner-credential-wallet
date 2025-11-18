@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { FlatList, Text, View } from 'react-native'
 import { Button, ListItem } from 'react-native-elements'
 
