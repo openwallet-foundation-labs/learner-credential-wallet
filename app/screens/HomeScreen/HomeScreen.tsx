@@ -124,7 +124,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
           >
            Learn more
           </Text>
-          {' '}about LCW
+          {' '} about the LCW
           </Text>
       </View>
     );
