@@ -8,7 +8,7 @@ import { delay } from './time';
 import { CredentialRecordRaw } from '../types/credential';
 
 // Selects credentials to exchange with issuer or verifier
-export async function selectCredentials (credentialRecords: CredentialRecordRaw[]): Promise<CredentialRecordRaw[]> {
+export async function selectCredentials (credentialRecords: CredentialRecordRaw[], profileId?: string): Promise<CredentialRecordRaw[]> {
   // ensure that the selected credentials have been cleared
   // before subscribing to redux store updates below
   store.dispatch(clearSelectedExchangeCredentials());
@@ -43,7 +43,9 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
   clearGlobalModal();
   const credentialRecordIds = credentialRecords.map((r: CredentialRecordRaw) => r._id);
   const credentialFilter = (r: CredentialRecordRaw) => {
-    return credentialRecordIds.some((id: ObjectId) => r._id.equals(id));
+    const matchesId = credentialRecordIds.some((id: ObjectId) => r._id.equals(id));
+    const matchesProfile = !profileId || r.profileRecordId.toHexString() === profileId;
+    return matchesId && matchesProfile;
   };
 
   console.log('Navigating to Share Credentials')
@@ -52,26 +54,26 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
     title: 'Share Credentials',
     instructionText: 'Select credentials to share.',
     credentialFilter,
-    // goBack: () => {
-    //   const cancelSendModalState = {
-    //     title: 'Cancel Send',
-    //     confirmButton: false,
-    //     cancelButton: false,
-    //     body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
-    //   };
-    //   console.log('CANCELING...')
-    //   displayGlobalModal(cancelSendModalState);
-    //   store.dispatch(clearSelectedExchangeCredentials());
-    //   navigationRef.navigate('HomeNavigation', {
-    //     screen: 'CredentialNavigation',
-    //     params: {
-    //       screen: 'HomeScreen',
-    //     },
-    //   });
-    //   setTimeout(() => {
-    //     clearGlobalModal();
-    //   }, 10000);
-    // },
+    goBack: () => {
+      const cancelSendModalState = {
+        title: 'Cancel Send',
+        confirmButton: false,
+        cancelButton: false,
+        body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
+      };
+      console.log('CANCELING...')
+      displayGlobalModal(cancelSendModalState);
+      store.dispatch(clearSelectedExchangeCredentials());
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'CredentialNavigation',
+        params: {
+          screen: 'HomeScreen',
+        },
+      });
+      setTimeout(() => {
+        clearGlobalModal();
+      }, 10000);
+    },
     onSelectCredentials: (s: CredentialRecordRaw[]) => {
       const dataLoadingPendingModalState = {
         title: 'Sending Credential',
@@ -82,6 +84,13 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
       console.log('SELECTED:', s)
       displayGlobalModal(dataLoadingPendingModalState);
       store.dispatch(selectExchangeCredentials(s));
+      // Navigate back to home after selection instead of showing cancel modal
+      navigationRef.navigate('HomeNavigation', {
+        screen: 'CredentialNavigation',
+        params: {
+          screen: 'HomeScreen',
+        },
+      });
     }
   });
 
