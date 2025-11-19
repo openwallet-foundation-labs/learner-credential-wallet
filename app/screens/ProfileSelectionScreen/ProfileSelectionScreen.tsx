@@ -14,6 +14,7 @@ import { makeSelectProfileForPendingCredentials } from '../../store/selectorFact
 export default function ProfileSelectionScreen({ navigation, route }: ProfileSelectionScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
   const rawProfileRecords = useSelector(selectRawProfileRecords);
+  const associatedProfile = useSelectorFactory(makeSelectProfileForPendingCredentials);
 
   const {
     onSelectProfile,
@@ -24,10 +25,14 @@ export default function ProfileSelectionScreen({ navigation, route }: ProfileSel
   const flatListData = useMemo(() => [...rawProfileRecords], [rawProfileRecords]);
 
   useEffect(() => {
-    if (rawProfileRecords.length === 1) {
+    console.log('Profile records:', rawProfileRecords);
+    
+    if (associatedProfile) {
+      onSelectProfile(associatedProfile);
+    } else if (rawProfileRecords.length === 1) {
       onSelectProfile(rawProfileRecords[0]);
     }
-  }, []);
+  }, [associatedProfile, rawProfileRecords, onSelectProfile]);
 
   const ListHeader = (
     <View style={styles.listHeader}>
