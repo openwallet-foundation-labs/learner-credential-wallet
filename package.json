@@ -162,6 +162,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.6",
     "react-redux": "^9.1.2",
+    "react-test-renderer": "19.0.0",
     "stream-browserify": "^3.0.0",
     "ts-node": "^10.9.2",
     "tsx": "^4.20.6",
