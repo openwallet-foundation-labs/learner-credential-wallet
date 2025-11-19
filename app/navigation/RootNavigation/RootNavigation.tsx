@@ -33,16 +33,10 @@ export default function RootNavigation(): React.ReactElement {
       <Stack.Screen 
         name="ProfileSelectionScreen" 
         component={ProfileSelectionScreen}
-        options={{
-          unmountOnBlur: true
-        }}
       />
       <Stack.Screen 
         name="CredentialSelectionScreen" 
         component={CredentialSelectionScreen}
-        options={{
-          unmountOnBlur: true
-        }}
       />
       <Stack.Screen name="ViewSourceScreen" component={ViewSourceScreen} />
     </Stack.Navigator>
