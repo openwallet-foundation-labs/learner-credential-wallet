@@ -54,6 +54,7 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
     title: 'Share Credentials',
     instructionText: 'Select credentials to share.',
     credentialFilter,
+    isVPRFlow: true,
     goBack: () => {
       const cancelSendModalState = {
         title: 'Cancel Send',
