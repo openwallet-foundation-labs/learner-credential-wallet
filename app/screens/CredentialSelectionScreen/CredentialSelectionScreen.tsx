@@ -18,7 +18,7 @@ export default function CredentialSelectionScreen({
   route
 }: CredentialSelectionScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { title, instructionText, onSelectCredentials, singleSelect, credentialFilter, goBack = navigation.goBack } = route.params;
+  const { title, instructionText, onSelectCredentials, singleSelect, credentialFilter, goBack = navigation.goBack, isVPRFlow } = route.params;
 
   const [selected, setSelected] = useState<number[]>([]);
   const allItems = useSelector(selectRawCredentialRecords);
@@ -109,6 +109,19 @@ export default function CredentialSelectionScreen({
     );
   }
 
+  function CancelButton(): React.ReactElement | null {
+    if (!isVPRFlow) return null;
+
+    return (
+      <Button
+        title="Cancel"
+        buttonStyle={styles.cancelButton}
+        titleStyle={mixins.buttonTitleSecondary}
+        onPress={goBack}
+      />
+    );
+  }
+
   return (
     <>
       <NavHeader
@@ -127,6 +140,7 @@ export default function CredentialSelectionScreen({
           keyExtractor={(item, index) => `${index}-${item.credential.id}`}
         />
         <ShareButton />
+        <CancelButton />
       </View>
     </>
   );

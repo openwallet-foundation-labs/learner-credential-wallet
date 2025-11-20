@@ -13,4 +13,5 @@ export type CredentialSelectionScreenParams = {
   singleSelect?: boolean;
   onSelectCredentials: (selectedCredentials: CredentialRecordRaw[]) => void;
   goBack?: () => void;
+  isVPRFlow?: boolean;
 };
