@@ -20,7 +20,7 @@ export default function CredentialListItem({ item, onShare, onDelete }: Props) {
   const onSelect = () => {
     if (navigationRef.isReady()) {
       navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
+        screen: 'SettingsNavigation',
         params: {
           screen: 'CredentialScreen',
           params: { rawCredentialRecord: item }
