@@ -17,5 +17,11 @@ export default createDynamicStyleSheet(({ mixins }) => ({
   shareButton: {
     ...mixins.buttonPrimary,
     marginVertical: 16,
+    marginHorizontal: 16,
+  },
+  cancelButton: {
+    ...mixins.buttonSecondary,
+    marginBottom: 20,
+    marginHorizontal: 16,
   },
 }));

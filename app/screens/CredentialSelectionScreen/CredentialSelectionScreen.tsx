@@ -18,11 +18,14 @@ export default function CredentialSelectionScreen({
   route
 }: CredentialSelectionScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { title, instructionText, onSelectCredentials, singleSelect, credentialFilter, goBack = navigation.goBack } = route.params;
+  const { title, instructionText, onSelectCredentials, singleSelect, credentialFilter, goBack = navigation.goBack, isVPRFlow } = route.params;
 
   const [selected, setSelected] = useState<number[]>([]);
   const allItems = useSelector(selectRawCredentialRecords);
-  const filteredItems = useMemo(() => credentialFilter ? allItems.filter(credentialFilter) : allItems, [allItems]);
+  const filteredItems = useMemo(() => {
+    const filtered = credentialFilter ? allItems.filter(credentialFilter) : allItems;
+    return filtered;
+  }, [allItems, credentialFilter]);
   const selectedCredentials = useMemo(() => selected.map((i) => filteredItems[i]), [selected, filteredItems]);
 
   // Pre-verify and cache results for visible credentials to keep rows pure/static
@@ -83,8 +86,7 @@ export default function CredentialSelectionScreen({
         precomputedVerification={verifyMap[String(item._id)]}
         showStatusBadges
         precomputedPublic={publicMap[String(item._id)]}
-        // Disable row press; allow only checkbox to toggle selection
-        onPressDisabled
+
       />
     );
   }
@@ -102,8 +104,20 @@ export default function CredentialSelectionScreen({
         titleStyle={mixins.buttonTitle}
         onPress={() => {
           onSelectCredentials(selectedCredentials);
-          goBack();
         }}
+      />
+    );
+  }
+
+  function CancelButton(): React.ReactElement | null {
+    if (!isVPRFlow) return null;
+
+    return (
+      <Button
+        title="Cancel"
+        buttonStyle={styles.cancelButton}
+        titleStyle={mixins.buttonTitleSecondary}
+        onPress={goBack}
       />
     );
   }
@@ -126,6 +140,7 @@ export default function CredentialSelectionScreen({
           keyExtractor={(item, index) => `${index}-${item.credential.id}`}
         />
         <ShareButton />
+        <CancelButton />
       </View>
     </>
   );

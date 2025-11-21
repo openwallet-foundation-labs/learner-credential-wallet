@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 import { FlatList, Text, View } from 'react-native';
 import { Button, ListItem } from 'react-native-elements';
 
@@ -26,12 +26,13 @@ export default function ProfileSelectionScreen({ navigation, route }: ProfileSel
 
   useEffect(() => {
     console.log('Profile records:', rawProfileRecords);
-    if (rawProfileRecords.length === 1) {
-      onSelectProfile(rawProfileRecords[0]);
-    } else if (associatedProfile){
+    
+    if (associatedProfile) {
       onSelectProfile(associatedProfile);
+    } else if (rawProfileRecords.length === 1) {
+      onSelectProfile(rawProfileRecords[0]);
     }
-  }, []);
+  }, [associatedProfile, rawProfileRecords, onSelectProfile]);
 
   const ListHeader = (
     <View style={styles.listHeader}>
@@ -67,7 +68,7 @@ function ProfileButton({ rawProfileRecord, onPress }: ProfileButtonProps) {
       containerStyle={mixins.buttonContainerVertical}
       titleStyle={mixins.buttonIconTitle}
       iconRight
-      onPress={(onPress)}
+      onPress={onPress}
       icon={
         <ListItem.Chevron
           hasTVPreferredFocus={undefined}
