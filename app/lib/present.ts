@@ -34,24 +34,13 @@ export async function createVerifiablePresentation({
 
   const holder = didRecord.didDocument.id;
   
-  // Create presentation - will throw error if credential is expired
-  let presentation;
-  try {
-    presentation = vc.createPresentation({ verifiableCredential, holder });
-  } catch (error) {
-    // If expired, create presentation manually to bypass validation
-    if (error instanceof Error && error.message.includes('validUntil')) {
-      console.log('[present.ts] Bypassing expiration check for presentation creation');
-      presentation = {
-        '@context': ['https://www.w3.org/2018/credentials/v1'],
-        type: ['VerifiablePresentation'],
-        holder,
-        verifiableCredential: Array.isArray(verifiableCredential) ? verifiableCredential : [verifiableCredential]
-      };
-    } else {
-      throw error;
-    }
-  }
+  // Use verify: false to skip validation (including expiration checks)
+  // The VC library 10.0.2+ properly handles this flag
+  const presentation = vc.createPresentation({ 
+    verifiableCredential, 
+    holder,
+    verify: false 
+  });
 
   return await vc.signPresentation({
     presentation,
@@ -62,21 +51,9 @@ export async function createVerifiablePresentation({
 }
 
 export function createUnsignedPresentation(verifiableCredential: IVerifiableCredential[] | IVerifiableCredential): IVerifiablePresentation {
-  // Create presentation - will throw error if credential is expired
-  try {
-    return vc.createPresentation({ verifiableCredential });
-  } catch (error) {
-    // If expired, create presentation manually to bypass validation
-    if (error instanceof Error && error.message.includes('validUntil')) {
-      console.log('[present.ts] Bypassing expiration check for unsigned presentation creation');
-      return {
-        '@context': ['https://www.w3.org/2018/credentials/v1'],
-        type: ['VerifiablePresentation'],
-        verifiableCredential: Array.isArray(verifiableCredential) ? verifiableCredential : [verifiableCredential]
-      } as any as IVerifiablePresentation;
-    }
-    throw error;
-  }
+  // Use verify: false to skip validation (including expiration checks)
+  // The VC library 10.0.2+ properly handles this flag
+  return vc.createPresentation({ verifiableCredential, verify: false });
 }
 
 export async function sharePresentation(verifiablePresentation: IVerifiablePresentation): Promise<void> {

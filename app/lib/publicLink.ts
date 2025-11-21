@@ -1,11 +1,14 @@
 import 'react-native-get-random-values';
 import { CredentialRecordRaw } from '../model';
 import { Cache, CacheKey } from './cache';
+import { credentialIdFor } from './decode';
 import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
 import * as verifierInstance from './verifierInstance';
 import { StoreCredentialResult } from './verifierInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - app.config.js doesn't have type declarations
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
 import { getStorageClient } from './storageClient';
 import { getRootSigner } from './getRootSigner';
@@ -17,8 +20,8 @@ let cachedSigner: ISigner | undefined;
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string> {
-  // Use the unique database record ID instead of credential.id to ensure each record gets its own public link
-  const id = `${rawCredentialRecord._id.toHexString?.() || rawCredentialRecord._id}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
+  // Use credentialIdFor() which returns the unique database record ID
+  const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   const wasLink = WAS.enabled ? await createWasPublicLinkIfAvailable(rawCredentialRecord) : null;
 
@@ -142,8 +145,8 @@ async function createWasPublicLinkIfAvailable(
 }
 
 export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw): Promise<void> {
-  // Use the unique database record ID to match the key used in createPublicLinkFor
-  const vcId = `${rawCredentialRecord._id.toHexString?.() || rawCredentialRecord._id}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
+  // Use credentialIdFor() to match the key used in createPublicLinkFor
+  const vcId = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
     const publicLinks = await Cache.getInstance()
@@ -187,8 +190,8 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
 }
 
 export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw): Promise<string | null> {
-  // Use the unique database record ID to match the key used in createPublicLinkFor
-  const id = `${rawCredentialRecord._id.toHexString?.() || rawCredentialRecord._id}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
+  // Use credentialIdFor() to match the key used in createPublicLinkFor
+  const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
     const publicLinks = await Cache.getInstance()

@@ -29,10 +29,11 @@ import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { useShareCredentials } from '../../hooks/useShareCredentials';
 import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
 import { navigationRef } from '../../navigation/navigationRef';
-import { canShareCredential } from '../../lib/credentialVerificationStatus';
 
 import { convertSVGtoPDF } from '../../lib/svgToPdf';
 import { PDF } from '../../types/pdf';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - app.config.js doesn't have type declarations
 import { LinkConfig } from '../../../app.config';
 
 export enum PublicLinkScreenMode {
@@ -58,10 +59,6 @@ export default function PublicLinkScreen({
     route.params;
   const { credential } = rawCredentialRecord;
   const { name } = credential;
-  
-  // Get verification status to check if credential can be shared
-  const verifyPayload = useVerifyCredential(rawCredentialRecord);
-  const canShare = canShareCredential(verifyPayload);
 
   const [publicLink, setPublicLink] = useState<string | null>(null);
   const [renderMethodAvailable, setRenderMethodAvailable] = useState(false);
@@ -156,18 +153,13 @@ export default function PublicLinkScreen({
     (async () => {
       const url = await getPublicViewLink(rawCredentialRecord);
       if (url === null && screenMode === PublicLinkScreenMode.Default) {
-        // Block if not verified
-        if (!canShare) {
-          await presentNotVerifiedModal('create');
-          return;
-        }
         if (Platform.OS === 'ios') await wait(300);
         await createPublicLink(); // auto path can still use standard loading modal
       } else if (url !== null) {
         setPublicLink(url);
       }
     })();
-  }, [rawCredentialRecord, screenMode, canShare]); // exhaustive deps
+  }, [rawCredentialRecord, screenMode]); // exhaustive deps
 
   // Safely capture QR only when allowed (PDF flow), link exists, and view is laid out
   useEffect(() => {
@@ -335,12 +327,6 @@ export default function PublicLinkScreen({
 
   // BUTTON: Create Public Link (single-modal swap to avoid flash)
   async function confirmCreatePublicLink() {
-    // Block if not verified
-    if (!canShare) {
-      await presentNotVerifiedModal('create');
-      return;
-    }
-
     const confirmed = await presentModalSafely({
       title: 'Are you sure?',
       confirmText: 'Create Link',
@@ -459,12 +445,6 @@ export default function PublicLinkScreen({
   }
 
   async function exportToPdf() {
-    // Block if not verified
-    if (!canShare) {
-      await presentNotVerifiedModal('export');
-      return;
-    }
-
     const confirmed = await presentModalSafely({
       title: 'Are you sure?',
       confirmText: 'Export as PDF',
@@ -507,12 +487,6 @@ export default function PublicLinkScreen({
   }
 
   async function shareToLinkedIn() {
-    // Block if not verified
-    if (!canShare) {
-      await presentNotVerifiedModal('linkedin');
-      return;
-    }
-
     const confirmed = await presentModalSafely({
       title: 'Are you sure?',
       confirmText: 'Add to LinkedIn',
@@ -562,12 +536,6 @@ export default function PublicLinkScreen({
 
   // Send credential as JSON
   const onSendCredential = async () => {
-    // Block if not verified
-    if (!canShare) {
-      await presentNotVerifiedModal('share');
-      return;
-    }
-
     if (presentingNative) return;
     setPresentingNative(true);
     try {
