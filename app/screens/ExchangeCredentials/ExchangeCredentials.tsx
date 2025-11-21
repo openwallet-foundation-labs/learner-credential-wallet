@@ -8,8 +8,8 @@ import { selectWithFactory } from '../../store/selectorFactories';
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
 import { processMessageChain, sendToExchanger } from '../../lib/exchanges';
-import { displayGlobalModal } from '../../lib/globalModal';
-import GlobalModalBody from '../../lib/globalModalBody';
+import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal';
+import GlobalModalBody, { getGlobalModalBody } from '../../lib/globalModalBody';
 import { NavigationUtil } from '../../lib/navigationUtil';
 import { delay } from '../../lib/time';
 import { ExchangeCredentialsProps } from './ExchangeCredentials.d';
@@ -112,7 +112,24 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
     }
 
     // Regardless if request is an offer or a request, select profile
-    const rawProfileRecord = await NavigationUtil.selectProfile();
+    const isVPRFlow = 'verifiablePresentationRequest' in requestOrOffer;
+    const rawProfileRecord = await NavigationUtil.selectProfile(
+      isVPRFlow ? {
+        goBack: () => {
+          displayGlobalModal({
+            title: 'Cancel Send',
+            confirmButton: false,
+            cancelButton: false,
+            body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
+          });
+          navigationRef.navigate('HomeNavigation', {
+            screen: 'CredentialNavigation',
+            params: { screen: 'HomeScreen' }
+          });
+          setTimeout(clearGlobalModal, 10000);
+        }
+      } : undefined
+    );
     const selectedDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
     const selectedProfile = await profileWithSigners({
       profileName: rawProfileRecord.profileName,
