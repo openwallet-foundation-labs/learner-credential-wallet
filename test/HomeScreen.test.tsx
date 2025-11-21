@@ -139,9 +139,7 @@ jest.mock('../app/lib/verifiableObject', () => ({
   })),
 }));
 
-jest.mock('../app/lib/credentialVerificationStatus', () => ({
-  canShareCredential: jest.fn(() => true),
-}));
+// credentialVerificationStatus module removed - all credentials can now be shared
 
 jest.mock('../app/lib/globalModal', () => ({
   displayGlobalModal: jest.fn(() => Promise.resolve(true)),

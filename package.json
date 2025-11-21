@@ -60,7 +60,7 @@
     "@digitalcredentials/issuer-registry-client": "^3.0.0",
     "@digitalcredentials/security-document-loader": "^8.0.0",
     "@digitalcredentials/ssi": "^5.4.2",
-    "@digitalcredentials/vc": "^10.0.1",
+    "@digitalcredentials/vc": "^10.0.2",
     "@digitalcredentials/vc-bitstring-status-list": "^1.0.0",
     "@digitalcredentials/vc-status-list": "^9.0.0",
     "@digitalcredentials/verifier-core": "^1.0.0-beta.6",

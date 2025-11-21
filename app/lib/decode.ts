@@ -71,15 +71,14 @@ export async function credentialsFrom(text: string): Promise<IVerifiableCredenti
   throw new Error('No credentials were resolved from the text');
 }
 
+/**
+ * Returns a unique identifier for a credential record.
+ * Uses the database record ID to ensure uniqueness across all credentials,
+ * even if they have the same or missing credential.id field.
+ * 
+ * This addresses the issue where multiple credentials with the same or missing
+ * credential.id would collide when used as cache keys for public links.
+ */
 export function credentialIdFor(rawCredentialRecord: CredentialRecordRaw): string {
-  const { credential } = rawCredentialRecord;
-  const subject = getSubject(credential);
-  const achievement = subject.achievement;
-  const id = (Array.isArray(achievement) ? achievement[0]?.id : achievement?.id) || credential.id || subject?.id;
-
-  if (!id) {
-    throw new Error('Credential ID could not be resolved.');
-  }
-
-  return id;
+  return rawCredentialRecord._id.toHexString?.() || String(rawCredentialRecord._id);
 }

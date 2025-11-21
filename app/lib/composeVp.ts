@@ -27,46 +27,19 @@ export async function composeVp(
 
   if (!didAuthRequested) {
     // Return an unsigned VP
-    // Create presentation - will throw error if credential is expired
-    try {
-      return await vc.createPresentation({ verifiableCredential: selectedVcs, verify: false });
-    } catch (error) {
-      // If expired, create presentation manually to bypass validation
-      if (error instanceof Error && error.message.includes('validUntil')) {
-        console.log('[composeVp.ts] Bypassing expiration check for unsigned VP creation');
-        return {
-          '@context': ['https://www.w3.org/2018/credentials/v1'],
-          type: ['VerifiablePresentation'],
-          verifiableCredential: selectedVcs
-        } as any as IVerifiablePresentation;
-      }
-      throw error;
-    }
+    // Use verify: false to skip validation (including expiration checks)
+    // The VC library 10.0.2+ properly handles this flag
+    return await vc.createPresentation({ verifiableCredential: selectedVcs, verify: false });
   }
 
   // Return a signed VP
-  // Create presentation - will throw error if credential is expired
-  let presentation;
-  try {
-    presentation = await vc.createPresentation({
-      holder: selectedProfile.did,
-      verifiableCredential: (selectedVcs!.length > 0) ? selectedVcs : undefined,
-      verify: false
-    });
-  } catch (error) {
-    // If expired, create presentation manually to bypass validation
-    if (error instanceof Error && error.message.includes('validUntil')) {
-      console.log('[composeVp.ts] Bypassing expiration check for signed VP creation');
-      presentation = {
-        '@context': ['https://www.w3.org/2018/credentials/v1'],
-        type: ['VerifiablePresentation'],
-        holder: selectedProfile.did,
-        ...(selectedVcs!.length > 0 && { verifiableCredential: selectedVcs })
-      };
-    } else {
-      throw error;
-    }
-  }
+  // Use verify: false to skip validation (including expiration checks)
+  // The VC library 10.0.2+ properly handles this flag
+  const presentation = await vc.createPresentation({
+    holder: selectedProfile.did,
+    verifiableCredential: (selectedVcs!.length > 0) ? selectedVcs : undefined,
+    verify: false
+  });
   
   return await vc.signPresentation({
     presentation, challenge, domain, documentLoader,
