@@ -56,41 +56,30 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
     credentialFilter,
     isVPRFlow: true,
     goBack: () => {
-      const cancelSendModalState = {
+      displayGlobalModal({
         title: 'Cancel Send',
         confirmButton: false,
         cancelButton: false,
         body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
-      };
-      console.log('CANCELING...')
-      displayGlobalModal(cancelSendModalState);
+      });
       store.dispatch(clearSelectedExchangeCredentials());
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
-        params: {
-          screen: 'HomeScreen',
-        },
+        params: { screen: 'HomeScreen' }
       });
-      setTimeout(() => {
-        clearGlobalModal();
-      }, 10000);
+      setTimeout(clearGlobalModal, 10000);
     },
     onSelectCredentials: (s: CredentialRecordRaw[]) => {
-      const dataLoadingPendingModalState = {
+      displayGlobalModal({
         title: 'Sending Credential',
         confirmButton: false,
         cancelButton: false,
         body: getGlobalModalBody('This will only take a moment.', true)
-      };
-      console.log('SELECTED:', s)
-      displayGlobalModal(dataLoadingPendingModalState);
+      });
       store.dispatch(selectExchangeCredentials(s));
-      // Navigate back to home after selection instead of showing cancel modal
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
-        params: {
-          screen: 'HomeScreen',
-        },
+        params: { screen: 'HomeScreen' }
       });
     }
   });
