@@ -25,15 +25,15 @@ import {
   linkedinUrlFrom,
   unshareCredential,
 } from '../../lib/publicLink';
-import { useDynamicStyles } from '../../hooks';
+import { useDynamicStyles, useVerifyCredential } from '../../hooks';
 import { useShareCredentials } from '../../hooks/useShareCredentials';
-// import { useDynamicStyles, useShareCredentials, useVerifyCredential } from '../../hooks';
 import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
 import { navigationRef } from '../../navigation/navigationRef';
 
 import { convertSVGtoPDF } from '../../lib/svgToPdf';
-import { isExpired as credentialIsExpired } from '../../lib/credentialValidityPeriod';
 import { PDF } from '../../types/pdf';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - app.config.js doesn't have type declarations
 import { LinkConfig } from '../../../app.config';
 
 export enum PublicLinkScreenMode {
@@ -69,7 +69,6 @@ export default function PublicLinkScreen({
   const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false);
 
   const qrCodeRef = useRef<any>(null);
-  // const isVerified = useVerifyCredential(rawCredentialRecord)?.result.verified;
 
   // ---- Selection (no setNativeProps) ----
   const inputRef = useRef<RNTextInput | null>(null);
@@ -149,41 +148,18 @@ export default function PublicLinkScreen({
     }
   }, [justCreated]);
 
-  // ---- Status gates ----
-  const hasWarningStatus = useMemo(() => {
-    const candidates: any[] = [
-      (rawCredentialRecord as any)?.status,
-      (rawCredentialRecord as any)?.status?.type,
-      (rawCredentialRecord as any)?.status?.state,
-      (rawCredentialRecord as any)?.status?.status,
-      (rawCredentialRecord as any)?.credentialStatus,
-      (rawCredentialRecord as any)?.credentialStatus?.status,
-      (credential as any)?.status,
-    ].filter(Boolean);
-    return candidates.some((v) => String(v).toLowerCase() === 'warning');
-  }, [rawCredentialRecord, credential]);
-
-  const isExpired = useMemo(() => credentialIsExpired(credential as any), [credential]);
-
-  // Block when the credential is Expired (ignore Warning-only)
-  const isBlocked = isExpired;
-
-  // Load/create share URL on mount (respect block)
+  // Load/create share URL on mount
   useEffect(() => {
     (async () => {
       const url = await getPublicViewLink(rawCredentialRecord);
       if (url === null && screenMode === PublicLinkScreenMode.Default) {
-        if (isBlocked) {
-          await presentBlockedPopup('create');
-          return;
-        }
         if (Platform.OS === 'ios') await wait(300);
         await createPublicLink(); // auto path can still use standard loading modal
       } else if (url !== null) {
         setPublicLink(url);
       }
     })();
-  }, [rawCredentialRecord, screenMode, isBlocked]); // exhaustive deps
+  }, [rawCredentialRecord, screenMode]); // exhaustive deps
 
   // Safely capture QR only when allowed (PDF flow), link exists, and view is laid out
   useEffect(() => {
@@ -280,17 +256,13 @@ export default function PublicLinkScreen({
     });
   }
 
-  async function presentBlockedPopup(action: 'create' | 'export' | 'linkedin' | 'share') {
+  async function presentNotVerifiedModal(action: 'create' | 'export' | 'linkedin' | 'share') {
     const titles = {
       create: 'Unable to Create Public Link',
       export: 'Unable to Export PDF',
       linkedin: 'Unable to Add to LinkedIn',
       share: 'Unable to Share Credential',
     } as const;
-
-    const reason = isExpired
-      ? 'This credential has expired, so this action is not allowed.'
-      : 'This credential’s status is Warning, so this action is not allowed.';
 
     const anchors = {
       create: 'public-link',
@@ -306,7 +278,9 @@ export default function PublicLinkScreen({
       confirmText: 'Close',
       body: (
         <>
-          <Text style={mixins.modalBodyText}>{reason}</Text>
+          <Text style={mixins.modalBodyText}>
+            This credential has not been verified (invalid signature or revoked status), so this action is not allowed.
+          </Text>
           <Button
             buttonStyle={mixins.buttonClear}
             titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
@@ -353,11 +327,6 @@ export default function PublicLinkScreen({
 
   // BUTTON: Create Public Link (single-modal swap to avoid flash)
   async function confirmCreatePublicLink() {
-    if (isBlocked) {
-      await presentBlockedPopup('create');
-      return;
-    }
-
     const confirmed = await presentModalSafely({
       title: 'Are you sure?',
       confirmText: 'Create Link',
@@ -476,11 +445,6 @@ export default function PublicLinkScreen({
   }
 
   async function exportToPdf() {
-    if (isBlocked) {
-      await presentBlockedPopup('export');
-      return;
-    }
-
     const confirmed = await presentModalSafely({
       title: 'Are you sure?',
       confirmText: 'Export as PDF',
@@ -523,11 +487,6 @@ export default function PublicLinkScreen({
   }
 
   async function shareToLinkedIn() {
-    if (isBlocked) {
-      await presentBlockedPopup('linkedin');
-      return;
-    }
-
     const confirmed = await presentModalSafely({
       title: 'Are you sure?',
       confirmText: 'Add to LinkedIn',
@@ -575,13 +534,8 @@ export default function PublicLinkScreen({
     }
   }
 
-  // Block JSON share if expired/warning
+  // Send credential as JSON
   const onSendCredential = async () => {
-    if (isBlocked) {
-      await presentBlockedPopup('share');
-      return;
-    }
-
     if (presentingNative) return;
     setPresentingNative(true);
     try {

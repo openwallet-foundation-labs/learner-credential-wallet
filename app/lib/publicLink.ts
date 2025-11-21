@@ -1,12 +1,14 @@
 import 'react-native-get-random-values';
 import { CredentialRecordRaw } from '../model';
 import { Cache, CacheKey } from './cache';
-import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
 import { credentialIdFor } from './decode';
+import { getExpirationDate, getIssuanceDate } from './credentialValidityPeriod';
 import * as verifierInstance from './verifierInstance';
 import { StoreCredentialResult } from './verifierInstance';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore - app.config.js doesn't have type declarations
 import { WAS, VERIFIER_INSTANCE_URL } from '../../app.config';
 import { getStorageClient } from './storageClient';
 import { getRootSigner } from './getRootSigner';
@@ -18,6 +20,7 @@ let cachedSigner: ISigner | undefined;
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string> {
+  // Use credentialIdFor() which returns the unique database record ID
   const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   const wasLink = WAS.enabled ? await createWasPublicLinkIfAvailable(rawCredentialRecord) : null;
@@ -142,6 +145,7 @@ async function createWasPublicLinkIfAvailable(
 }
 
 export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw): Promise<void> {
+  // Use credentialIdFor() to match the key used in createPublicLinkFor
   const vcId = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
@@ -186,6 +190,7 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
 }
 
 export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw): Promise<string | null> {
+  // Use credentialIdFor() to match the key used in createPublicLinkFor
   const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
@@ -216,7 +221,7 @@ export async function linkedinUrlFrom(rawCredentialRecord: CredentialRecordRaw):
   const publicLink = await getPublicViewLink(rawCredentialRecord);
 
   let issuerName;
-  const { issuer } = rawCredentialRecord.credential;
+  const { issuer } = rawCredentialRecord.credential as any;
   if (typeof issuer === 'string') {
     issuerName = issuer;
   } else {

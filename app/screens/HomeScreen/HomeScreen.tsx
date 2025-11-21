@@ -16,6 +16,10 @@ import { useAppDispatch, useDynamicStyles } from '../../hooks';
 import { useShareCredentials } from '../../hooks/useShareCredentials';
 import { deleteCredential, selectRawCredentialRecords } from '../../store/slices/credential';
 import { getCredentialName } from '../../lib/credentialName';
+import { verificationResultFor } from '../../lib/verifiableObject';
+import { displayGlobalModal } from '../../lib/globalModal';
+import { useContext } from 'react';
+import { DidRegistryContext } from '../../init/registries';
 
 
 export default function HomeScreen({ navigation }: HomeScreenProps): React.ReactElement {
@@ -25,8 +29,13 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
   const [itemToDelete, setItemToDelete] = useState<CredentialRecordRaw|null>(null);
   const dispatch = useAppDispatch();
   const share = useShareCredentials();
+  const registries = useContext(DidRegistryContext);
 
   const itemToDeleteName = itemToDelete ? getCredentialName(itemToDelete.credential) : '';
+
+  async function handleShareFromSwipe(item: CredentialRecordRaw) {
+    await share([item]);
+  }
 
   function renderItem({ item }: RenderItemProps) {
     const { credential } = item;
@@ -38,7 +47,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
         <View>
           <Swipeable
             renderLeftActions={() => (
-              <TouchableOpacity onPress={() => share([item])} style={[mixins.buttonIconContainer, styles.noShadow]}>
+              <TouchableOpacity onPress={() => handleShareFromSwipe(item)} style={[mixins.buttonIconContainer, styles.noShadow]}>
                 <View style={[styles.swipeButton, mixins.buttonPrimary]}>
                   <MaterialIcons
                     name="share"
