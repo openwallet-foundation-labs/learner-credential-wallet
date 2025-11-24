@@ -28,28 +28,17 @@ import {
   SettingsItemProps,
   SettingsProps,
   AboutProps,
-  SettingsNavigationParamList
-} from './SettingsNavigation.d'
-import {
-  AddExistingProfileScreen,
-  DetailsScreen,
-  DeveloperScreen,
-  ManageProfilesScreen,
-  RestoreWalletScreen,
-  CredentialScreen,
-  PublicLinkScreen
-} from '../../screens'
-import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen'
-import {
-  useAppDispatch,
-  useDynamicStyles,
-  useResetNavigationOnBlur
-} from '../../hooks'
-import { SettingsNavigationProps } from '../'
-import { exportWallet } from '../../lib/export'
-import { registerWallet } from '../../lib/registerWallet'
-import WASScreen from '../../screens/WAS/WasScreen'
-import WasConnect from '../../screens/WAS/WasConnect'
+  SettingsNavigationParamList,
+} from './SettingsNavigation.d';
+import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen, CredentialScreen,
+  PublicLinkScreen, HelpScreen } from '../../screens';
+import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen';
+import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur } from '../../hooks';
+import { SettingsNavigationProps } from '../';
+import { exportWallet } from '../../lib/export';
+import { registerWallet } from '../../lib/registerWallet';
+import WASScreen from '../../screens/WAS/WasScreen';
+import WasConnect from '../../screens/WAS/WasConnect';
 
 const Stack = createStackNavigator<SettingsNavigationParamList>()
 
