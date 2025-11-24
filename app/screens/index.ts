@@ -22,6 +22,7 @@ export { default as DeveloperScreen } from './DeveloperScreen/DeveloperScreen';
 export { default as PublicLinkScreen } from './PublicLinkScreen/PublicLinkScreen';
 export { default as CredentialSelectionScreen } from './CredentialSelectionScreen/CredentialSelectionScreen';
 export { default as IssuerInfoScreen } from './IssuerInfoScreen/IssuerInfoScreen';
+export { default as HelpScreen } from './HelpScreen/HelpScreen';
 
 // Type Definitions
 export * from './DetailsScreen/DetailsScreen.d';
