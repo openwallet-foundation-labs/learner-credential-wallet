@@ -29,9 +29,9 @@ export default function HelpScreen({ navigation }: HelpProps): React.ReactElemen
           Need help getting started?{'\n'}
           <Text
             style={styles.link}
-            onPress={() => Linking.openURL('https://lcw.app/faq.html#getstarted')}
+            onPress={() => Linking.openURL('https://lcw.app/faq.html#userguide')}
           >
-            https://lcw.app/faq.html#getstarted
+           https://lcw.app/faq.html#userguide
           </Text>
         </Text>
       </ScrollView>
