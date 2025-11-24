@@ -138,16 +138,16 @@ describe('HelpScreen', () => {
     const { getByText } = render(
       <HelpScreen navigation={mockNavigation} route={mockRoute} />
     );
-    expect(getByText('https://lcw.app/faq.html#getstarted')).toBeTruthy();
+    expect(getByText('https://lcw.app/faq.html#userguide')).toBeTruthy();
   });
 
   it('opens the help URL when link is pressed', () => {
     const { getByText } = render(
       <HelpScreen navigation={mockNavigation} route={mockRoute} />
     );
-    const link = getByText('https://lcw.app/faq.html#getstarted');
+    const link = getByText('https://lcw.app/faq.html#userguide');
     fireEvent.press(link);
-    expect(Linking.openURL).toHaveBeenCalledWith('https://lcw.app/faq.html#getstarted');
+    expect(Linking.openURL).toHaveBeenCalledWith('https://lcw.app/faq.html#userguide');
   });
 
   it('navigates back to Settings when back button is pressed', () => {
