@@ -1,22 +1,22 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   container: {
-    padding: 16,
+    padding: 16
   },
   paragraph: {
     ...mixins.paragraphText,
     fontSize: theme.fontSize.medium,
-    marginVertical: 8,
+    marginVertical: 8
   },
   underline: {
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline'
   },
   header: {
     marginVertical: 8,
-    ...mixins.headerText,
+    ...mixins.headerText
   },
   spacer: {
-    height: 24,
+    height: 24
   }
-}));
+}))

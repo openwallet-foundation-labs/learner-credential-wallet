@@ -1,49 +1,49 @@
-import { useEffect, useMemo, useState, useContext } from 'react';
-import { useSelector } from 'react-redux';
+import { useEffect, useMemo, useState, useContext } from 'react'
+import { useSelector } from 'react-redux'
 import {
   Rubik_400Regular,
   Rubik_500Medium,
   Rubik_700Bold,
   useFonts
-} from '@expo-google-fonts/rubik';
-import { RobotoMono_400Regular } from '@expo-google-fonts/roboto-mono';
+} from '@expo-google-fonts/rubik'
+import { RobotoMono_400Regular } from '@expo-google-fonts/roboto-mono'
 
-import { DidRegistryContext, loadKnownDidRegistries } from '../init/registries';
+import { DidRegistryContext, loadKnownDidRegistries } from '../init/registries'
 import {
   lock,
   pollWalletState,
-  selectWalletState,
-} from '../store/slices/wallet';
-import { getAllRecords } from '../store';
-import { useAppDispatch } from './useAppDispatch';
-import { initializeLogger } from '../init/logger';
+  selectWalletState
+} from '../store/slices/wallet'
+import { getAllRecords } from '../store'
+import { useAppDispatch } from './useAppDispatch'
+import { initializeLogger } from '../init/logger'
 
 export function useAppLoading(): boolean {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true)
 
-  const didRegistries = useContext(DidRegistryContext);
+  const didRegistries = useContext(DidRegistryContext)
 
-  const primaryTasks = [
-    useFontsLoaded(),
-    useWalletStateInitialized(),
-  ];
+  const primaryTasks = [useFontsLoaded(), useWalletStateInitialized()]
 
-  const primaryTasksFinished = useMemo(() => primaryTasks.every(t => t), primaryTasks);
+  const primaryTasksFinished = useMemo(
+    () => primaryTasks.every((t) => t),
+    primaryTasks
+  )
 
   useEffect(() => {
-    if (primaryTasksFinished) runSecondaryTasks();
-  }, [primaryTasksFinished]);
+    if (primaryTasksFinished) runSecondaryTasks()
+  }, [primaryTasksFinished])
 
   async function runSecondaryTasks() {
     await Promise.all([
       initializeLogger(),
       loadKnownDidRegistries({ client: didRegistries })
-    ]);
+    ])
 
-    setLoading(false);
+    setLoading(false)
   }
 
-  return loading;
+  return loading
 }
 
 function useFontsLoaded() {
@@ -51,21 +51,21 @@ function useFontsLoaded() {
     Rubik_400Regular,
     Rubik_500Medium,
     Rubik_700Bold,
-    RobotoMono_400Regular,
-  });
+    RobotoMono_400Regular
+  })
 
-  return fontsLoaded;
+  return fontsLoaded
 }
 
 function useWalletStateInitialized() {
-  const dispatch = useAppDispatch();
+  const dispatch = useAppDispatch()
 
-  const { isUnlocked, isInitialized } = useSelector(selectWalletState);
-  const walletStateInitialized = isUnlocked !== null && isInitialized !== null;
+  const { isUnlocked, isInitialized } = useSelector(selectWalletState)
+  const walletStateInitialized = isUnlocked !== null && isInitialized !== null
 
   useEffect(() => {
     if (!walletStateInitialized) {
-      dispatch(pollWalletState());
+      dispatch(pollWalletState())
     } else {
       /**
        * SecureStore items aren't removed when the app is deleted, so if the
@@ -73,12 +73,12 @@ function useWalletStateInitialized() {
        * status to locked.
        */
       if (isUnlocked && !isInitialized) {
-        dispatch(lock());
+        dispatch(lock())
       } else if (isUnlocked) {
-        dispatch(getAllRecords());
+        dispatch(getAllRecords())
       }
     }
-  }, [walletStateInitialized]);
+  }, [walletStateInitialized])
 
-  return walletStateInitialized;
+  return walletStateInitialized
 }

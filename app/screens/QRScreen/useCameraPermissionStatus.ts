@@ -1,29 +1,29 @@
-import {useCallback, useEffect, useState} from 'react';
-import {Camera} from 'react-native-vision-camera';
+import { useCallback, useEffect, useState } from 'react'
+import { Camera } from 'react-native-vision-camera'
 
 export type PermissionResponse = {
-  status: 'undetermined' | 'granted' | 'denied';
-  requestPermission: () => any;
-};
+  status: 'undetermined' | 'granted' | 'denied'
+  requestPermission: () => any
+}
 
 export function useCameraPermissionStatus(): PermissionResponse {
   const [status, setStatus] =
-    useState<PermissionResponse['status']>('undetermined');
+    useState<PermissionResponse['status']>('undetermined')
 
   const requestPermission = useCallback(async () => {
-    const result = await Camera.requestCameraPermission();
-    setStatus(result);
-  }, []);
+    const result = await Camera.requestCameraPermission()
+    setStatus(result)
+  }, [])
 
   useEffect(() => {
-    const s = Camera.getCameraPermissionStatus();
+    const s = Camera.getCameraPermissionStatus()
     if (s === 'granted' || s === 'denied') {
-      setStatus(s);
+      setStatus(s)
     }
-  }, []);
+  }, [])
 
   return {
     status,
-    requestPermission,
-  };
+    requestPermission
+  }
 }

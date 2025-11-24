@@ -1,1 +1,1 @@
-export { default as CredentialListItem } from './CredentialListItem';
+export { default as CredentialListItem } from './CredentialListItem'

@@ -1,44 +1,44 @@
-import { StyleSheet } from 'react-native';
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { StyleSheet } from 'react-native'
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   modalBackground: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.75,
-    backgroundColor: theme.color.modalBackground,
+    backgroundColor: theme.color.modalBackground
   },
   modalOuterContainer: {
     flex: 1,
     justifyContent: 'center',
-    padding: 16,
+    padding: 16
   },
   modalContainer: {
     backgroundColor: theme.color.foregroundPrimary,
     padding: 16,
-    borderRadius: theme.borderRadius,
+    borderRadius: theme.borderRadius
   },
   modalTitle: {
     color: theme.color.textPrimary,
     fontFamily: theme.fontFamily.bold,
     fontSize: theme.fontSize.regular,
     marginVertical: 8,
-    textAlign: 'center',
+    textAlign: 'center'
   },
   buttonGroupContainer: {
-    marginTop: 16,
+    marginTop: 16
   },
   buttonPrimary: {
-    ...mixins.button, 
+    ...mixins.button,
     ...mixins.buttonPrimary,
-    flexGrow: 1,
+    flexGrow: 1
   },
   buttonSecondary: {
     ...mixins.button,
     backgroundColor: theme.color.buttonSecondary,
-    flexGrow: 1,
+    flexGrow: 1
   },
   buttonSecondaryTitle: {
     ...mixins.buttonTitle,
-    color: theme.color.textPrimary,
-  },
-}));
+    color: theme.color.textPrimary
+  }
+}))

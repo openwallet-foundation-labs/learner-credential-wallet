@@ -1,41 +1,42 @@
-import React, { useState } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
-import { navigationRef } from '../../navigation/navigationRef';
-import { theme } from '../../styles';
-import { redirectRequestRoute } from '../../lib/navigationUtil';
+import React, { useState } from 'react'
+import { View, Text, Button, StyleSheet } from 'react-native'
+import { navigationRef } from '../../navigation/navigationRef'
+import { theme } from '../../styles'
+import { redirectRequestRoute } from '../../lib/navigationUtil'
 
 export default function WasConnectScreen() {
-  const [statusMessage, setStatusMessage] = useState('');
-  const [statusType, setStatusType] = useState<'success' | 'error' | ''>('');
+  const [statusMessage, setStatusMessage] = useState('')
+  const [statusType, setStatusType] = useState<'success' | 'error' | ''>('')
 
   React.useEffect(() => {
-    handleScanQR();
-  }, []);
+    handleScanQR()
+  }, [])
 
   const resetStatus = () => {
-    setStatusMessage('');
-    setStatusType('');
-  };
+    setStatusMessage('')
+    setStatusType('')
+  }
 
   const handleScanQR = () => {
     if (navigationRef.isReady()) {
-      resetStatus();
+      resetStatus()
 
       navigationRef.navigate('QRScreen', {
-        instructionText: 'Scan a shared QR code from Resume Author to connect your wallet.',
+        instructionText:
+          'Scan a shared QR code from Resume Author to connect your wallet.',
         onReadQRCode: async (qrText: string) => {
           try {
-            const url = new URL(qrText);
-            const requestParam = url.searchParams.get('request');
+            const url = new URL(qrText)
+            const requestParam = url.searchParams.get('request')
             if (!requestParam) {
-              throw new Error('Invalid QR code: missing request parameter');
+              throw new Error('Invalid QR code: missing request parameter')
             }
 
-            const decoded = decodeURIComponent(requestParam);
-            const payload = JSON.parse(decoded);
-            const requestUrl = payload?.protocols?.vcapi;
+            const decoded = decodeURIComponent(requestParam)
+            const payload = JSON.parse(decoded)
+            const requestUrl = payload?.protocols?.vcapi
             if (!requestUrl) {
-              throw new Error('Missing request URL in QR code');
+              throw new Error('Missing request URL in QR code')
             }
 
             redirectRequestRoute(qrText)
@@ -47,26 +48,29 @@ export default function WasConnectScreen() {
             //   suite: new Ed25519Signature2020({ signer })
             // });
 
-            setStatusMessage('✅ Wallet successfully connected to Resume Author!');
-            setStatusType('success');
+            setStatusMessage(
+              '✅ Wallet successfully connected to Resume Author!'
+            )
+            setStatusType('success')
 
             if (navigationRef.isReady()) {
-              navigationRef.goBack();
+              navigationRef.goBack()
             }
           } catch (error) {
-            console.error('Connection failed:', error);
-            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-            setStatusMessage(`Failed to connect wallet: ${errorMessage}`);
-            setStatusType('error');
+            console.error('Connection failed:', error)
+            const errorMessage =
+              error instanceof Error ? error.message : 'Unknown error occurred'
+            setStatusMessage(`Failed to connect wallet: ${errorMessage}`)
+            setStatusType('error')
 
             if (navigationRef.isReady()) {
-              navigationRef.goBack();
+              navigationRef.goBack()
             }
           }
         }
-      });
+      })
     }
-  };
+  }
 
   return (
     <View style={styles.container}>
@@ -82,13 +86,16 @@ export default function WasConnectScreen() {
       )}
 
       {statusType !== '' && (
-        <Button title="Reset" onPress={() => {
-          resetStatus();
-          handleScanQR();
-        }} />
+        <Button
+          title="Reset"
+          onPress={() => {
+            resetStatus()
+            handleScanQR()
+          }}
+        />
       )}
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
@@ -96,17 +103,17 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
+    padding: 20
   },
   statusText: {
     marginTop: 20,
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: 'center'
   },
   successText: {
-    color: theme.color.success,
+    color: theme.color.success
   },
   errorText: {
-    color: theme.color.error,
-  },
-});
+    color: theme.color.error
+  }
+})

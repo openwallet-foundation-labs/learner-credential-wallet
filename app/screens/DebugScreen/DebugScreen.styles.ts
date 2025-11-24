@@ -1,24 +1,24 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   container: {
-    padding: 16,
+    padding: 16
   },
   paragraph: {
-    ...mixins.paragraphText,
+    ...mixins.paragraphText
   },
   codeBlock: {
     color: theme.color.textPrimary,
     backgroundColor: theme.color.backgroundSecondary,
     padding: 10,
     fontFamily: theme.fontFamily.mono,
-    marginBottom: 16,
+    marginBottom: 16
   },
   exitButton: {
     backgroundColor: theme.color.transparent,
-    padding: 0,
+    padding: 0
   },
   exitButtonTitle: {
-    color: theme.color.textHeader,
-  },
-}));
+    color: theme.color.textHeader
+  }
+}))

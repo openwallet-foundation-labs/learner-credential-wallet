@@ -1,9 +1,9 @@
-import { createContext } from 'react';
-import { ThemeType } from '.';
+import { createContext } from 'react'
+import { ThemeType } from '.'
 
 export type ThemeContextValue = {
-  theme: ThemeType,
-  isDarkTheme: boolean;
+  theme: ThemeType
+  isDarkTheme: boolean
 }
 
-export const ThemeContext = createContext<ThemeContextValue | null>(null);
+export const ThemeContext = createContext<ThemeContextValue | null>(null)

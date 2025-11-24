@@ -1,10 +1,10 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   dataValue: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.regular,
-    color: theme.color.textPrimary,
+    color: theme.color.textPrimary
   },
   flexRow: {
     flexDirection: 'row',
@@ -15,20 +15,20 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     borderRadius: theme.borderRadius,
     marginTop: 16,
     padding: 16,
-    justifyContent: 'space-between',
+    justifyContent: 'space-between'
   },
   proofText: {
     justifyContent: 'center',
-    marginHorizontal: 14,
+    marginHorizontal: 14
   },
   lastCheckedText: {
     fontSize: 12,
-    color: theme.color.textSecondary,
+    color: theme.color.textSecondary
   },
   modalBodyText: {
     ...mixins.paragraphText,
     textAlign: 'center',
     lineHeight: 24,
-    marginVertical: 8,
-  },
-}));
+    marginVertical: 8
+  }
+}))

@@ -1,11 +1,11 @@
-import { ZCAP_EXPIRES } from '../../app.config';
+import { ZCAP_EXPIRES } from '../../app.config'
 // @ts-ignore
-import { ZcapClient } from '@digitalcredentials/ezcap';
-import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
+import { ZcapClient } from '@digitalcredentials/ezcap'
+import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020'
 
-import { displayGlobalModal } from './globalModal';
-import { getRootSigner } from './getRootSigner';
-import { IZcapQuery } from './walletRequestApi';
+import { displayGlobalModal } from './globalModal'
+import { getRootSigner } from './getRootSigner'
+import { IZcapQuery } from './walletRequestApi'
 
 // export default async function handleZcapRequest({
 //   request,

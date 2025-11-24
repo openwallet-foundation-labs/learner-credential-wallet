@@ -1,4 +1,4 @@
-import { IOpenBadgeCredentialV3 } from '@digitalcredentials/ssi';
+import { IOpenBadgeCredentialV3 } from '@digitalcredentials/ssi'
 
 export const mockOpenBadgeWithAlignments: IOpenBadgeCredentialV3 = {
   '@context': [
@@ -20,7 +20,8 @@ export const mockOpenBadgeWithAlignments: IOpenBadgeCredentialV3 = {
       type: ['Achievement'],
       criteria: {
         type: 'Criteria',
-        narrative: 'Cite strong and thorough textual evidence to support analysis of what the text says explicitly as well as inferences drawn from the text, including determining where the text leaves matters uncertain'
+        narrative:
+          'Cite strong and thorough textual evidence to support analysis of what the text says explicitly as well as inferences drawn from the text, including determining where the text leaves matters uncertain'
       },
       description: 'Analyze a sample text',
       name: 'Text analysis',
@@ -30,12 +31,14 @@ export const mockOpenBadgeWithAlignments: IOpenBadgeCredentialV3 = {
           targetCode: 'ce-cf4dee18-7cea-443a-b920-158a0762c6bf',
           targetFramework: 'Edmonds College Course Catalog',
           targetName: 'Requirements Analysis',
-          targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis'
+          targetUrl:
+            'https://credentialfinder.org/credential/20229/Requirements_Analysis'
         },
         {
           type: ['Alignment'],
           targetName: 'Requirements Analysis with Description',
-          targetUrl: 'https://credentialfinder.org/credential/20229/Requirements_Analysis',
+          targetUrl:
+            'https://credentialfinder.org/credential/20229/Requirements_Analysis',
           targetDescription: 'This is a description'
         },
         {
@@ -52,4 +55,4 @@ export const mockOpenBadgeWithAlignments: IOpenBadgeCredentialV3 = {
       ]
     }
   }
-};
+}

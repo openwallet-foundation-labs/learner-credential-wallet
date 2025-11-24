@@ -1,65 +1,79 @@
-import React, { useEffect, useState } from 'react';
-import { useAsyncCallback } from 'react-async-hook';
-import { Text, View } from 'react-native';
-import AnimatedEllipsis from 'rn-animated-ellipsis';
+import React, { useEffect, useState } from 'react'
+import { useAsyncCallback } from 'react-async-hook'
+import { Text, View } from 'react-native'
+import AnimatedEllipsis from 'rn-animated-ellipsis'
 
-import ConfirmModal from '../ConfirmModal/ConfirmModal';
-import { useAppDispatch, useDynamicStyles } from '../../hooks';
-import { isCredentialRequestParams, requestCredential } from '../../lib/credentialRequest';
-import { ProfileRecordRaw } from '../../model';
-import { selectWithFactory } from '../../store/selectorFactories';
-import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
-import dynamicStyleSheet from './CredentialRequestHandler.styles';
-import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
-import {navigationRef} from '../../navigation';
+import ConfirmModal from '../ConfirmModal/ConfirmModal'
+import { useAppDispatch, useDynamicStyles } from '../../hooks'
+import {
+  isCredentialRequestParams,
+  requestCredential
+} from '../../lib/credentialRequest'
+import { ProfileRecordRaw } from '../../model'
+import { selectWithFactory } from '../../store/selectorFactories'
+import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile'
+import dynamicStyleSheet from './CredentialRequestHandler.styles'
+import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer'
+import { IVerifiableCredential } from '@digitalcredentials/ssi'
+import { navigationRef } from '../../navigation'
 
 type CredentialRequestHandlerProps = {
-  credentialRequestParams: Record<string, unknown> | undefined;
-  rawProfileRecord: ProfileRecordRaw;
-  onFailed: () => void;
+  credentialRequestParams: Record<string, unknown> | undefined
+  rawProfileRecord: ProfileRecordRaw
+  onFailed: () => void
 }
 
 export default function CredentialRequestHandler({
-  credentialRequestParams, rawProfileRecord, onFailed
+  credentialRequestParams,
+  rawProfileRecord,
+  onFailed
 }: CredentialRequestHandlerProps): React.ReactElement {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const dispatch = useAppDispatch();
-  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const dispatch = useAppDispatch()
+  const [modalIsOpen, setModalIsOpen] = useState(false)
 
-  const credentialRequest = useAsyncCallback(requestCredential, { onSuccess: onFinish,
+  const credentialRequest = useAsyncCallback(requestCredential, {
+    onSuccess: onFinish,
     onError: () => {
-      setModalIsOpen(false);
+      setModalIsOpen(false)
       if (navigationRef.isReady()) {
         navigationRef.navigate('HomeNavigation', {
           screen: 'CredentialNavigation',
           params: {
-            screen: 'HomeScreen',
-          },
-        });
+            screen: 'HomeScreen'
+          }
+        })
       }
-    }});
-  const errorMessage = credentialRequest.error?.message;
+    }
+  })
+  const errorMessage = credentialRequest.error?.message
 
   async function onFinish(credentials: IVerifiableCredential[]) {
-    setModalIsOpen(false);
-    await dispatch(stageCredentialsForProfile({ credentials, profileRecordId: rawProfileRecord._id }));
+    setModalIsOpen(false)
+    await dispatch(
+      stageCredentialsForProfile({
+        credentials,
+        profileRecordId: rawProfileRecord._id
+      })
+    )
   }
 
   function onRequestClose() {
-    setModalIsOpen(false);
+    setModalIsOpen(false)
     if (errorMessage) {
-      onFailed();
+      onFailed()
     }
   }
 
   useEffect(() => {
     if (isCredentialRequestParams(credentialRequestParams)) {
-      setModalIsOpen(true);
-      const rawDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
-      credentialRequest.execute(credentialRequestParams, rawDidRecord);
+      setModalIsOpen(true)
+      const rawDidRecord = selectWithFactory(makeSelectDidFromProfile, {
+        rawProfileRecord
+      })
+      credentialRequest.execute(credentialRequestParams, rawDidRecord)
     }
-  }, [credentialRequestParams, rawProfileRecord]);
+  }, [credentialRequestParams, rawProfileRecord])
 
   return (
     <ConfirmModal
@@ -73,11 +87,16 @@ export default function CredentialRequestHandler({
     >
       {credentialRequest.loading ? (
         <View style={styles.loadingContainer}>
-          <AnimatedEllipsis style={styles.loadingDots} minOpacity={0.4} animationDelay={200} useNativeDriver={true} />
+          <AnimatedEllipsis
+            style={styles.loadingDots}
+            minOpacity={0.4}
+            animationDelay={200}
+            useNativeDriver={true}
+          />
         </View>
       ) : (
         <Text style={styles.modalText}>{errorMessage}</Text>
       )}
     </ConfirmModal>
-  );
+  )
 }

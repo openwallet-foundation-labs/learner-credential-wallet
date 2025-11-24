@@ -1,6 +1,6 @@
-export type { IssuerInfoScreenProps } from '../../navigation';
+export type { IssuerInfoScreenProps } from '../../navigation'
 
 export type IssuerInfoScreenParams = {
-  issuerId: string;
+  issuerId: string
   rawCredentialRecord: rawCredentialRecord
 }

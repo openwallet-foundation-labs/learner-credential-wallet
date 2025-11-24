@@ -1,4 +1,4 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   listItemContainer: {
@@ -6,44 +6,44 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     backgroundColor: theme.color.foregroundPrimary,
     paddingVertical: mixins.button.paddingVertical,
     paddingHorizontal: mixins.button.paddingHorizontal,
-    minHeight: 72,
+    minHeight: 72
   },
   listItemOuterContainer: {
     marginVertical: 8,
-    borderRadius: mixins.button.borderRadius,
+    borderRadius: mixins.button.borderRadius
   },
   listItemContentContainer: {
-    flexDirection: 'column',
+    flexDirection: 'column'
   },
   listItemTextContainer: {
-    flex: 1,
+    flex: 1
   },
   listItemTopContent: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   listItemTitle: {
     color: theme.color.textPrimary,
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.regular,
-    marginBottom: 6,
+    marginBottom: 6
   },
   listItemSubtitle: {
     color: theme.color.textSecondary,
     fontFamily: theme.fontFamily.regular,
-    fontSize: 14,
+    fontSize: 14
   },
   notVerifiedIcon: {
     width: theme.issuerIconSize - 8,
     height: theme.issuerIconSize - 8,
     marginRight: 12,
     justifyContent: 'center',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   checkboxContainer: {
     marginRight: 12,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   checkboxBox: {
     width: 22,
@@ -53,6 +53,6 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     borderColor: theme.color.textSecondary,
     backgroundColor: 'transparent',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-}));
+    justifyContent: 'center'
+  }
+}))

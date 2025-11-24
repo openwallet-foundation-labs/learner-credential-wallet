@@ -1,21 +1,26 @@
-import React from 'react';
-import { Text, View, ScrollView } from 'react-native';
-import { Button } from 'react-native-elements';
+import React from 'react'
+import { Text, View, ScrollView } from 'react-native'
+import { Button } from 'react-native-elements'
 
-import NavHeader from '../../components/NavHeader/NavHeader';
-import dynamicStyleSheet from './DebugScreen.styles';
-import { DebugScreenProps } from '../../navigation';
-import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
-import { useSelectorFactory } from '../../hooks/useSelectorFactory';
-import { useDynamicStyles } from '../../hooks';
+import NavHeader from '../../components/NavHeader/NavHeader'
+import dynamicStyleSheet from './DebugScreen.styles'
+import { DebugScreenProps } from '../../navigation'
+import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile'
+import { useSelectorFactory } from '../../hooks/useSelectorFactory'
+import { useDynamicStyles } from '../../hooks'
 
-export default function DebugScreen({ navigation, route }: DebugScreenProps): React.ReactElement {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const { rawCredentialRecord, rawProfileRecord } = route.params;
-  const rawDidRecord = useSelectorFactory(makeSelectDidFromProfile, { rawProfileRecord });
+export default function DebugScreen({
+  navigation,
+  route
+}: DebugScreenProps): React.ReactElement {
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const { rawCredentialRecord, rawProfileRecord } = route.params
+  const rawDidRecord = useSelectorFactory(makeSelectDidFromProfile, {
+    rawProfileRecord
+  })
 
   function goBack() {
-    navigation.goBack();
+    navigation.goBack()
   }
 
   function Exit(): React.ReactElement {
@@ -26,7 +31,7 @@ export default function DebugScreen({ navigation, route }: DebugScreenProps): Re
         onPress={goBack}
         title="Exit"
       />
-    );
+    )
   }
 
   return (
@@ -53,5 +58,5 @@ export default function DebugScreen({ navigation, route }: DebugScreenProps): Re
         </View>
       </ScrollView>
     </>
-  );
+  )
 }

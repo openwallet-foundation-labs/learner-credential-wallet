@@ -1,7 +1,7 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(() => ({
   container: {
-    width: '100%',
-  },
-}));
+    width: '100%'
+  }
+}))

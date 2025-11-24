@@ -1,1 +1,1 @@
-export type { AddScreenProps } from '../../navigation';
+export type { AddScreenProps } from '../../navigation'

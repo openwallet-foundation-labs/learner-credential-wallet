@@ -1,47 +1,54 @@
-import React, { useEffect, useMemo } from 'react';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useMemo } from 'react'
+import { useSelector } from 'react-redux'
 
-import type { ThemeProviderProps } from './ThemeProvider.d';
-import { useAppDispatch } from '../../hooks';
-import { selectWalletState, updateThemeName } from '../../store/slices/wallet';
-import { defaultTheme, ThemeContext, ThemeContextValue, themes } from '../../styles';
-import { findThemeBy } from '../../styles/theme/themeName';
-import { useSystemTheme } from './useSystemTheme';
+import type { ThemeProviderProps } from './ThemeProvider.d'
+import { useAppDispatch } from '../../hooks'
+import { selectWalletState, updateThemeName } from '../../store/slices/wallet'
+import {
+  defaultTheme,
+  ThemeContext,
+  ThemeContextValue,
+  themes
+} from '../../styles'
+import { findThemeBy } from '../../styles/theme/themeName'
+import { useSystemTheme } from './useSystemTheme'
 
-export default function ThemeProvider({ children }: ThemeProviderProps): React.ReactElement {
-  const dispatch = useAppDispatch();
-  const { themeName } = useSelector(selectWalletState);
+export default function ThemeProvider({
+  children
+}: ThemeProviderProps): React.ReactElement {
+  const dispatch = useAppDispatch()
+  const { themeName } = useSelector(selectWalletState)
 
   // Use custom hook instead of broken useColorScheme
-  const colorScheme = useSystemTheme();
+  const colorScheme = useSystemTheme()
 
-  console.log('colorScheme from OS:', colorScheme);
-  console.log('themeName from storage:', themeName);
+  console.log('colorScheme from OS:', colorScheme)
+  console.log('themeName from storage:', themeName)
 
   // ALWAYS sync with OS theme - remove the themeName === null check
   useEffect(() => {
     if (colorScheme !== null) {
-      const osThemeName = colorScheme === 'dark' ? themes.darkTheme.name : themes.lightTheme.name;
+      const osThemeName =
+        colorScheme === 'dark' ? themes.darkTheme.name : themes.lightTheme.name
 
       // Only update if different to avoid unnecessary dispatches
       if (themeName !== osThemeName) {
-        console.log('Syncing theme to match OS:', osThemeName);
-        dispatch(updateThemeName(osThemeName));
+        console.log('Syncing theme to match OS:', osThemeName)
+        dispatch(updateThemeName(osThemeName))
       }
     }
-  }, [colorScheme, themeName, dispatch]);
+  }, [colorScheme, themeName, dispatch])
 
-  const theme = useMemo(() => findThemeBy(themeName) || defaultTheme, [themeName]);
-  const isDarkTheme = useMemo(() => theme === themes.darkTheme, [theme]);
+  const theme = useMemo(
+    () => findThemeBy(themeName) || defaultTheme,
+    [themeName]
+  )
+  const isDarkTheme = useMemo(() => theme === themes.darkTheme, [theme])
 
   const value: ThemeContextValue = {
     theme,
-    isDarkTheme,
-  };
+    isDarkTheme
+  }
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>
 }

@@ -1,7 +1,7 @@
-import type { ThemeType } from '..';
-import { Color } from '../../colors';
-import { FontFamily } from '../../fonts';
-import { ColorScheme } from '../../colorScheme';
+import type { ThemeType } from '..'
+import { Color } from '../../colors'
+import { FontFamily } from '../../fonts'
+import { ColorScheme } from '../../colorScheme'
 
 export const lightTheme: ThemeType = {
   name: 'LightTheme',
@@ -29,25 +29,25 @@ export const lightTheme: ThemeType = {
     transparent: Color.Transparent,
     switchActive: Color.Blue,
     modalBackground: Color.Gray400,
-    highlightAndroid: Color.TransparentBlue,
+    highlightAndroid: Color.TransparentBlue
   },
   fontFamily: {
     regular: FontFamily.RubikRegular,
     medium: FontFamily.RubikMedium,
     bold: FontFamily.RubikBold,
-    mono: FontFamily.RobotoMonoRegular,
+    mono: FontFamily.RobotoMonoRegular
   },
   fontSize: {
     title: 36,
     header: 24,
     medium: 18,
     regular: 16,
-    small: 12,
+    small: 12
   },
   borderRadius: 5,
   iconSize: 24,
   issuerIconSize: 48,
   statusBarStyle: ColorScheme.Dark,
   keyboardAppearance: ColorScheme.Light,
-  shadowOpacity: 0.1,
-};
+  shadowOpacity: 0.1
+}

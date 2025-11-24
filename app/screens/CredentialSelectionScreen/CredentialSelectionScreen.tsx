@@ -1,75 +1,97 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, FlatList } from 'react-native';
-import { Text, Button } from 'react-native-elements';
-import { useSelector } from 'react-redux';
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { View, FlatList } from 'react-native'
+import { Text, Button } from 'react-native-elements'
+import { useSelector } from 'react-redux'
 
-import CredentialItem from '../../components/CredentialItem/CredentialItem';
-import NavHeader from '../../components/NavHeader/NavHeader';
-import dynamicStyleSheet from './CredentialSelectionScreen.styles';
-import type { RenderItemProps } from './CredentialSelectionScreen.d';
-import type { CredentialSelectionScreenProps } from '../../navigation';
-import { selectRawCredentialRecords } from '../../store/slices/credential';
-import { useDynamicStyles } from '../../hooks';
-import { verificationResultFor, VerificationResult } from '../../lib/verifiableObject';
-import { hasPublicLink } from '../../lib/publicLink';
+import CredentialItem from '../../components/CredentialItem/CredentialItem'
+import NavHeader from '../../components/NavHeader/NavHeader'
+import dynamicStyleSheet from './CredentialSelectionScreen.styles'
+import type { RenderItemProps } from './CredentialSelectionScreen.d'
+import type { CredentialSelectionScreenProps } from '../../navigation'
+import { selectRawCredentialRecords } from '../../store/slices/credential'
+import { useDynamicStyles } from '../../hooks'
+import {
+  verificationResultFor,
+  VerificationResult
+} from '../../lib/verifiableObject'
+import { hasPublicLink } from '../../lib/publicLink'
 
 export default function CredentialSelectionScreen({
   navigation,
   route
 }: CredentialSelectionScreenProps): React.ReactElement {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { title, instructionText, onSelectCredentials, singleSelect, credentialFilter, goBack = navigation.goBack } = route.params;
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const {
+    title,
+    instructionText,
+    onSelectCredentials,
+    singleSelect,
+    credentialFilter,
+    goBack = navigation.goBack
+  } = route.params
 
-  const [selected, setSelected] = useState<number[]>([]);
-  const allItems = useSelector(selectRawCredentialRecords);
-  const filteredItems = useMemo(() => credentialFilter ? allItems.filter(credentialFilter) : allItems, [allItems]);
-  const selectedCredentials = useMemo(() => selected.map((i) => filteredItems[i]), [selected, filteredItems]);
+  const [selected, setSelected] = useState<number[]>([])
+  const allItems = useSelector(selectRawCredentialRecords)
+  const filteredItems = useMemo(
+    () => (credentialFilter ? allItems.filter(credentialFilter) : allItems),
+    [allItems]
+  )
+  const selectedCredentials = useMemo(
+    () => selected.map((i) => filteredItems[i]),
+    [selected, filteredItems]
+  )
 
   // Pre-verify and cache results for visible credentials to keep rows pure/static
-  const [verifyMap, setVerifyMap] = useState<Record<string, VerificationResult>>({});
-  const [publicMap, setPublicMap] = useState<Record<string, boolean>>({});
-  const loadingRef = useRef<boolean>(false);
+  const [verifyMap, setVerifyMap] = useState<
+    Record<string, VerificationResult>
+  >({})
+  const [publicMap, setPublicMap] = useState<Record<string, boolean>>({})
+  const loadingRef = useRef<boolean>(false)
 
   useEffect(() => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-    (async () => {
-      const entries: Record<string, VerificationResult> = {};
-      const publicEntries: Record<string, boolean> = {};
+    if (loadingRef.current) return
+    loadingRef.current = true
+    ;(async () => {
+      const entries: Record<string, VerificationResult> = {}
+      const publicEntries: Record<string, boolean> = {}
       for (const r of filteredItems) {
         try {
-          const res = await verificationResultFor({ rawCredentialRecord: r, forceFresh: false, registries: undefined as any });
-          entries[String(r._id)] = res;
-          publicEntries[String(r._id)] = await hasPublicLink(r);
+          const res = await verificationResultFor({
+            rawCredentialRecord: r,
+            forceFresh: false,
+            registries: undefined as any
+          })
+          entries[String(r._id)] = res
+          publicEntries[String(r._id)] = await hasPublicLink(r)
         } catch {
           // keep empty; rows will handle gracefully
         }
       }
-      setVerifyMap(entries);
-      setPublicMap(publicEntries);
-      loadingRef.current = false;
-    })();
-  }, [filteredItems]);
+      setVerifyMap(entries)
+      setPublicMap(publicEntries)
+      loadingRef.current = false
+    })()
+  }, [filteredItems])
 
   function toggleItem(credentialIndex: number): void {
     if (selected.includes(credentialIndex)) {
-      setSelected(selected.filter(i => i !== credentialIndex));
+      setSelected(selected.filter((i) => i !== credentialIndex))
     } else {
       if (singleSelect) {
         // In single-select mode, only allow one selection at a time
-        setSelected([credentialIndex]);
+        setSelected([credentialIndex])
       } else {
-        setSelected([...selected, credentialIndex]);
+        setSelected([...selected, credentialIndex])
       }
     }
   }
 
   function renderItem({ item, index }: RenderItemProps): React.ReactElement {
-    const { credential } = item;
+    const { credential } = item
 
     const onSelectItem = () => {
-      toggleItem(index);
-    };
+      toggleItem(index)
+    }
 
     return (
       <CredentialItem
@@ -86,38 +108,33 @@ export default function CredentialSelectionScreen({
         // Disable row press; allow only checkbox to toggle selection
         onPressDisabled
       />
-    );
+    )
   }
 
-
-
   function ShareButton(): React.ReactElement | null {
-    if (selected.length === 0) return null;
+    if (selected.length === 0) return null
 
-    const buttonTitle = singleSelect ? 'Create Link' : 'Send Selected Credentials';
+    const buttonTitle = singleSelect
+      ? 'Create Link'
+      : 'Send Selected Credentials'
     return (
       <Button
         title={buttonTitle}
         buttonStyle={styles.shareButton}
         titleStyle={mixins.buttonTitle}
         onPress={() => {
-          onSelectCredentials(selectedCredentials);
-          goBack();
+          onSelectCredentials(selectedCredentials)
+          goBack()
         }}
       />
-    );
+    )
   }
 
   return (
     <>
-      <NavHeader
-        title={title}
-        goBack={goBack}
-      />
+      <NavHeader title={title} goBack={goBack} />
       <View style={styles.container}>
-        <Text style={styles.paragraph}>
-          {instructionText}
-        </Text>
+        <Text style={styles.paragraph}>{instructionText}</Text>
         <FlatList
           indicatorStyle="white"
           style={styles.credentialList}
@@ -128,5 +145,5 @@ export default function CredentialSelectionScreen({
         <ShareButton />
       </View>
     </>
-  );
+  )
 }

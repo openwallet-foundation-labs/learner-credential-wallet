@@ -1,18 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import { Modal, Text, View, TouchableWithoutFeedback, AccessibilityInfo } from 'react-native';
-import { Button } from 'react-native-elements';
+import React, { useEffect, useState } from 'react'
+import {
+  Modal,
+  Text,
+  View,
+  TouchableWithoutFeedback,
+  AccessibilityInfo
+} from 'react-native'
+import { Button } from 'react-native-elements'
 
-import { useAccessibilityFocus, useDynamicStyles } from '../../hooks';
-import { ConfirmModalProps } from './ConfirmModal.d';
+import { useAccessibilityFocus, useDynamicStyles } from '../../hooks'
+import { ConfirmModalProps } from './ConfirmModal.d'
 
-import dynamicStyleSheet from './ConfirmModal.style';
+import dynamicStyleSheet from './ConfirmModal.style'
 
 /**
  * TODO: Right now the accessibility focus throws errors on Android
  * when returning from the share UI. Those errors must be resolved before
  * this can be enabled. This disable flag is a temporary fix.
  */
-const ENABLE_ACCESSIBILITY_FOCUS = false;
+const ENABLE_ACCESSIBILITY_FOCUS = false
 
 export default function ConfirmModal({
   open = true,
@@ -27,25 +33,27 @@ export default function ConfirmModal({
   accessibilityFocusContent = false,
   confirmText = 'Confirm',
   cancelText = 'Cancel',
-  children,
+  children
 }: ConfirmModalProps): React.ReactElement {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
 
-  const [isFirstRender, setIsFirstRender] = useState(true);
-  const [titleRef, focusTitle] = useAccessibilityFocus<Text>();
-  const [contentRef, focusContent] = useAccessibilityFocus<View>();
+  const [isFirstRender, setIsFirstRender] = useState(true)
+  const [titleRef, focusTitle] = useAccessibilityFocus<Text>()
+  const [contentRef, focusContent] = useAccessibilityFocus<View>()
 
   useEffect(() => {
     if (!isFirstRender) {
-      AccessibilityInfo.announceForAccessibility(`Modal ${open ? 'open' : 'closed'}`);
+      AccessibilityInfo.announceForAccessibility(
+        `Modal ${open ? 'open' : 'closed'}`
+      )
     } else {
-      setIsFirstRender(false);
+      setIsFirstRender(false)
     }
-  }, [open]);
+  }, [open])
 
   function onContentLayout() {
     if (ENABLE_ACCESSIBILITY_FOCUS) {
-      accessibilityFocusContent ? focusContent() : focusTitle();
+      accessibilityFocusContent ? focusContent() : focusTitle()
     }
   }
 
@@ -59,12 +67,16 @@ export default function ConfirmModal({
       accessible={false}
     >
       <View style={styles.modalOuterContainer}>
-        <TouchableWithoutFeedback accessible={false} importantForAccessibility="no" onPress={() => {
-          if (cancelOnBackgroundPress) {
-            onRequestClose();
-            onCancel();
-          }
-        }}>
+        <TouchableWithoutFeedback
+          accessible={false}
+          importantForAccessibility="no"
+          onPress={() => {
+            if (cancelOnBackgroundPress) {
+              onRequestClose()
+              onCancel()
+            }
+          }}
+        >
           <View style={styles.modalBackground} />
         </TouchableWithoutFeedback>
         <View style={styles.modalContainer}>
@@ -72,7 +84,9 @@ export default function ConfirmModal({
             style={styles.modalTitle}
             ref={titleRef}
             accessibilityRole="header"
-          >{title}</Text>
+          >
+            {title}
+          </Text>
           <View ref={contentRef} onLayout={onContentLayout}>
             {children}
           </View>
@@ -84,14 +98,14 @@ export default function ConfirmModal({
                 titleStyle={styles.buttonSecondaryTitle}
                 title={cancelText}
                 onPress={() => {
-                  onRequestClose();
-                  onCancel();
+                  onRequestClose()
+                  onCancel()
                 }}
               />
             ) : null}
-            { cancelButton && confirmButton ? (
+            {cancelButton && confirmButton ? (
               <View style={mixins.buttonSeparator} />
-            ) : null }
+            ) : null}
             {confirmButton ? (
               <Button
                 buttonStyle={styles.buttonPrimary}
@@ -108,5 +122,5 @@ export default function ConfirmModal({
         </View>
       </View>
     </Modal>
-  );
+  )
 }

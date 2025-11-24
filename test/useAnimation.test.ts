@@ -1,6 +1,6 @@
-import { renderHook } from '@testing-library/react-native';
-import { Animated } from 'react-native';
-import { useAnimation } from '../app/hooks/useAnimation';
+import { renderHook } from '@testing-library/react-native'
+import { Animated } from 'react-native'
+import { useAnimation } from '../app/hooks/useAnimation'
 
 jest.mock('react-native', () => ({
   Animated: {
@@ -17,17 +17,17 @@ jest.mock('react-native', () => ({
   Easing: {
     linear: 'linear'
   }
-}));
+}))
 
 describe('useAnimation', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-  });
+    jest.clearAllMocks()
+  })
 
   it('should create animation with default range and config', () => {
-    const { result } = renderHook(() => useAnimation());
-    
-    expect(Animated.Value).toHaveBeenCalledWith(0);
+    const { result } = renderHook(() => useAnimation())
+
+    expect(Animated.Value).toHaveBeenCalledWith(0)
     expect(Animated.timing).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -35,40 +35,42 @@ describe('useAnimation', () => {
         useNativeDriver: true,
         easing: 'linear'
       })
-    );
-    expect(result.current.value).toBe('interpolated-value');
-  });
+    )
+    expect(result.current.value).toBe('interpolated-value')
+  })
 
   it('should create animation with custom range', () => {
-    const customRange: [number, number] = [10, 20];
-    const { result } = renderHook(() => useAnimation(customRange));
-    
-    const mockAnimatedValue = (Animated.Value as jest.Mock).mock.results[0].value;
+    const customRange: [number, number] = [10, 20]
+    const { result } = renderHook(() => useAnimation(customRange))
+
+    const mockAnimatedValue = (Animated.Value as jest.Mock).mock.results[0]
+      .value
     expect(mockAnimatedValue.interpolate).toHaveBeenCalledWith({
       inputRange: [0, 1],
       outputRange: customRange
-    });
-  });
+    })
+  })
 
   it('should create animation with string range', () => {
-    const stringRange: [string, string] = ['0deg', '360deg'];
-    const { result } = renderHook(() => useAnimation(stringRange));
-    
-    const mockAnimatedValue = (Animated.Value as jest.Mock).mock.results[0].value;
+    const stringRange: [string, string] = ['0deg', '360deg']
+    const { result } = renderHook(() => useAnimation(stringRange))
+
+    const mockAnimatedValue = (Animated.Value as jest.Mock).mock.results[0]
+      .value
     expect(mockAnimatedValue.interpolate).toHaveBeenCalledWith({
       inputRange: [0, 1],
       outputRange: stringRange
-    });
-  });
+    })
+  })
 
   it('should create animation with custom config', () => {
     const customConfig = {
       duration: 2000,
       delay: 500
-    };
-    
-    renderHook(() => useAnimation([0, 1], customConfig));
-    
+    }
+
+    renderHook(() => useAnimation([0, 1], customConfig))
+
     expect(Animated.timing).toHaveBeenCalledWith(
       expect.anything(),
       expect.objectContaining({
@@ -78,16 +80,17 @@ describe('useAnimation', () => {
         duration: 2000,
         delay: 500
       })
-    );
-  });
+    )
+  })
 
   it('should provide reset functionality', () => {
-    const { result } = renderHook(() => useAnimation());
-    
-    const mockAnimatedValue = (Animated.Value as jest.Mock).mock.results[0].value;
-    
-    result.current.reset();
-    
-    expect(mockAnimatedValue.setValue).toHaveBeenCalledWith(0);
-  });
-});
+    const { result } = renderHook(() => useAnimation())
+
+    const mockAnimatedValue = (Animated.Value as jest.Mock).mock.results[0]
+      .value
+
+    result.current.reset()
+
+    expect(mockAnimatedValue.setValue).toHaveBeenCalledWith(0)
+  })
+})
