@@ -1,4 +1,4 @@
-import type { Config } from 'jest';
+import type { Config } from 'jest'
 
 const packagesToTransformWithBabel = [
   '@react-native',
@@ -22,20 +22,20 @@ const packagesToTransformWithBabel = [
   'react-native-securerandom',
   'rn-animated-ellipsis',
   'react-native-outside-press'
-];
+]
 
 const transformIgnorePatterns = [
-  `/node_modules/(?!(${packagesToTransformWithBabel.join('|')}))`,
-];
+  `/node_modules/(?!(${packagesToTransformWithBabel.join('|')}))`
+]
 
 const config: Config = {
   preset: 'react-native',
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
   },
   transformIgnorePatterns,
   moduleNameMapper: {
-    '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js',
+    '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js'
   },
   setupFiles: ['<rootDir>/jest.setup.js'],
   collectCoverage: true,
@@ -45,8 +45,8 @@ const config: Config = {
     'app/**/*.{js,jsx,ts,tsx}',
     '!app/**/*.d.ts',
     '!app/**/*.test.{js,jsx,ts,tsx}',
-    '!app/**/*.spec.{js,jsx,ts,tsx}',
-  ],
-};
+    '!app/**/*.spec.{js,jsx,ts,tsx}'
+  ]
+}
 
-export default config;
+export default config

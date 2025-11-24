@@ -1,3 +1,3 @@
 export type PDF = {
-  readonly filePath: string;
+  readonly filePath: string
 }

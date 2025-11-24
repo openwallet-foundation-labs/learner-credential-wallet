@@ -1,48 +1,48 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   container: {
     padding: 16,
     paddingBottom: 0,
-    flex: 1,
+    flex: 1
   },
   listContainer: {
-    marginTop: 8,
+    marginTop: 8
   },
   listContentContainer: {
-    paddingBottom: 8,
+    paddingBottom: 8
   },
   doneButton: {
     backgroundColor: theme.color.transparent,
     padding: 0,
-    alignItems: 'center',
+    alignItems: 'center'
   },
   doneButtonTitle: {
     lineHeight: 17,
     paddingHorizontal: 8,
     color: theme.color.textHeader,
-    fontSize: theme.fontSize.regular,
+    fontSize: theme.fontSize.regular
   },
   profileText: {
-    ...mixins.paragraphText,
+    ...mixins.paragraphText
   },
   profileTextBold: {
-    fontFamily: theme.fontFamily.bold,
+    fontFamily: theme.fontFamily.bold
   },
   listHeader: {
-    marginVertical: 8,
+    marginVertical: 8
   },
   footerContainer: {
     ...mixins.shadow,
     backgroundColor: theme.color.backgroundSecondary,
     paddingHorizontal: 16,
-    paddingVertical: 4,
+    paddingVertical: 4
   },
   acceptAllButton: {
     height: 44,
-    minHeight: undefined,
+    minHeight: undefined
   },
   acceptAllButtonTitle: {
-    fontSize: 14,
-  },
-}));
+    fontSize: 14
+  }
+}))

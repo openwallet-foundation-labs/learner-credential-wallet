@@ -1,1 +1,1 @@
-export type { VerificationStatusScreenProps } from '../../navigation';
+export type { VerificationStatusScreenProps } from '../../navigation'

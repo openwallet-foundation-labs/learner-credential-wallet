@@ -1,78 +1,78 @@
-import React, {useEffect, useRef, useState,} from 'react';
-import {Text,  useWindowDimensions} from 'react-native';
-import { View,  StyleSheet } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react'
+import { Text, useWindowDimensions } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 
-import { ConfirmModal } from '../../components';
-import { NavHeader } from '../../components';
-import { QRScreenProps } from './QRScreen.d';
-import dynamicStyleSheet from './QRScreen.styles';
-import { errorMessageFrom } from '../../lib/error';
-import { useDynamicStyles } from '../../hooks';
-import {Camera, CodeType, useCameraDevice, useCameraFormat, useCodeScanner} from 'react-native-vision-camera';
-import {useFocusEffect, useIsFocused} from '@react-navigation/native';
-import {useAppState} from '@react-native-community/hooks';
-import {Code} from 'react-native-vision-camera';
-import {useCameraPermissionStatus} from './useCameraPermissionStatus';
-const codeTypes: CodeType[] = ['qr'];
-export default function QRScreen({ navigation, route }: QRScreenProps)  {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const { onReadQRCode, instructionText } = route.params;
-  const isActivated = useRef(true);
+import { ConfirmModal } from '../../components'
+import { NavHeader } from '../../components'
+import { QRScreenProps } from './QRScreen.d'
+import dynamicStyleSheet from './QRScreen.styles'
+import { errorMessageFrom } from '../../lib/error'
+import { useDynamicStyles } from '../../hooks'
+import {
+  Camera,
+  CodeType,
+  useCameraDevice,
+  useCameraFormat,
+  useCodeScanner
+} from 'react-native-vision-camera'
+import { useFocusEffect, useIsFocused } from '@react-navigation/native'
+import { useAppState } from '@react-native-community/hooks'
+import { Code } from 'react-native-vision-camera'
+import { useCameraPermissionStatus } from './useCameraPermissionStatus'
+const codeTypes: CodeType[] = ['qr']
+export default function QRScreen({ navigation, route }: QRScreenProps) {
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const { onReadQRCode, instructionText } = route.params
+  const isActivated = useRef(true)
   const deactivate = () => {
-    isActivated.current = false;
-  };
+    isActivated.current = false
+  }
   const activate = () => {
-    isActivated.current = true;
-  };
-  const [errorMessage, setErrorMessage] = useState('');
-  const { width } = useWindowDimensions();
+    isActivated.current = true
+  }
+  const [errorMessage, setErrorMessage] = useState('')
+  const { width } = useWindowDimensions()
 
-  const errorModalOpen = errorMessage !== '';
+  const errorModalOpen = errorMessage !== ''
 
-  const {status, requestPermission} = useCameraPermissionStatus();
+  const { status, requestPermission } = useCameraPermissionStatus()
 
   useEffect(() => {
     if (status === 'undetermined') {
-      requestPermission();
+      requestPermission()
     }
-  }, [status, requestPermission]);
-
+  }, [status, requestPermission])
 
   function Instructions(): React.ReactElement {
-    return (
-      <Text style={styles.instructionText}>
-        {instructionText}
-      </Text>
-    );
+    return <Text style={styles.instructionText}>{instructionText}</Text>
   }
 
   useFocusEffect(
     React.useCallback(() => {
-      activate();
+      activate()
 
-      return deactivate;
-    }, []),
-  );
+      return deactivate
+    }, [])
+  )
 
   async function onRead(codes: Code[]) {
-    const code = codes[0];
+    const code = codes[0]
     if (!code || !code.value) {
-      return;
+      return
     }
     if (!isActivated.current) {
-      return;
+      return
     }
-    deactivate();
+    deactivate()
     try {
-      await onReadQRCode(code.value);
+      await onReadQRCode(code.value)
     } catch (err) {
-      setErrorMessage(errorMessageFrom(err));
+      setErrorMessage(errorMessageFrom(err))
     }
-
   }
 
   function onRequestModalClose() {
-    setErrorMessage('');
+    setErrorMessage('')
     // setTimeout(() => scannerRef.current?.reactivate(), 1000);
   }
 
@@ -108,24 +108,23 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
 
   const codeScanner = useCodeScanner({
     codeTypes: codeTypes,
-    onCodeScanned: onRead,
-  });
+    onCodeScanned: onRead
+  })
 
-  const device = useCameraDevice('back');
+  const device = useCameraDevice('back')
 
   const format = useCameraFormat(device, [
-    {photoResolution: {width: 1920, height: 1080}},
-    {videoResolution: {width: 1920, height: 1080}},
-  ]);
-  const isFocused = useIsFocused();
-  const appState = useAppState();
-  const isActive = isFocused && appState === 'active';
+    { photoResolution: { width: 1920, height: 1080 } },
+    { videoResolution: { width: 1920, height: 1080 } }
+  ])
+  const isFocused = useIsFocused()
+  const appState = useAppState()
+  const isActive = isFocused && appState === 'active'
 
   if (!device) {
-    return null;
+    return null
     // TODO should return <NoCameraView />;
   }
-
 
   return (
     <View style={styles.scannerBody}>
@@ -150,7 +149,7 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
             styles.markerStyle,
             {
               width: width * 0.8,
-              height: width * 0.8,
+              height: width * 0.8
             }
           ]}
         />
@@ -165,7 +164,7 @@ export default function QRScreen({ navigation, route }: QRScreenProps)  {
         title={errorMessage}
       />
     </View>
-  );
+  )
 }
 
 const stylez = StyleSheet.create({
@@ -173,13 +172,13 @@ const stylez = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     top: 50,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
 
   rectangle: {
     height: 250,
     width: 250,
     borderWidth: 2,
-    backgroundColor: 'transparent',
-  },
-});
+    backgroundColor: 'transparent'
+  }
+})

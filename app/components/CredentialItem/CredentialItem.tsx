@@ -1,18 +1,18 @@
-import React, { ComponentProps, useMemo } from 'react';
-import { View, TouchableOpacity } from 'react-native';
-import { Text } from 'react-native-elements';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { ComponentProps, useMemo } from 'react'
+import { View, TouchableOpacity } from 'react-native'
+import { Text } from 'react-native-elements'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
 
-import dynamicStyleSheet from './CredentialItem.styles';
-import type { CredentialItemProps } from './CredentialItem.d';
-import CredentialStatusBadges from '../CredentialStatusBadges/CredentialStatusBadges';
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
-import { credentialItemPropsFor } from '../../lib/credentialDisplay';
-import { CardImage } from '../../lib/credentialDisplay/shared';
+import dynamicStyleSheet from './CredentialItem.styles'
+import type { CredentialItemProps } from './CredentialItem.d'
+import CredentialStatusBadges from '../CredentialStatusBadges/CredentialStatusBadges'
+import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { credentialItemPropsFor } from '../../lib/credentialDisplay'
+import { CardImage } from '../../lib/credentialDisplay/shared'
 
-type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
+type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified'
 
-  function CredentialItem({
+function CredentialItem({
   onSelect,
   checkable = false,
   selected = false,
@@ -23,60 +23,64 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
   credential,
   showStatusBadges = false,
   precomputedVerification,
-    precomputedPublic,
-    onPressDisabled,
+  precomputedPublic,
+  onPressDisabled
 }: CredentialItemProps): React.ReactElement {
-  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
+  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const verifyCredential = useVerifyCredential(rawCredentialRecord)
 
-  const { title, subtitle, image: rawImage } = credentialItemPropsFor(credential);
+  const {
+    title,
+    subtitle,
+    image: rawImage
+  } = credentialItemPropsFor(credential)
 
-  const image = typeof rawImage === 'string' ? { uri: rawImage } : rawImage;
+  const image = typeof rawImage === 'string' ? { uri: rawImage } : rawImage
 
-  const hasBottomElement = bottomElement !== undefined;
+  const hasBottomElement = bottomElement !== undefined
   const accessibilityProps: ComponentProps<typeof View> = {
     accessibilityLabel: `${title} Credential, from ${subtitle}`,
     accessibilityRole: checkable ? 'checkbox' : 'button',
-    accessibilityState: { checked: checkable ? selected : undefined },
-  };
+    accessibilityState: { checked: checkable ? selected : undefined }
+  }
 
   const verificationStatus = useMemo<VerificationStatus>(() => {
-    const logs = verifyCredential?.result?.log ?? [];
-    const isLoading = verifyCredential?.loading;
-    const isVerified = verifyCredential?.result?.verified;
+    const logs = verifyCredential?.result?.log ?? []
+    const isLoading = verifyCredential?.loading
+    const isVerified = verifyCredential?.result?.verified
 
-    if (logs.length === 0 && isVerified === null) return 'not_verified';
-    if (isLoading && logs.length > 0) return 'verifying';
+    if (logs.length === 0 && isVerified === null) return 'not_verified'
+    if (isLoading && logs.length > 0) return 'verifying'
 
     const details = logs.reduce<Record<string, boolean>>((acc, log) => {
-      acc[log.id] = log.valid;
-      return acc;
-    }, {});
+      acc[log.id] = log.valid
+      return acc
+    }, {})
 
-    ['valid_signature', 'expiration', 'registered_issuer'].forEach((key) => {
+    ;['valid_signature', 'expiration', 'registered_issuer'].forEach((key) => {
       if (!(key in details)) {
-        details[key] = false;
+        details[key] = false
       }
-    });
+    })
 
     const hasFailure = ['valid_signature', 'revocation_status'].some(
       (key) => details[key] === false
-    );
+    )
 
     const hasWarning = ['expiration', 'registered_issuer'].some(
       (key) => details[key] === false
-    );
+    )
 
-    if (hasFailure) return 'not_verified';
-    if (hasWarning) return 'warning';
+    if (hasFailure) return 'not_verified'
+    if (hasWarning) return 'warning'
 
-    return 'verified';
-  }, [verifyCredential]);
+    return 'verified'
+  }, [verifyCredential])
 
   function LeftContent(): React.ReactElement | null {
-    if (hideLeft) return null;
-  
-  if (checkable) {
+    if (hideLeft) return null
+
+    if (checkable) {
       return (
         <TouchableOpacity
           onPress={onSelect}
@@ -87,20 +91,36 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
         >
           <View
             style={[
-              { width: 22, height: 22, borderRadius: 4, borderWidth: 2, borderColor: theme.color.textSecondary, backgroundColor: 'transparent', alignItems: 'center', justifyContent: 'center' },
-              selected && { borderColor: theme.color.buttonPrimary, backgroundColor: theme.color.buttonPrimary },
+              {
+                width: 22,
+                height: 22,
+                borderRadius: 4,
+                borderWidth: 2,
+                borderColor: theme.color.textSecondary,
+                backgroundColor: 'transparent',
+                alignItems: 'center',
+                justifyContent: 'center'
+              },
+              selected && {
+                borderColor: theme.color.buttonPrimary,
+                backgroundColor: theme.color.buttonPrimary
+              }
             ]}
           >
             {selected && (
-              <MaterialCommunityIcons name="check" size={16} color={theme.color.backgroundPrimary} />
+              <MaterialCommunityIcons
+                name="check"
+                size={16}
+                color={theme.color.backgroundPrimary}
+              />
             )}
           </View>
         </TouchableOpacity>
-      );
+      )
     }
-  
-    const hasImage = image?.uri?.startsWith('http');
-  
+
+    const hasImage = image?.uri?.startsWith('http')
+
     if (hasImage) {
       return (
         <CardImage
@@ -108,9 +128,8 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
           accessibilityLabel={subtitle}
           size={theme.issuerIconSize - 8}
         />
-      );
+      )
     }
-  
 
     if (verificationStatus === 'not_verified') {
       return (
@@ -121,9 +140,9 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
             color={theme.color.error}
           />
         </View>
-      );
+      )
     }
-  
+
     if (verificationStatus === 'warning') {
       return (
         <View style={styles.notVerifiedIcon}>
@@ -133,9 +152,9 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
             color={theme.color.warning}
           />
         </View>
-      );
+      )
     }
-  
+
     if (verificationStatus === 'verifying') {
       return (
         <View style={styles.notVerifiedIcon}>
@@ -145,9 +164,9 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
             color={theme.color.textSecondary}
           />
         </View>
-      );
+      )
     }
-  
+
     return (
       <View style={styles.notVerifiedIcon}>
         <MaterialCommunityIcons
@@ -156,12 +175,11 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
           color={theme.color.success}
         />
       </View>
-    );
+    )
   }
-  
-  
+
   function StatusBadges(): React.ReactElement | null {
-    if (!showStatusBadges || !rawCredentialRecord) return null;
+    if (!showStatusBadges || !rawCredentialRecord) return null
 
     return (
       <CredentialStatusBadges
@@ -170,18 +188,18 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
         precomputedVerification={precomputedVerification as any}
         precomputedPublic={precomputedPublic}
       />
-    );
+    )
   }
 
   function Chevron(): React.ReactElement | null {
-    if (!chevron) return null;
+    if (!chevron) return null
     return (
       <MaterialCommunityIcons
         name="chevron-right"
         size={theme.issuerIconSize - 8}
         color={theme.color.textSecondary}
       />
-    );
+    )
   }
 
   return (
@@ -198,7 +216,9 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
           <View
             style={styles.listItemTopContent}
             accessible={hasBottomElement}
-            importantForAccessibility={hasBottomElement ? 'yes' : 'no-hide-descendants'}
+            importantForAccessibility={
+              hasBottomElement ? 'yes' : 'no-hide-descendants'
+            }
             {...accessibilityProps}
           >
             <LeftContent />
@@ -213,7 +233,7 @@ type VerificationStatus = 'verifying' | 'verified' | 'warning' | 'not_verified';
         </View>
       </TouchableOpacity>
     </View>
-  );
+  )
 }
 
-export default React.memo(CredentialItem);
+export default React.memo(CredentialItem)

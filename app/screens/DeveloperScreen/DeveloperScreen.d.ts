@@ -1,1 +1,1 @@
-export { DeveloperScreenProps } from '../../navigation';
+export { DeveloperScreenProps } from '../../navigation'

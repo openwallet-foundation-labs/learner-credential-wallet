@@ -1,36 +1,40 @@
-import { NavigationState, PartialState } from '@react-navigation/native';
-import { Linking } from 'react-native';
+import { NavigationState, PartialState } from '@react-navigation/native'
+import { Linking } from 'react-native'
 
-import { navigationRef } from '../navigation/navigationRef';
-import { encodeQueryParams } from './encode';
+import { navigationRef } from '../navigation/navigationRef'
+import { encodeQueryParams } from './encode'
 
-import { LinkConfig } from '../../app.config';
-import { redirectRequestRoute } from './navigationUtil';
-import { isLegacyCredentialRequest, legacyRequestParamsFromUrl } from './decode';
-import { goToCredentialFoyer } from '../screens/AddScreen/AddScreen';
+import { LinkConfig } from '../../app.config'
+import { redirectRequestRoute } from './navigationUtil'
+import { isLegacyCredentialRequest, legacyRequestParamsFromUrl } from './decode'
+import { goToCredentialFoyer } from '../screens/AddScreen/AddScreen'
 
-const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol
-  .concat(LinkConfig.schemes.universalAppLink);
+const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol.concat(
+  LinkConfig.schemes.universalAppLink
+)
 const DEEP_LINK_PATHS: DeepLinkPaths = {
-  request: (credentialRequestParams) => deepLinkNavigate('ProfileSelectionScreen', {
-    onSelectProfile: (rawProfileRecord) => navigationRef.navigate('AcceptCredentialsNavigation', {
-      screen: 'ApproveCredentialsScreen',
-      params: {
-        rawProfileRecord,
-        credentialRequestParams,
-      }
+  request: (credentialRequestParams) =>
+    deepLinkNavigate('ProfileSelectionScreen', {
+      onSelectProfile: (rawProfileRecord) =>
+        navigationRef.navigate('AcceptCredentialsNavigation', {
+          screen: 'ApproveCredentialsScreen',
+          params: {
+            rawProfileRecord,
+            credentialRequestParams
+          }
+        })
     }),
-  }),
-  present: (shareRequestParams) => deepLinkNavigate('HomeNavigation', {
-    screen: 'ShareNavigation',
-    params: {
-      screen: 'ShareHomeScreen',
+  present: (shareRequestParams) =>
+    deepLinkNavigate('HomeNavigation', {
+      screen: 'ShareNavigation',
       params: {
-        shareRequestParams,
+        screen: 'ShareHomeScreen',
+        params: {
+          shareRequestParams
+        }
       }
-    }
-  })
-};
+    })
+}
 
 /**
  * @see https://reactnavigation.org/docs/navigation-container/#linking
@@ -46,28 +50,28 @@ export const deepLinkConfig = {
    */
   subscribe: (listener: (url: string) => void) => {
     const onReceiveURL = ({ url }: { url: string }) => {
-      console.log('deepLink "subscribe" event for url:', url);
+      console.log('deepLink "subscribe" event for url:', url)
       if (isLegacyCredentialRequest(url)) {
-        const params = legacyRequestParamsFromUrl(url);
-        return goToCredentialFoyer(params);
+        const params = legacyRequestParamsFromUrl(url)
+        return goToCredentialFoyer(params)
       }
       if (url.includes('request=')) {
-        redirectRequestRoute(url);
+        redirectRequestRoute(url)
       }
 
-      return listener(encodeQueryParams(url));
-    };
+      return listener(encodeQueryParams(url))
+    }
 
-    const subscription = Linking.addEventListener('url', onReceiveURL);
-    return () => subscription.remove();
+    const subscription = Linking.addEventListener('url', onReceiveURL)
+    return () => subscription.remove()
   },
   getInitialURL: async () => {
-    const url = await Linking.getInitialURL();
+    const url = await Linking.getInitialURL()
     if (url !== null) {
-      await new Promise((res) => setTimeout(res, 100));
-      return encodeQueryParams(url);
+      await new Promise((res) => setTimeout(res, 100))
+      return encodeQueryParams(url)
     }
-  },
+  }
   // getStateFromPath: (url: string) => {
   //   console.log('deepLink "getStateFromPath" event for path:', url);
   //   const messageObject = parseWalletApiUrl({ url });
@@ -87,22 +91,39 @@ export const deepLinkConfig = {
   //     });
   //   return stateForExchangeCredentials(message);
   // }
-};
+}
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type DeepLinkPaths = Record<string, (params: any) => any>;
-type ResultState = PartialState<NavigationState>;
+type DeepLinkPaths = Record<string, (params: any) => any>
+type ResultState = PartialState<NavigationState>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const deepLinkNavigate: typeof navigationRef.navigate = (...args: any[]): ResultState => {
-  function stateFor(screen: string, params?: Record<string, unknown>): ResultState {
-    const hasParams = params !== undefined;
-    const paramsAreNestedScreen = params !== undefined && 'screen' in params && 'params' in params;
+const deepLinkNavigate: typeof navigationRef.navigate = (
+  ...args: any[]
+): ResultState => {
+  function stateFor(
+    screen: string,
+    params?: Record<string, unknown>
+  ): ResultState {
+    const hasParams = params !== undefined
+    const paramsAreNestedScreen =
+      params !== undefined && 'screen' in params && 'params' in params
 
-    if (paramsAreNestedScreen) return { routes: [{ name: screen, state: stateFor(params?.screen as string, params?.params as Record<string, unknown>) }] };
-    else if (hasParams) return { routes: [{ name: screen, params }] };
-    return { routes: [{ name: screen }] };
+    if (paramsAreNestedScreen)
+      return {
+        routes: [
+          {
+            name: screen,
+            state: stateFor(
+              params?.screen as string,
+              params?.params as Record<string, unknown>
+            )
+          }
+        ]
+      }
+    else if (hasParams) return { routes: [{ name: screen, params }] }
+    return { routes: [{ name: screen }] }
   }
 
-  return stateFor(args[0] as string, args[1] as Record<string, unknown>);
-};
+  return stateFor(args[0] as string, args[1] as Record<string, unknown>)
+}

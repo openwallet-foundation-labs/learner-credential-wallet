@@ -1,4 +1,4 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   container: {
@@ -7,43 +7,43 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     padding: 16,
     marginVertical: 8,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'center'
   },
   textContainer: {
-    flex: 1,
+    flex: 1
   },
   titleText: {
     color: theme.color.textPrimary,
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.regular,
-    marginBottom: 6,
+    marginBottom: 6
   },
   subtitleText: {
     color: theme.color.textPrimary,
     fontFamily: theme.fontFamily.regular,
-    fontSize: 14,
+    fontSize: 14
   },
   input: {
     ...mixins.input,
-    backgroundColor: theme.color.foregroundPrimary,
+    backgroundColor: theme.color.foregroundPrimary
   },
   underline: {
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline'
   },
   checkboxButtonContainer: {
     flexDirection: 'row',
     padding: 8,
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
   checkboxContainer: {
     height: 24,
     width: 24,
-    marginRight: 16,
+    marginRight: 16
   },
   checkboxText: {
-    ...mixins.paragraphText,
+    ...mixins.paragraphText
   },
   passwordForm: {
-    marginVertical: 8,
-  },
-}));
+    marginVertical: 8
+  }
+}))

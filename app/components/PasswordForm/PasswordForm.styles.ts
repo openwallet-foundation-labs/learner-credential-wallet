@@ -1,7 +1,7 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(() => ({
   inputSeparator: {
-    height: 14,
-  },
-}));
+    height: 14
+  }
+}))

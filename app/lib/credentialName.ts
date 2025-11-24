@@ -1,5 +1,5 @@
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
-import { getSubject } from './credentialDisplay/shared/utils/credentialSubject';
+import { IVerifiableCredential } from '@digitalcredentials/ssi'
+import { getSubject } from './credentialDisplay/shared/utils/credentialSubject'
 
 /**
  * Extracts the credential name from a verifiable credential
@@ -8,11 +8,12 @@ import { getSubject } from './credentialDisplay/shared/utils/credentialSubject';
  */
 export function getCredentialName(credential: IVerifiableCredential): string {
   const credentialSubject = getSubject(credential)
-  let achievement = credentialSubject.hasCredential ?? credentialSubject.achievement;
+  let achievement =
+    credentialSubject.hasCredential ?? credentialSubject.achievement
 
   if (Array.isArray(achievement)) {
-    achievement = achievement[0];
+    achievement = achievement[0]
   }
 
-  return achievement?.name ?? 'Unknown Credential';
+  return achievement?.name ?? 'Unknown Credential'
 }

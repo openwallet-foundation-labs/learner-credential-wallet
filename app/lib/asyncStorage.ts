@@ -1,3 +1,3 @@
 export enum AsyncStorageKey {
-  ThemeName = 'ThemeName',
+  ThemeName = 'ThemeName'
 }

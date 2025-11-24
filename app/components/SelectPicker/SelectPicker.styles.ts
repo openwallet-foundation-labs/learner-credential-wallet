@@ -1,23 +1,23 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   dropDownPicker: {
     backgroundColor: theme.color.backgroundPrimary,
     borderColor: theme.color.iconInactive,
     paddingHorizontal: 16,
-    borderRadius: theme.borderRadius,
+    borderRadius: theme.borderRadius
   },
   dropDownPickerDrawer: {
     backgroundColor: theme.color.backgroundPrimary,
     borderColor: theme.color.iconInactive,
-    borderRadius: theme.borderRadius,
+    borderRadius: theme.borderRadius
   },
   dropDownPickerText: {
-    ...mixins.paragraphText,
+    ...mixins.paragraphText
   },
   headerComponentContainer: {
     zIndex: 2,
-    marginBottom: 8,
+    marginBottom: 8
   },
   dropDownLabel: {
     color: theme.color.textPrimary,
@@ -26,15 +26,15 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     marginLeft: 14,
     marginBottom: -10,
     alignSelf: 'flex-start',
-    paddingHorizontal: 4,  
-    zIndex: 2,
+    paddingHorizontal: 4,
+    zIndex: 2
   },
   dropDownItem: {
     paddingHorizontal: 20,
     height: 48,
-    backgroundColor: theme.color.foregroundPrimary,
+    backgroundColor: theme.color.foregroundPrimary
   },
   dropDownItemSelected: {
-    backgroundColor: theme.color.backgroundPrimary,
-  },
-}));
+    backgroundColor: theme.color.backgroundPrimary
+  }
+}))

@@ -1,24 +1,33 @@
-import React, { useEffect, useRef } from 'react';
-import { Text, ScrollView, View } from 'react-native';
+import React, { useEffect, useRef } from 'react'
+import { Text, ScrollView, View } from 'react-native'
 
-import { NavHeader } from '../../components';
-import dynamicStyleSheet from './ViewSourceScreen.styles';
-import { ViewSourceScreenParams } from './ViewSourceScreen.d';
+import { NavHeader } from '../../components'
+import dynamicStyleSheet from './ViewSourceScreen.styles'
+import { ViewSourceScreenParams } from './ViewSourceScreen.d'
 
 type ViewSourceScreenProps = {
-  navigation: any;
-  route: { params: ViewSourceScreenParams };
-};
-import { useDynamicStyles } from '../../hooks';
-import { Button } from 'react-native-elements';
+  navigation: any
+  route: { params: ViewSourceScreenParams }
+}
+import { useDynamicStyles } from '../../hooks'
+import { Button } from 'react-native-elements'
 
-export default function ViewSourceScreen({ navigation, route }: ViewSourceScreenProps): React.ReactElement {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { data, screenTitle = 'View Source', onPressButton, buttonTitle, noWrap } = route.params;
-  const scrollRef = useRef<ScrollView>(null);
+export default function ViewSourceScreen({
+  navigation,
+  route
+}: ViewSourceScreenProps): React.ReactElement {
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const {
+    data,
+    screenTitle = 'View Source',
+    onPressButton,
+    buttonTitle,
+    noWrap
+  } = route.params
+  const scrollRef = useRef<ScrollView>(null)
 
   function BottomButton(): React.ReactElement | null {
-    if (buttonTitle === undefined) return null;
+    if (buttonTitle === undefined) return null
 
     return (
       <Button
@@ -27,12 +36,12 @@ export default function ViewSourceScreen({ navigation, route }: ViewSourceScreen
         titleStyle={mixins.buttonTitle}
         onPress={onPressButton}
       />
-    );
+    )
   }
 
   useEffect(() => {
-    scrollRef.current?.scrollToEnd({ animated: false });
-  }, []);
+    scrollRef.current?.scrollToEnd({ animated: false })
+  }, [])
 
   return (
     <>
@@ -43,7 +52,13 @@ export default function ViewSourceScreen({ navigation, route }: ViewSourceScreen
           style={styles.scrollView}
           contentContainerStyle={styles.scrollViewInner}
         >
-          <ScrollView horizontal contentContainerStyle={[styles.scrollViewHorizontalInner, noWrap && styles.noWrap]}>
+          <ScrollView
+            horizontal
+            contentContainerStyle={[
+              styles.scrollViewHorizontalInner,
+              noWrap && styles.noWrap
+            ]}
+          >
             <Text style={styles.codeBlock} selectable>
               {data}
             </Text>
@@ -52,5 +67,5 @@ export default function ViewSourceScreen({ navigation, route }: ViewSourceScreen
         <BottomButton />
       </View>
     </>
-  );
+  )
 }

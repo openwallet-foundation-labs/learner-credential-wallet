@@ -1,0 +1,8 @@
+node_modules/
+coverage/
+android/
+ios/
+.expo/
+patches/
+*.log
+*.lock

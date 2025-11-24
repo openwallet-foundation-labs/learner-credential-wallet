@@ -1,1 +1,1 @@
-export type { ExchangeCredentialsProps } from '../../navigation';
+export type { ExchangeCredentialsProps } from '../../navigation'

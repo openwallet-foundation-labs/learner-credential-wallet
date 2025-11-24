@@ -1,18 +1,18 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ mixins }) => ({
   container: {
     padding: 16,
     paddingBottom: 0,
-    flex: 1,
+    flex: 1
   },
   credentialList: {
-    overflow: 'hidden',
+    overflow: 'hidden'
   },
   paragraph: {
     ...mixins.paragraphText,
     marginBottom: 16,
-    marginTop: 8,
+    marginTop: 8
   },
   shareButton: {
     ...mixins.buttonPrimary,

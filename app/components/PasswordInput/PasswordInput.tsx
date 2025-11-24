@@ -1,33 +1,45 @@
-import React, { ComponentProps, forwardRef, Ref, useRef, RefObject } from 'react';
-import { View, TextInput as RNTextInput, Platform } from 'react-native';
-import { TextInput } from 'react-native-paper';
+import React, {
+  ComponentProps,
+  forwardRef,
+  Ref,
+  useRef,
+  RefObject
+} from 'react'
+import { View, TextInput as RNTextInput, Platform } from 'react-native'
+import { TextInput } from 'react-native-paper'
 
-import AccessibleView from '../AccessibleView/AccessibleView';
-import { useDynamicStyles } from '../../hooks';
+import AccessibleView from '../AccessibleView/AccessibleView'
+import { useDynamicStyles } from '../../hooks'
 
-import dynamicStyleSheet from './PasswordInput.styles';
+import dynamicStyleSheet from './PasswordInput.styles'
 
-type TextInputProps = ComponentProps<typeof TextInput>;
+type TextInputProps = ComponentProps<typeof TextInput>
 
 export type PasswordInputProps = TextInputProps & {
-  label: string;
-  value: string;
-  onChangeText: (value: string) => void;
-  highlightError?: boolean;
-  inputRef?: RefObject<RNTextInput>;
-};
+  label: string
+  value: string
+  onChangeText: (value: string) => void
+  highlightError?: boolean
+  inputRef?: RefObject<RNTextInput>
+}
 
-function PasswordInput({
-  label,
-  value,
-  onChangeText,
-  inputRef,
-  highlightError,
-  ...textInputProps
-}: PasswordInputProps, ref: Ref<View>): React.ReactElement {
-  const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet);
-  const _inputRef = inputRef || useRef<RNTextInput>(null);
-  const selectionColor = Platform.select({ ios: theme.color.brightAccent, android: theme.color.highlightAndroid });
+function PasswordInput(
+  {
+    label,
+    value,
+    onChangeText,
+    inputRef,
+    highlightError,
+    ...textInputProps
+  }: PasswordInputProps,
+  ref: Ref<View>
+): React.ReactElement {
+  const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet)
+  const _inputRef = inputRef || useRef<RNTextInput>(null)
+  const selectionColor = Platform.select({
+    ios: theme.color.brightAccent,
+    android: theme.color.highlightAndroid
+  })
 
   return (
     <AccessibleView
@@ -45,13 +57,19 @@ function PasswordInput({
         secureTextEntry
         autoCorrect={false}
         value={value}
-        outlineColor={highlightError ? theme.color.error : theme.color.textPrimary}
+        outlineColor={
+          highlightError ? theme.color.error : theme.color.textPrimary
+        }
         selectionColor={selectionColor}
-        theme={{ colors: {
-          placeholder: value ? theme.color.textPrimary : theme.color.inputInactive,
-          text: theme.color.textPrimary,
-          primary: theme.color.brightAccent,
-        }}}
+        theme={{
+          colors: {
+            placeholder: value
+              ? theme.color.textPrimary
+              : theme.color.inputInactive,
+            text: theme.color.textPrimary,
+            primary: theme.color.brightAccent
+          }
+        }}
         label={label}
         mode="outlined"
         onChangeText={onChangeText}
@@ -59,7 +77,7 @@ function PasswordInput({
         {...textInputProps}
       />
     </AccessibleView>
-  );
+  )
 }
 
-export default forwardRef<View, PasswordInputProps>(PasswordInput);
+export default forwardRef<View, PasswordInputProps>(PasswordInput)

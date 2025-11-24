@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { Text, View, FlatList, AccessibilityInfo, Linking } from 'react-native';
-import { Button } from 'react-native-elements';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useSelector } from 'react-redux';
-import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler';
+import React, { useState } from 'react'
+import { Text, View, FlatList, AccessibilityInfo, Linking } from 'react-native'
+import { Button } from 'react-native-elements'
+import { MaterialIcons } from '@expo/vector-icons'
+import { useSelector } from 'react-redux'
+import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler'
 
-import { CredentialItem, NavHeader, ConfirmModal } from '../../components';
-import { navigationRef } from '../../navigation/navigationRef';
-import { LinkConfig } from '../../../app.config';
+import { CredentialItem, NavHeader, ConfirmModal } from '../../components'
+import { navigationRef } from '../../navigation/navigationRef'
+import { LinkConfig } from '../../../app.config'
 
 import dynamicStyleSheet from './HomeScreen.styles';
 import { HomeScreenProps, RenderItemProps } from './HomeScreen.d';
@@ -22,8 +22,10 @@ import { useContext } from 'react';
 import { DidRegistryContext } from '../../init/registries';
 
 
-export default function HomeScreen({ navigation }: HomeScreenProps): React.ReactElement {
-  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
+export default function HomeScreen({
+  navigation
+}: HomeScreenProps): React.ReactElement {
+  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet)
 
   const rawCredentialRecords = useSelector(selectRawCredentialRecords);
   const [itemToDelete, setItemToDelete] = useState<CredentialRecordRaw|null>(null);
@@ -38,12 +40,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
   }
 
   function renderItem({ item }: RenderItemProps) {
-    const { credential } = item;
-    const onSelect = () => navigation.navigate('CredentialScreen', { rawCredentialRecord: item });
+    const { credential } = item
+    const onSelect = () =>
+      navigation.navigate('CredentialScreen', { rawCredentialRecord: item })
 
     return (
       <View style={styles.swipeItemOuter}>
-
         <View>
           <Swipeable
             renderLeftActions={() => (
@@ -56,10 +58,12 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
                   />
                 </View>
               </TouchableOpacity>
-
             )}
             renderRightActions={() => (
-              <TouchableOpacity onPress={() => setItemToDelete(item)} style={[mixins.buttonIconContainer, styles.noShadow]}>
+              <TouchableOpacity
+                onPress={() => setItemToDelete(item)}
+                style={[mixins.buttonIconContainer, styles.noShadow]}
+              >
                 <View style={[styles.swipeButton, mixins.buttonError]}>
                   <MaterialIcons
                     name="delete"
@@ -80,7 +84,7 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
           </Swipeable>
         </View>
       </View>
-    );
+    )
   }
 
   function goToCredentialAdd() {
@@ -88,9 +92,9 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
       navigationRef.navigate('HomeNavigation', {
         screen: 'AddNavigation',
         params: {
-          screen: 'AddScreen',
-        },
-      });
+          screen: 'AddScreen'
+        }
+      })
     }
   }
 
@@ -111,32 +115,32 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
           />
         }
       />
-    );
+    )
   }
 
   async function deleteItem() {
-    if (itemToDelete === null) return;
-    dispatch(deleteCredential(itemToDelete));
-    setItemToDelete(null);
-    AccessibilityInfo.announceForAccessibility('Credential Deleted');
+    if (itemToDelete === null) return
+    dispatch(deleteCredential(itemToDelete))
+    setItemToDelete(null)
+    AccessibilityInfo.announceForAccessibility('Credential Deleted')
   }
 
   function LearnMoreLink(): React.ReactElement {
     return (
       <View style={styles.learnMoreContainer}>
-         <Text style={styles.learnMoreText}>
+        <Text style={styles.learnMoreText}>
           <Text
             style={styles.learnMoreLink}
             onPress={() => Linking.openURL(LinkConfig.appWebsite.home)}
             accessibilityRole="link"
             accessibilityLabel="Learn more about the LCW at lcw.app"
           >
-           Learn more
-          </Text>
-          {' '} about the LCW
-          </Text>
+            Learn more
+          </Text>{' '}
+          about the LCW
+        </Text>
       </View>
-    );
+    )
   }
 
   return (
@@ -171,5 +175,5 @@ export default function HomeScreen({ navigation }: HomeScreenProps): React.React
         </Text>
       </ConfirmModal>
     </>
-  );
+  )
 }

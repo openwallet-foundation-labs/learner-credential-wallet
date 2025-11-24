@@ -5,10 +5,10 @@ import { ProfileCredentialScreenParams } from '../../screens/ProfileCredentialSc
 import { CredentialRecordRaw } from '../../types/credential';
 
 export type SettingsItemProps = {
-  readonly title: string;
-  readonly onPress: () => void;
-  readonly rightComponent?: ReactNode;
-  readonly disabled?: boolean;
+  readonly title: string
+  readonly onPress: () => void
+  readonly rightComponent?: ReactNode
+  readonly disabled?: boolean
 }
 
 export type SettingsNavigationParamList = {

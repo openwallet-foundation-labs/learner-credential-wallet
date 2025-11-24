@@ -16,42 +16,46 @@ import { ExchangeCredentialsProps } from './ExchangeCredentials.d';
 import { HumanReadableError } from '../../lib/error';
 import { useThemeContext } from '../../hooks/useThemeContext';
 
-import { profileWithSigners } from '../../lib/profile';
-import { CredentialRecord } from '../../model';
+import { profileWithSigners } from '../../lib/profile'
+import { CredentialRecord } from '../../model'
 
-export default function ExchangeCredentials({ route }: ExchangeCredentialsProps): React.ReactElement {
-  const { params } = route;
-  const { message } = params;
+export default function ExchangeCredentials({
+  route
+}: ExchangeCredentialsProps): React.ReactElement {
+  const { params } = route
+  const { message } = params
 
-  const { theme } = useThemeContext();
-  const dispatch = useAppDispatch();
-  const { mixins } = useDynamicStyles();
+  const { theme } = useThemeContext()
+  const dispatch = useAppDispatch()
+  const { mixins } = useDynamicStyles()
 
-  const [coldStart, setColdStart] = useState(true);
-  const appState = useRef(AppState.currentState);
+  const [coldStart, setColdStart] = useState(true)
+  const appState = useRef(AppState.currentState)
 
   useLayoutEffect(() => {
-    const subscription = AppState.addEventListener('change', nextAppState => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
       //use AppState to determine if app is cold launched or not
       if (appState.current === null || nextAppState === 'background') {
         //if cold launch, auto-open the modal
-        setColdStart(true);
+        setColdStart(true)
       }
-      appState.current = nextAppState;
-    });
+      appState.current = nextAppState
+    })
 
     return () => {
-      subscription.remove();
-    };
-  }, []);
+      subscription.remove()
+    }
+  }, [])
 
   const dataLoadingSuccessModalState = {
     title: 'Success',
     confirmButton: true,
     confirmText: 'OK',
     cancelButton: false,
-    body: <GlobalModalBody message='You have successfully delivered credentials to the organization.' />
-  };
+    body: (
+      <GlobalModalBody message="You have successfully delivered credentials to the organization." />
+    )
+  }
 
   const modalConfirmZcapRequest = async () => {
     const confirmed = await displayGlobalModal({
@@ -63,8 +67,8 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
           Something is requesting storage access.
         </Text>
       )
-    });
-    return confirmed;
+    })
+    return confirmed
   }
 
   /**
@@ -81,34 +85,46 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
    * { issueRequest: { credential } }
    */
   const acceptExchange = async () => {
-    setColdStart(false);
+    setColdStart(false)
     // Short circuit unsupported IssueRequest
     if ('issueRequest' in message) {
-      throw new HumanReadableError('Issue/signing requests not supported yet.');
+      throw new HumanReadableError('Issue/signing requests not supported yet.')
     }
 
-    console.log('[acceptExchange] Processing message:', JSON.stringify(message, null, 2));
+    console.log(
+      '[acceptExchange] Processing message:',
+      JSON.stringify(message, null, 2)
+    )
 
-    const { credentialRequestOrigin } = message;
-    console.log('[acceptExchange] credentialRequestOrigin (self-asserted):',
-      credentialRequestOrigin);
+    const { credentialRequestOrigin } = message
+    console.log(
+      '[acceptExchange] credentialRequestOrigin (self-asserted):',
+      credentialRequestOrigin
+    )
 
-    let requestOrOffer, exchangeUrl;
+    let requestOrOffer, exchangeUrl
     // If this is an Exchange Invitation, send the initial POST {}
     //   to get back either a request or an offer
     if ('protocols' in message) {
-      exchangeUrl = message.protocols?.vcapi;
+      exchangeUrl = message.protocols?.vcapi
       if (exchangeUrl === undefined) {
-        throw new HumanReadableError('Only the "vcapi" protocol is supported currently.');
+        throw new HumanReadableError(
+          'Only the "vcapi" protocol is supported currently.'
+        )
       }
       // Start the exchange - initial POST {}
-      const initialResponse = await await sendToExchanger({ exchangeUrl, payload: {} });
-      console.log(`Initial exchange response from "${exchangeUrl}":`,
-        JSON.stringify(initialResponse, null, 2));
-      requestOrOffer = initialResponse;
+      const initialResponse = await await sendToExchanger({
+        exchangeUrl,
+        payload: {}
+      })
+      console.log(
+        `Initial exchange response from "${exchangeUrl}":`,
+        JSON.stringify(initialResponse, null, 2)
+      )
+      requestOrOffer = initialResponse
     } else {
-      exchangeUrl = message.redirectUrl;
-      requestOrOffer = message;
+      exchangeUrl = message.redirectUrl
+      requestOrOffer = message
     }
 
     // Regardless if request is an offer or a request, select profile
@@ -138,7 +154,7 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
         didDocument: selectedDidRecord.didDocument,
         verificationKey: selectedDidRecord.verificationKey
       }
-    });
+    })
 
     // Recursively process exchanges until either:
     //  1) we're issued some credentials, or
@@ -149,58 +165,64 @@ export default function ExchangeCredentials({ route }: ExchangeCredentialsProps)
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {
-      const { credentialRequestOrigin } = requestOrOffer;
-      console.log('credentialRequestOrigin:', credentialRequestOrigin);
-      console.log('[acceptExchange] Accepting credentials:', acceptCredentials);
-      await dispatch(stageCredentialsForProfile({ credentials: acceptCredentials, profileRecordId: rawProfileRecord._id }));
-      await delay(500);
+      const { credentialRequestOrigin } = requestOrOffer
+      console.log('credentialRequestOrigin:', credentialRequestOrigin)
+      console.log('[acceptExchange] Accepting credentials:', acceptCredentials)
+      await dispatch(
+        stageCredentialsForProfile({
+          credentials: acceptCredentials,
+          profileRecordId: rawProfileRecord._id
+        })
+      )
+      await delay(500)
       navigationRef.navigate('AcceptCredentialsNavigation', {
         screen: 'ApproveCredentialsScreen',
         params: {
           rawProfileRecord
         }
-      });
+      })
     } else {
-      console.log('[acceptExchange] Exchanges completed.');
-      displayGlobalModal(dataLoadingSuccessModalState);
+      console.log('[acceptExchange] Exchanges completed.')
+      displayGlobalModal(dataLoadingSuccessModalState)
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
         params: {
-          screen: 'HomeScreen',
+          screen: 'HomeScreen'
         }
-      });
+      })
     }
-  };
+  }
 
   const rejectExchange = () => {
-    coldStart && setColdStart(false);
+    coldStart && setColdStart(false)
     if (navigationRef.isReady() && navigationRef.canGoBack()) {
-      navigationRef.goBack();
+      navigationRef.goBack()
     } else {
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
         params: {
-          screen: 'HomeScreen',
-        },
-      });
+          screen: 'HomeScreen'
+        }
+      })
     }
-  };
+  }
 
   return (
     <ConfirmModal
       open={coldStart}
       onConfirm={acceptExchange}
       onCancel={rejectExchange}
-      onRequestClose={() => {(!coldStart) && rejectExchange();}}
+      onRequestClose={() => {
+        !coldStart && rejectExchange()
+      }}
       title="Incoming Message"
       confirmText="Yes"
-      cancelText="No">
+      cancelText="No"
+    >
       <Text style={mixins.modalBodyText}>
         An organization would like to exchange credentials with you.
       </Text>
-      <Text style={mixins.modalBodyText}>
-        Would you like to continue?
-      </Text>
+      <Text style={mixins.modalBodyText}>Would you like to continue?</Text>
     </ConfirmModal>
-  );
+  )
 }

@@ -1,4 +1,4 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme }) => ({
   container: {
@@ -9,15 +9,15 @@ export default createDynamicStyleSheet(({ theme }) => ({
     paddingHorizontal: 7,
     marginHorizontal: 2,
     height: 20,
-    marginBottom: 4,
+    marginBottom: 4
   },
   icon: {
     marginRight: 4,
-    marginLeft: -5,
+    marginLeft: -5
   },
   label: {
     fontFamily: theme.fontFamily.medium,
     fontSize: theme.fontSize.small,
-    letterSpacing: 0.3,
+    letterSpacing: 0.3
   }
-}));
+}))

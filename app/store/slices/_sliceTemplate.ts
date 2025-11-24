@@ -8,20 +8,23 @@
  *   - entity
  */
 
-import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { EntityRecord, EntityRecordRaw } from '../../model';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit'
+import { EntityRecord, EntityRecordRaw } from '../../model'
 
 export type EntityState = {
-  rawEntityRecords: EntityRecordRaw[];
-};
+  rawEntityRecords: EntityRecordRaw[]
+}
 
 const initialState: EntityState = {
-  rawEntityRecords: [],
-};
+  rawEntityRecords: []
+}
 
-const getAllEntityRecords = createAsyncThunk('entityState/getAllEntityRecords', async () => ({
-  rawEntityRecords: await EntityRecord.getAllEntityRecords(),
-}));
+const getAllEntityRecords = createAsyncThunk(
+  'entityState/getAllEntityRecords',
+  async () => ({
+    rawEntityRecords: await EntityRecord.getAllEntityRecords()
+  })
+)
 
 const entitySlice = createSlice({
   name: 'entityState',
@@ -30,12 +33,10 @@ const entitySlice = createSlice({
   extraReducers: (builder) => {
     builder.addCase(getAllEntityRecords.fulfilled, (state, action) => ({
       ...state,
-      ...action.payload,
-    }));
-  },
-});
+      ...action.payload
+    }))
+  }
+})
 
-export default entitySlice.reducer;
-export {
-  getAllEntityRecords,
-};
+export default entitySlice.reducer
+export { getAllEntityRecords }

@@ -1,34 +1,27 @@
-import React, { useEffect } from 'react';
-import { Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Header } from 'react-native-elements';
+import React, { useEffect } from 'react'
+import { Text } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import { Header } from 'react-native-elements'
 
-import { useAccessibilityFocus, useDynamicStyles } from '../../hooks';
-import type { NavHeaderProps } from './NavHeader.d';
-import AccessibleView from '../AccessibleView/AccessibleView';
+import { useAccessibilityFocus, useDynamicStyles } from '../../hooks'
+import type { NavHeaderProps } from './NavHeader.d'
+import AccessibleView from '../AccessibleView/AccessibleView'
 
 export default function NavHeader({
   title,
   goBack,
   ...headerProps
 }: NavHeaderProps): React.ReactElement {
-  const { mixins } = useDynamicStyles();
-  const [headerRef, focusHeader] = useAccessibilityFocus<Text>();
+  const { mixins } = useDynamicStyles()
+  const [headerRef, focusHeader] = useAccessibilityFocus<Text>()
 
-  useEffect(focusHeader, []);
+  useEffect(focusHeader, [])
 
   const leftComponent = goBack ? (
-    <AccessibleView
-      label="Back"
-      accessibilityRole="button"
-      onPress={goBack}
-    >
-      <MaterialIcons
-        name="arrow-back"
-        style={mixins.headerIcon}
-      />
+    <AccessibleView label="Back" accessibilityRole="button" onPress={goBack}>
+      <MaterialIcons name="arrow-back" style={mixins.headerIcon} />
     </AccessibleView>
-  ) : undefined;
+  ) : undefined
 
   const centerComponent = (
     <Text
@@ -38,7 +31,7 @@ export default function NavHeader({
     >
       {title}
     </Text>
-  );
+  )
 
   return (
     <Header
@@ -50,5 +43,5 @@ export default function NavHeader({
       centerComponent={centerComponent}
       {...headerProps}
     />
-  );
+  )
 }

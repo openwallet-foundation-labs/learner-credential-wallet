@@ -1,20 +1,21 @@
-import { VERIFIER_INSTANCE_URL } from '../../app.config';
-import { CredentialRecordRaw } from '../model';
-import { selectWithFactory } from '../store/selectorFactories';
-import { makeSelectDidForCredential } from '../store/selectorFactories/makeSelectDidForCredential';
-import { createVerifiablePresentation } from './present';
+import { VERIFIER_INSTANCE_URL } from '../../app.config'
+import { CredentialRecordRaw } from '../model'
+import { selectWithFactory } from '../store/selectorFactories'
+import { makeSelectDidForCredential } from '../store/selectorFactories/makeSelectDidForCredential'
+import { createVerifiablePresentation } from './present'
 
 export type StoreCredentialResult = {
   // server at which the vc was stored
-  server?: string;
-  url: {  // URLs are relative to the server
+  server?: string
+  url: {
+    // URLs are relative to the server
     // human-readable HTML view of the credential
-    view: string;
+    view: string
     // raw JSON GET
-    get: string;
+    get: string
     // delete/unshare
-    unshare: string;
-  };
+    unshare: string
+  }
 }
 
 /**
@@ -23,31 +24,37 @@ export type StoreCredentialResult = {
  * @param rawCredentialRecord - the credential record to post
  * @returns {StoreCredentialResult} - Server and API URLs for the stored VC.
  */
-export async function postCredential(rawCredentialRecord: CredentialRecordRaw): Promise<StoreCredentialResult> {
-  const rawDidRecord = selectWithFactory(makeSelectDidForCredential, { rawCredentialRecord });
-  const { credential } = rawCredentialRecord;
+export async function postCredential(
+  rawCredentialRecord: CredentialRecordRaw
+): Promise<StoreCredentialResult> {
+  const rawDidRecord = selectWithFactory(makeSelectDidForCredential, {
+    rawCredentialRecord
+  })
+  const { credential } = rawCredentialRecord
   const vp = await createVerifiablePresentation({
-    didRecord: rawDidRecord, verifiableCredential: credential});
+    didRecord: rawDidRecord,
+    verifiableCredential: credential
+  })
 
   const request = {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ vp }),
-  };
-
-  const url = `${VERIFIER_INSTANCE_URL}/api/credentials`;
-
-  const response = await fetch(url, request);
-  if (!response.ok) {
-    console.log('verifier instance URL:', url);
-    console.log('verifier instance response:', await response.text());
-    throw new Error('Failed to post credential to verifier instance');
+    body: JSON.stringify({ vp })
   }
 
-  const result = await response.json() as StoreCredentialResult;
-  result.server = VERIFIER_INSTANCE_URL;
+  const url = `${VERIFIER_INSTANCE_URL}/api/credentials`
 
-  return result;
+  const response = await fetch(url, request)
+  if (!response.ok) {
+    console.log('verifier instance URL:', url)
+    console.log('verifier instance response:', await response.text())
+    throw new Error('Failed to post credential to verifier instance')
+  }
+
+  const result = (await response.json()) as StoreCredentialResult
+  result.server = VERIFIER_INSTANCE_URL
+
+  return result
 }
 
 /**
@@ -57,24 +64,34 @@ export async function postCredential(rawCredentialRecord: CredentialRecordRaw): 
  * @param unshareUrl {string} - API url for unsharing the credential.
  */
 export async function deleteCredential(
-  rawCredentialRecord: CredentialRecordRaw, unshareUrl: string
+  rawCredentialRecord: CredentialRecordRaw,
+  unshareUrl: string
 ): Promise<void> {
-  const rawDidRecord = selectWithFactory(makeSelectDidForCredential, { rawCredentialRecord });
-  const { credential } = rawCredentialRecord;
+  const rawDidRecord = selectWithFactory(makeSelectDidForCredential, {
+    rawCredentialRecord
+  })
+  const { credential } = rawCredentialRecord
   const vp = await createVerifiablePresentation({
-    didRecord: rawDidRecord, verifiableCredential: credential});
+    didRecord: rawDidRecord,
+    verifiableCredential: credential
+  })
 
   const request = {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ vp }),
-  };
+    body: JSON.stringify({ vp })
+  }
 
-  console.log('Unshare URL:', unshareUrl);
+  console.log('Unshare URL:', unshareUrl)
 
-  const response = await fetch(unshareUrl, request);
+  const response = await fetch(unshareUrl, request)
   if (!response.ok) {
-    console.log('verifier instance response:', JSON.stringify(response, null, 2));
-    throw new Error(`Failed to delete credential from verifier instance: ${response.status} ${response.statusText} ${await response.text()}`);
+    console.log(
+      'verifier instance response:',
+      JSON.stringify(response, null, 2)
+    )
+    throw new Error(
+      `Failed to delete credential from verifier instance: ${response.status} ${response.statusText} ${await response.text()}`
+    )
   }
 }

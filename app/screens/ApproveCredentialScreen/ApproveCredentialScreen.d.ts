@@ -1,1 +1,1 @@
-export type { ApproveCredentialScreenProps } from '../../navigation';
+export type { ApproveCredentialScreenProps } from '../../navigation'

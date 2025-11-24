@@ -1,16 +1,29 @@
-import React, { useState } from 'react';
-import { ScrollView, Image, Linking, AccessibilityInfo, Switch, View, Text } from 'react-native';
-import { ListItem } from 'react-native-elements';
-import { useSelector } from 'react-redux';
-import { createStackNavigator } from '@react-navigation/stack';
-import DeviceInfo from 'react-native-device-info';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import React, { useState } from 'react'
+import {
+  ScrollView,
+  Image,
+  Linking,
+  AccessibilityInfo,
+  Switch,
+  View,
+  Text
+} from 'react-native'
+import { ListItem } from 'react-native-elements'
+import { useSelector } from 'react-redux'
+import { createStackNavigator } from '@react-navigation/stack'
+import DeviceInfo from 'react-native-device-info'
+import { TouchableOpacity } from 'react-native-gesture-handler'
 
-import appConfig, { FEATURE_FLAGS, WAS, LinkConfig } from '../../../app.config';
-import walletImage from '../../assets/wallet.png';
-import dynamicStyleSheet from './SettingsNavigation.styles';
-import { NavHeader, ConfirmModal, BackupItemModal } from '../../components';
-import { lock, reset, selectWalletState, toggleBiometrics } from '../../store/slices/wallet';
+import appConfig, { FEATURE_FLAGS, WAS, LinkConfig } from '../../../app.config'
+import walletImage from '../../assets/wallet.png'
+import dynamicStyleSheet from './SettingsNavigation.styles'
+import { NavHeader, ConfirmModal, BackupItemModal } from '../../components'
+import {
+  lock,
+  reset,
+  selectWalletState,
+  toggleBiometrics
+} from '../../store/slices/wallet'
 import {
   SettingsItemProps,
   SettingsProps,
@@ -26,93 +39,143 @@ import { registerWallet } from '../../lib/registerWallet';
 import WASScreen from '../../screens/WAS/WasScreen';
 import WasConnect from '../../screens/WAS/WasConnect';
 
-const Stack = createStackNavigator<SettingsNavigationParamList>();
+const Stack = createStackNavigator<SettingsNavigationParamList>()
 
-function SettingsItem({ title, onPress, rightComponent, disabled }: SettingsItemProps): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
+function SettingsItem({
+  title,
+  onPress,
+  rightComponent,
+  disabled
+}: SettingsItemProps): React.ReactElement {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
   const _rightComponent = rightComponent || (
     <ListItem.Chevron
       hasTVPreferredFocus={undefined}
       color={theme.color.textSecondary}
     />
-  );
+  )
 
   return (
     <TouchableOpacity
       style={[
         styles.listItemContainer,
-        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, minHeight: 60 },
+        {
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingHorizontal: 16,
+          paddingVertical: 12,
+          minHeight: 60
+        },
         disabled && styles.listItemContainerDisabled
       ]}
       onPress={onPress}
       disabled={disabled}
     >
       <View style={{ flex: 1 }}>
-        <Text style={styles.listItemTitle}>
-          {title}
-        </Text>
+        <Text style={styles.listItemTitle}>{title}</Text>
       </View>
       {_rightComponent}
     </TouchableOpacity>
-  );
+  )
 }
 
 function Settings({ navigation }: SettingsProps): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
-  const dispatch = useAppDispatch();
-  const [resetModalOpen, setResetModalOpen] = useState(false);
-  const [backupModalOpen, setBackupModalOpen] = useState(false);
-  const { isBiometricsSupported } = useSelector(selectWalletState);
-  const { isBiometricsEnabled: initialBiometryValue } = useSelector(selectWalletState);
-  const [isBiometricsEnabled, setIsBiometricsEnabled] = useState(initialBiometryValue);
+  const dispatch = useAppDispatch()
+  const [resetModalOpen, setResetModalOpen] = useState(false)
+  const [backupModalOpen, setBackupModalOpen] = useState(false)
+  const { isBiometricsSupported } = useSelector(selectWalletState)
+  const { isBiometricsEnabled: initialBiometryValue } =
+    useSelector(selectWalletState)
+  const [isBiometricsEnabled, setIsBiometricsEnabled] =
+    useState(initialBiometryValue)
 
   async function resetWallet() {
-    dispatch(reset());
+    dispatch(reset())
   }
 
   function lockWallet() {
-    AccessibilityInfo.announceForAccessibility('Locked Wallet');
-    dispatch(lock());
+    AccessibilityInfo.announceForAccessibility('Locked Wallet')
+    dispatch(lock())
   }
 
   async function onToggleBiometrics() {
-    const initialState = isBiometricsEnabled;
-    setIsBiometricsEnabled(!initialState);
+    const initialState = isBiometricsEnabled
+    setIsBiometricsEnabled(!initialState)
 
     try {
-      await dispatch(toggleBiometrics());
+      await dispatch(toggleBiometrics())
     } catch (err) {
-      setIsBiometricsEnabled(initialState);
-      console.error('Could not toggle biometrics', err);
+      setIsBiometricsEnabled(initialState)
+      console.error('Could not toggle biometrics', err)
     }
   }
 
   const biometricSwitch = (
     <Switch
       style={styles.switch}
-      thumbColor={isBiometricsEnabled ? theme.color.backgroundSecondary : theme.color.backgroundPrimary}
-      trackColor={{ true: theme.color.switchActive, false: theme.color.iconInactive }}
+      thumbColor={
+        isBiometricsEnabled
+          ? theme.color.backgroundSecondary
+          : theme.color.backgroundPrimary
+      }
+      trackColor={{
+        true: theme.color.switchActive,
+        false: theme.color.iconInactive
+      }}
       ios_backgroundColor={theme.color.iconInactive}
       value={isBiometricsEnabled}
       onValueChange={onToggleBiometrics}
       disabled={!isBiometricsSupported}
     />
-  );
+  )
 
   return (
     <>
       <NavHeader title="Settings" />
       <ScrollView contentContainerStyle={styles.settingsContainer}>
-        <SettingsItem key="biometrics" title="Use biometrics to unlock" onPress={onToggleBiometrics} rightComponent={biometricSwitch} disabled={!isBiometricsSupported} />
-        <SettingsItem key="profiles" title="Manage profiles" onPress={() => navigation.navigate('ManageProfilesScreen')} />
-        <SettingsItem key="register" title="Register wallet" onPress={registerWallet} />
-        <SettingsItem key="restore" title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
-        <SettingsItem key="backup" title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
-        <SettingsItem key="reset" title="Reset wallet" onPress={() => setResetModalOpen(true)} />
-        <SettingsItem key="about" title="About" onPress={() => navigation.navigate('About')} />
-        {FEATURE_FLAGS.passwordProtect && <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />}
+        <SettingsItem
+          key="biometrics"
+          title="Use biometrics to unlock"
+          onPress={onToggleBiometrics}
+          rightComponent={biometricSwitch}
+          disabled={!isBiometricsSupported}
+        />
+        <SettingsItem
+          key="profiles"
+          title="Manage profiles"
+          onPress={() => navigation.navigate('ManageProfilesScreen')}
+        />
+        <SettingsItem
+          key="register"
+          title="Register wallet"
+          onPress={registerWallet}
+        />
+        <SettingsItem
+          key="restore"
+          title="Restore wallet"
+          onPress={() => navigation.navigate('RestoreWalletScreen')}
+        />
+        <SettingsItem
+          key="backup"
+          title="Backup wallet"
+          onPress={() => setBackupModalOpen(true)}
+        />
+        <SettingsItem
+          key="reset"
+          title="Reset wallet"
+          onPress={() => setResetModalOpen(true)}
+        />
+        <SettingsItem
+          key="about"
+          title="About"
+          onPress={() => navigation.navigate('About')}
+        />
+        {FEATURE_FLAGS.passwordProtect && (
+          <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />
+        )}
       </ScrollView>
       <ConfirmModal
         open={resetModalOpen}
@@ -129,16 +192,16 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
         backupModalText="This will backup your wallet contents into a file for you to download."
       />
     </>
-  );
+  )
 }
 
 function About({ navigation }: AboutProps): React.ReactElement {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const version = DeviceInfo.getVersion();
-  const buildNumber = DeviceInfo.getBuildNumber();
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const version = DeviceInfo.getVersion()
+  const buildNumber = DeviceInfo.getBuildNumber()
 
   function goToDeveloperScreen() {
-    navigation.navigate('DeveloperScreen');
+    navigation.navigate('DeveloperScreen')
   }
 
   return (
@@ -153,16 +216,19 @@ function About({ navigation }: AboutProps): React.ReactElement {
         />
         <Text style={styles.aboutTitleBolded}>{appConfig.displayName}</Text>
         <Text style={styles.paragraphCenter}>
-          This mobile wallet was developed by the Digital Credentials Consortium, a network of leading international universities designing an open infrastructure for academic credentials.
+          This mobile wallet was developed by the Digital Credentials
+          Consortium, a network of leading international universities designing
+          an open infrastructure for academic credentials.
         </Text>
-        <Text style={styles.paragraphCenter} accessibilityRole="link" >
+        <Text style={styles.paragraphCenter} accessibilityRole="link">
           More information at&nbsp;
           <Text
             style={styles.link}
             onPress={() => Linking.openURL(LinkConfig.appWebsite.home)}
           >
             {LinkConfig.appWebsite.home}
-          </Text>.
+          </Text>
+          .
         </Text>
         <Text style={styles.paragraphCenter}>
           Copyright 2021-2025 Massachusetts Institute of Technology
@@ -174,11 +240,13 @@ function About({ navigation }: AboutProps): React.ReactElement {
         </TouchableOpacity>
       </ScrollView>
     </>
-  );
+  )
 }
 
-export default function SettingsNavigation({ navigation }: SettingsNavigationProps): React.ReactElement {
-  useResetNavigationOnBlur(navigation);
+export default function SettingsNavigation({
+  navigation
+}: SettingsNavigationProps): React.ReactElement {
+  useResetNavigationOnBlur(navigation)
 
   return (
     <Stack.Navigator
@@ -192,7 +260,10 @@ export default function SettingsNavigation({ navigation }: SettingsNavigationPro
       <Stack.Screen name="CredentialScreen" component={CredentialScreen} />
       <Stack.Screen name="PublicLinkScreen" component={PublicLinkScreen} />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
-      <Stack.Screen name="RestoreWalletScreen" component={RestoreWalletScreen} />
+      <Stack.Screen
+        name="RestoreWalletScreen"
+        component={RestoreWalletScreen}
+      />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="DeveloperScreen" component={DeveloperScreen} />
       {WAS.enabled && (
@@ -202,5 +273,5 @@ export default function SettingsNavigation({ navigation }: SettingsNavigationPro
         </>
       )}
     </Stack.Navigator>
-  );
+  )
 }

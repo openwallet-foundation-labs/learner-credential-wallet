@@ -35,9 +35,9 @@ export function shouldDisableUrls(
     const registryNames = issuerInRegistries({ issuer: credential.issuer, registries });
     const shouldDisable = !registryNames || registryNames.length === 0;
 
-    return shouldDisable;
+    return shouldDisable
   } catch (error) {
-    console.error('Error in shouldDisableUrls:', error);
-    return true; // Default to safe mode
+    console.error('Error in shouldDisableUrls:', error)
+    return true // Default to safe mode
   }
 }

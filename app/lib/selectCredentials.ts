@@ -1,47 +1,56 @@
-import { ObjectId } from 'bson';
-import store from '../store';
-import { navigationRef } from '../navigation';
-import { clearSelectedExchangeCredentials, selectExchangeCredentials } from '../store/slices/credentialFoyer';
-import { clearGlobalModal, displayGlobalModal } from './globalModal';
-import { getGlobalModalBody } from './globalModalBody';
-import { delay } from './time';
-import { CredentialRecordRaw } from '../types/credential';
+import { ObjectId } from 'bson'
+import store from '../store'
+import { navigationRef } from '../navigation'
+import {
+  clearSelectedExchangeCredentials,
+  selectExchangeCredentials
+} from '../store/slices/credentialFoyer'
+import { clearGlobalModal, displayGlobalModal } from './globalModal'
+import { getGlobalModalBody } from './globalModalBody'
+import { delay } from './time'
+import { CredentialRecordRaw } from '../types/credential'
 
 // Selects credentials to exchange with issuer or verifier
 export async function selectCredentials (credentialRecords: CredentialRecordRaw[], profileId?: string): Promise<CredentialRecordRaw[]> {
   // ensure that the selected credentials have been cleared
   // before subscribing to redux store updates below
-  store.dispatch(clearSelectedExchangeCredentials());
+  store.dispatch(clearSelectedExchangeCredentials())
   console.log('Store dispatch cleared..')
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
+    const selectedExchangeCredentials: CredentialRecordRaw[] =
+      store.getState().credentialFoyer.selectedExchangeCredentials
     if (selectedExchangeCredentials.length === 0) {
-      break;
+      break
     } else {
-      await delay(500);
+      await delay(500)
     }
   }
 
-  let resolvePromise: (value: CredentialRecordRaw[]) => void;
-  const selectionPromise = new Promise((resolve: (value: CredentialRecordRaw[]) => void) => {
-    resolvePromise = resolve;
-  });
+  let resolvePromise: (value: CredentialRecordRaw[]) => void
+  const selectionPromise = new Promise(
+    (resolve: (value: CredentialRecordRaw[]) => void) => {
+      resolvePromise = resolve
+    }
+  )
 
   const unsubscribe = store.subscribe(async () => {
     // increase likelihood that the selected credentials
     // have been recorded before processing them
-    await delay(1000);
-    const selectedExchangeCredentials: CredentialRecordRaw[] = store.getState().credentialFoyer.selectedExchangeCredentials;
+    await delay(1000)
+    const selectedExchangeCredentials: CredentialRecordRaw[] =
+      store.getState().credentialFoyer.selectedExchangeCredentials
     if (selectedExchangeCredentials.length > 0) {
-      resolvePromise(selectedExchangeCredentials);
-      unsubscribe();
-      store.dispatch(clearSelectedExchangeCredentials());
+      resolvePromise(selectedExchangeCredentials)
+      unsubscribe()
+      store.dispatch(clearSelectedExchangeCredentials())
     }
-  });
+  })
 
-  clearGlobalModal();
-  const credentialRecordIds = credentialRecords.map((r: CredentialRecordRaw) => r._id);
+  clearGlobalModal()
+  const credentialRecordIds = credentialRecords.map(
+    (r: CredentialRecordRaw) => r._id
+  )
   const credentialFilter = (r: CredentialRecordRaw) => {
     const matchesId = credentialRecordIds.some((id: ObjectId) => r._id.equals(id));
     const matchesProfile = !profileId || r.profileRecordId.toHexString() === profileId;
@@ -82,7 +91,7 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
         params: { screen: 'HomeScreen' }
       });
     }
-  });
+  })
 
-  return selectionPromise;
+  return selectionPromise
 }

@@ -1,43 +1,50 @@
-import React, { useMemo, useState } from 'react';
-import { View, FlatList, Text } from 'react-native';
-import { Button } from 'react-native-elements';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useAppDispatch, useDynamicStyles } from '../../hooks';
-import { TextInput } from 'react-native-paper';
+import React, { useMemo, useState } from 'react'
+import { View, FlatList, Text } from 'react-native'
+import { Button } from 'react-native-elements'
+import { MaterialIcons } from '@expo/vector-icons'
+import { useAppDispatch, useDynamicStyles } from '../../hooks'
+import { TextInput } from 'react-native-paper'
 
-import { ConfirmModal, NavHeader, ProfileItem } from '../../components';
-import { useSelectorFactory } from '../../hooks/useSelectorFactory';
-import { makeSelectProfilesWithCredentials } from '../../store/selectorFactories/makeSelectProfilesWithCredentials';
-import { createProfile } from '../../store/slices/profile';
+import { ConfirmModal, NavHeader, ProfileItem } from '../../components'
+import { useSelectorFactory } from '../../hooks/useSelectorFactory'
+import { makeSelectProfilesWithCredentials } from '../../store/selectorFactories/makeSelectProfilesWithCredentials'
+import { createProfile } from '../../store/slices/profile'
 
-import { ManageProfilesScreenProps } from './ManageProfilesScreen.d';
-import dynamicStyleSheet from './ManageProfilesScreen.styles';
+import { ManageProfilesScreenProps } from './ManageProfilesScreen.d'
+import dynamicStyleSheet from './ManageProfilesScreen.styles'
 
-export default function ManageProfilesScreen({ navigation }: ManageProfilesScreenProps): React.ReactElement {
-  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const [profileName, setProfileName] = useState('');
-  const [modalIsOpen, setModalIsOpen] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const dispatch = useAppDispatch();
+export default function ManageProfilesScreen({
+  navigation
+}: ManageProfilesScreenProps): React.ReactElement {
+  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const [profileName, setProfileName] = useState('')
+  const [modalIsOpen, setModalIsOpen] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
+  const dispatch = useAppDispatch()
 
-  const rawProfileRecords = useSelectorFactory(makeSelectProfilesWithCredentials);
-  const flatListData = useMemo(() => [...rawProfileRecords], [rawProfileRecords]);
+  const rawProfileRecords = useSelectorFactory(
+    makeSelectProfilesWithCredentials
+  )
+  const flatListData = useMemo(
+    () => [...rawProfileRecords],
+    [rawProfileRecords]
+  )
 
   async function onPressCreate() {
     if (profileName !== '') {
       try {
-        await dispatch(createProfile({ profileName })).unwrap();
-        setModalIsOpen(false);
-        setProfileName('');
-        setErrorMessage('');
+        await dispatch(createProfile({ profileName })).unwrap()
+        setModalIsOpen(false)
+        setProfileName('')
+        setErrorMessage('')
       } catch (error: any) {
-        setErrorMessage(error.message || 'Failed to create profile');
+        setErrorMessage(error.message || 'Failed to create profile')
       }
     }
   }
 
   async function onPressAddExisting() {
-    navigation.navigate('AddExistingProfileScreen');
+    navigation.navigate('AddExistingProfileScreen')
   }
 
   const ListHeader = (
@@ -73,7 +80,7 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
         }
       />
     </View>
-  );
+  )
 
   return (
     <>
@@ -81,12 +88,12 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
       <ConfirmModal
         open={modalIsOpen}
         onRequestClose={() => {
-          setProfileName('');
-          setErrorMessage('');
+          setProfileName('')
+          setErrorMessage('')
         }}
         onCancel={() => {
-          setModalIsOpen(false);
-          setErrorMessage('');
+          setModalIsOpen(false)
+          setErrorMessage('')
         }}
         onConfirm={onPressCreate}
         cancelOnBackgroundPress
@@ -97,18 +104,20 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
         <TextInput
           value={profileName}
           onChangeText={(text) => {
-            setProfileName(text);
-            setErrorMessage('');
+            setProfileName(text)
+            setErrorMessage('')
           }}
           style={styles.input}
           outlineColor={theme.color.textPrimary}
           selectionColor={theme.color.textPrimary}
           theme={{
             colors: {
-              placeholder: profileName ? theme.color.textPrimary : theme.color.inputInactive,
+              placeholder: profileName
+                ? theme.color.textPrimary
+                : theme.color.inputInactive,
               text: theme.color.textPrimary,
-              primary: theme.color.brightAccent,
-            },
+              primary: theme.color.brightAccent
+            }
           }}
           label="Profile Name"
           mode="outlined"
@@ -127,12 +136,10 @@ export default function ManageProfilesScreen({ navigation }: ManageProfilesScree
         ListHeaderComponent={ListHeader}
         contentContainerStyle={styles.contentContainer}
         data={flatListData}
-        renderItem={({ item }) => (
-          <ProfileItem rawProfileRecord={item} />
-        )}
+        renderItem={({ item }) => <ProfileItem rawProfileRecord={item} />}
         keyExtractor={(item) => item._id.toHexString?.() ?? String(item._id)}
         showsVerticalScrollIndicator={false}
       />
     </>
-  );
+  )
 }
