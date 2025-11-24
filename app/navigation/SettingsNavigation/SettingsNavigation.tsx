@@ -17,7 +17,7 @@ import {
   AboutProps,
   SettingsNavigationParamList,
 } from './SettingsNavigation.d';
-import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen } from '../../screens';
+import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen, HelpScreen } from '../../screens';
 import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen';
 import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur } from '../../hooks';
 import { SettingsNavigationProps } from '../';
