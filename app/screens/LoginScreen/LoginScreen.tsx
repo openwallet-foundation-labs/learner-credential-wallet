@@ -1,58 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { Text, Image, AccessibilityInfo, View } from 'react-native';
-import { Button } from 'react-native-elements';
-import { useSelector } from 'react-redux';
+import React, { useState, useEffect } from 'react'
+import { Text, Image, AccessibilityInfo, View } from 'react-native'
+import { Button } from 'react-native-elements'
+import { useSelector } from 'react-redux'
 
-import appConfig from '../../../app.config';
-import { selectWalletState, unlock, unlockWithBiometrics } from '../../store/slices/wallet';
-import { SafeScreenView, ErrorDialog, PasswordInput } from '../../components';
-import walletImage from '../../assets/wallet.png';
+import appConfig from '../../../app.config'
+import {
+  selectWalletState,
+  unlock,
+  unlockWithBiometrics
+} from '../../store/slices/wallet'
+import { SafeScreenView, ErrorDialog, PasswordInput } from '../../components'
+import walletImage from '../../assets/wallet.png'
 
-import dynamicStyleSheet from './LoginScreen.styles';
-import { useAccessibilityFocus, useAppDispatch, useAsyncValue, useDynamicStyles } from '../../hooks';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { getBiometryIconName } from '../../lib/biometrics';
+import dynamicStyleSheet from './LoginScreen.styles'
+import {
+  useAccessibilityFocus,
+  useAppDispatch,
+  useAsyncValue,
+  useDynamicStyles
+} from '../../hooks'
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import { getBiometryIconName } from '../../lib/biometrics'
 
 export default function LoginScreen(): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
-  const dispatch = useAppDispatch();
-  const { isBiometricsEnabled, isBiometricsSupported } = useSelector(selectWalletState);
-  const [password, setPassword] = useState('');
-  const [errorText, setErrorText] = useState('');
-  const [passwordRef, focusPassword] = useAccessibilityFocus<View>();
-  const [biometryIconName] = useAsyncValue(getBiometryIconName);
+  const dispatch = useAppDispatch()
+  const { isBiometricsEnabled, isBiometricsSupported } =
+    useSelector(selectWalletState)
+  const [password, setPassword] = useState('')
+  const [errorText, setErrorText] = useState('')
+  const [passwordRef, focusPassword] = useAccessibilityFocus<View>()
+  const [biometryIconName] = useAsyncValue(getBiometryIconName)
 
-  const isError = errorText !== '';
-  const biometryIcon = biometryIconName ? <MaterialCommunityIcons name={biometryIconName} size={theme.iconSize} color={theme.color.textSecondary} /> : undefined;
-  const showBiometricsButton = isBiometricsSupported && biometryIcon && isBiometricsEnabled;
+  const isError = errorText !== ''
+  const biometryIcon = biometryIconName ? (
+    <MaterialCommunityIcons
+      name={biometryIconName}
+      size={theme.iconSize}
+      color={theme.color.textSecondary}
+    />
+  ) : undefined
+  const showBiometricsButton =
+    isBiometricsSupported && biometryIcon && isBiometricsEnabled
 
   async function _unlockWallet() {
     try {
-      await dispatch(unlock(password));
-      AccessibilityInfo.announceForAccessibility('Unlocked Wallet');
+      await dispatch(unlock(password))
+      AccessibilityInfo.announceForAccessibility('Unlocked Wallet')
     } catch (err) {
-      setErrorText('Incorrect password');
+      setErrorText('Incorrect password')
     }
   }
 
   async function _unlockWalletWithBiometrics() {
     try {
-      await dispatch(unlockWithBiometrics());
-      AccessibilityInfo.announceForAccessibility('Unlocked Wallet');
+      await dispatch(unlockWithBiometrics())
+      AccessibilityInfo.announceForAccessibility('Unlocked Wallet')
     } catch (err) {
-      setErrorText('Unable to verify identify, please enter password');
+      setErrorText('Unable to verify identify, please enter password')
     }
   }
 
   // Removes error when user begins typing
   useEffect(() => {
     if (isError) {
-      setErrorText('');
+      setErrorText('')
     }
-  }, [password]);
+  }, [password])
 
-  useEffect(focusPassword, []);
+  useEffect(focusPassword, [])
 
   return (
     <SafeScreenView style={styles.container}>
@@ -64,8 +81,8 @@ export default function LoginScreen(): React.ReactElement {
       />
       <Text style={styles.title}>{appConfig.displayName}</Text>
       <Text style={styles.paragraph}>
-        A place to store all your credentials. They stay on your device until you
-        decide to share them.
+        A place to store all your credentials. They stay on your device until
+        you decide to share them.
       </Text>
       <PasswordInput
         ref={passwordRef}
@@ -97,5 +114,5 @@ export default function LoginScreen(): React.ReactElement {
         />
       )}
     </SafeScreenView>
-  );
+  )
 }

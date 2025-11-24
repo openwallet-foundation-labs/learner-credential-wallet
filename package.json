@@ -6,8 +6,9 @@
     "start": "npx expo start --dev-client -c",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "lint": "eslint ./app ./App.tsx && npm run compile",
-    "lint:fix": "eslint --fix ./app ./App.tsx && npm run compile",
+    "lint": "prettier --check ./app ./App.tsx && npm run compile",
+    "lint:fix": "prettier --write ./app ./App.tsx && npm run compile",
+    "format": "prettier --write .",
     "test": "npm run test-jest && npm run test-node",
     "test-jest": "NODE_OPTIONS=\"$NODE_OPTIONS --experimental-vm-modules\" jest --config jest.config.ts --runInBand --detectOpenHandles --forceExit",
     "test-node": "node --import=tsx --test test-node/*",
@@ -15,6 +16,7 @@
     "coverage:open": "npm run coverage && open coverage/lcov-report/index.html",
     "compile": "tsc --noEmit -p tsconfig.json && echo ✓ Passed TS compile check",
     "postinstall": "npx patch-package",
+    "prepare": "husky install",
     "fix-deps": "npx expo install --check",
     "prebuild:ios": "EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p ios",
     "prebuild:android": "EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p android"
@@ -136,7 +138,6 @@
     "validator": "^13.11.0"
   },
   "devDependencies": {
-    "@babel/eslint-parser": "^7.25.1",
     "@reduxjs/toolkit": "^2.2.7",
     "@testing-library/react-native": "^13.3.3",
     "@types/crypto-js": "^4.1.1",
@@ -144,19 +145,17 @@
     "@types/react": "~19.0.10",
     "@types/text-encoding": "^0.0.39",
     "@types/uuid": "^10.0.0",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
     "assert": "^2.1.0",
     "babel-plugin-module-resolver": "^5.0.0",
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "crypto-browserify": "^3.12.1",
-    "eslint": "^8.57.0",
-    "eslint-plugin-jest": "^27.6.0",
-    "eslint-plugin-react": "^7.33.2",
+    "husky": "^8.0.3",
     "jest": "^29.6.3",
     "jest-expo": "~53.0.10",
+    "lint-staged": "^15.5.2",
     "patch-package": "^6.5.1",
+    "prettier": "^3.6.2",
     "process": "^0.11.10",
     "react": "19.0.0",
     "react-dom": "19.0.0",
@@ -169,6 +168,11 @@
     "typescript": "~5.8.3",
     "url": "^0.11.4",
     "util": "^0.12.5"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "prettier --write"
+    ]
   },
   "overrides": {
     "react-redux": {

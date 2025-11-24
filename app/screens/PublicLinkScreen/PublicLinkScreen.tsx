@@ -1,24 +1,24 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import {
   View,
   ScrollView,
   Linking,
   TextInput as RNTextInput,
   Platform,
-  InteractionManager,
-} from 'react-native';
-import { Button, Text } from 'react-native-elements';
-import { TextInput } from 'react-native-paper';
-import QRCode from 'react-native-qrcode-svg';
-import Clipboard from '@react-native-clipboard/clipboard';
-import OutsidePressHandler from 'react-native-outside-press';
-import Share from 'react-native-share';
+  InteractionManager
+} from 'react-native'
+import { Button, Text } from 'react-native-elements'
+import { TextInput } from 'react-native-paper'
+import QRCode from 'react-native-qrcode-svg'
+import Clipboard from '@react-native-clipboard/clipboard'
+import OutsidePressHandler from 'react-native-outside-press'
+import Share from 'react-native-share'
 
-import { PublicLinkScreenParams } from './PublicLinkScreen.d';
-import dynamicStyleSheet from './PublicLinkScreen.styles';
-import LoadingIndicatorDots from '../../components/LoadingIndicatorDots/LoadingIndicatorDots';
-import NavHeader from '../../components/NavHeader/NavHeader';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { PublicLinkScreenParams } from './PublicLinkScreen.d'
+import dynamicStyleSheet from './PublicLinkScreen.styles'
+import LoadingIndicatorDots from '../../components/LoadingIndicatorDots/LoadingIndicatorDots'
+import NavHeader from '../../components/NavHeader/NavHeader'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import {
   createPublicLinkFor,
   getPublicViewLink,
@@ -38,78 +38,79 @@ import { LinkConfig } from '../../../app.config';
 
 export enum PublicLinkScreenMode {
   Default,
-  ShareCredential,
+  ShareCredential
 }
 
 // ---- Small timing helpers (avoid rAF global for lint) ----
-const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
-const nextFrame = () => wait(16); // ~1 frame
+const wait = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms))
+const nextFrame = () => wait(16) // ~1 frame
 
 export default function PublicLinkScreen({
   navigation,
-  route,
+  route
 }: {
-  navigation: any;
-  route: { params: PublicLinkScreenParams };
+  navigation: any
+  route: { params: PublicLinkScreenParams }
 }): React.ReactElement {
-  const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet);
+  const { styles, mixins, theme } = useDynamicStyles(dynamicStyleSheet)
 
-  const share = useShareCredentials();
+  const share = useShareCredentials()
   const { rawCredentialRecord, screenMode = PublicLinkScreenMode.Default } =
-    route.params;
-  const { credential } = rawCredentialRecord;
-  const { name } = credential;
+    route.params
+  const { credential } = rawCredentialRecord
+  const { name } = credential
 
-  const [publicLink, setPublicLink] = useState<string | null>(null);
-  const [renderMethodAvailable, setRenderMethodAvailable] = useState(false);
+  const [publicLink, setPublicLink] = useState<string | null>(null)
+  const [renderMethodAvailable, setRenderMethodAvailable] = useState(false)
 
-  const [justCreated, setJustCreated] = useState(false);
-  const [pdf, setPdf] = useState<PDF | null>(null);
-  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null);
-  const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false);
+  const [justCreated, setJustCreated] = useState(false)
+  const [pdf, setPdf] = useState<PDF | null>(null)
+  const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null)
+  const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false)
 
   const qrCodeRef = useRef<any>(null);
 
   // ---- Selection (no setNativeProps) ----
-  const inputRef = useRef<RNTextInput | null>(null);
+  const inputRef = useRef<RNTextInput | null>(null)
   const [selection, setSelection] = useState<
     { start: number; end: number } | undefined
-  >(undefined);
-  const disableOutsidePressHandler = inputRef.current?.isFocused() ?? false;
+  >(undefined)
+  const disableOutsidePressHandler = inputRef.current?.isFocused() ?? false
   const selectionColor = Platform.select({
     ios: theme.color.brightAccent,
-    android: theme.color.highlightAndroid,
-  });
+    android: theme.color.highlightAndroid
+  })
 
   // ---- QR capture timing ----
-  const [qrReady, setQrReady] = useState(false);
-  const onQRCodeLayout = () => setQrReady(true);
+  const [qrReady, setQrReady] = useState(false)
+  const onQRCodeLayout = () => setQrReady(true)
 
   // Gate all QR/PDF side-effects; do NOT run for "Send Credential" JSON flow
-  const [allowQrWork, setAllowQrWork] = useState(false);
+  const [allowQrWork, setAllowQrWork] = useState(false)
 
   // Prevent double-presenting native sheets
-  const [presentingNative, setPresentingNative] = useState(false);
+  const [presentingNative, setPresentingNative] = useState(false)
 
   // ---------- iOS-safe helpers (avoid “presenting on itself”) ----------
   const tearDownModalIOS = async () => {
-    if (Platform.OS !== 'ios') return;
-    await InteractionManager.runAfterInteractions();
-    await wait(160);
-    await nextFrame();
-  };
+    if (Platform.OS !== 'ios') return
+    await InteractionManager.runAfterInteractions()
+    await wait(160)
+    await nextFrame()
+  }
 
   const safelyBeforeNativePresent = async () => {
-    clearGlobalModal(); // close any RN modal first
-    await tearDownModalIOS(); // wait for dismissal to finish on iOS
-  };
+    clearGlobalModal() // close any RN modal first
+    await tearDownModalIOS() // wait for dismissal to finish on iOS
+  }
 
   const presentModalSafely = async (
     config: Parameters<typeof displayGlobalModal>[0]
   ) => {
-    await tearDownModalIOS(); // ensure no modal is mid-transition
-    return displayGlobalModal(config);
-  };
+    await tearDownModalIOS() // ensure no modal is mid-transition
+    return displayGlobalModal(config)
+  }
 
   // Swap current modal content → loading (no dismiss/re-present → no flash)
   const swapModalToLoading = () => {
@@ -117,105 +118,108 @@ export default function PublicLinkScreen({
       title: 'Creating Public Link',
       confirmButton: false,
       cancelButton: false,
-      body: <LoadingIndicatorDots />,
-    });
-  };
+      body: <LoadingIndicatorDots />
+    })
+  }
   // --------------------------------------------------------------------
 
   // Render-method availability
   useEffect(() => {
-    setRenderMethodAvailable('renderMethod' in credential);
-  }, [credential]);
+    setRenderMethodAvailable('renderMethod' in credential)
+  }, [credential])
 
   // On mount, defensively clear any stale global modal from previous screens
   useEffect(() => {
-    clearGlobalModal();
-  }, []);
+    clearGlobalModal()
+  }, [])
 
   // If a link appears (either created now or loaded), ensure any loading modal is closed
   useEffect(() => {
     if (publicLink) {
-      clearGlobalModal();
-      void tearDownModalIOS();
+      clearGlobalModal()
+      void tearDownModalIOS()
     }
-  }, [publicLink]);
+  }, [publicLink])
 
   // Extra safety: if we just created a link, also ensure any modal is closed
   useEffect(() => {
     if (justCreated) {
-      clearGlobalModal();
-      void tearDownModalIOS();
+      clearGlobalModal()
+      void tearDownModalIOS()
     }
-  }, [justCreated]);
+  }, [justCreated])
 
   // Load/create share URL on mount
   useEffect(() => {
-    (async () => {
-      const url = await getPublicViewLink(rawCredentialRecord);
+    ;(async () => {
+      const url = await getPublicViewLink(rawCredentialRecord)
       if (url === null && screenMode === PublicLinkScreenMode.Default) {
         if (Platform.OS === 'ios') await wait(300);
         await createPublicLink(); // auto path can still use standard loading modal
       } else if (url !== null) {
-        setPublicLink(url);
+        setPublicLink(url)
       }
     })();
   }, [rawCredentialRecord, screenMode]); // exhaustive deps
 
   // Safely capture QR only when allowed (PDF flow), link exists, and view is laid out
   useEffect(() => {
-    if (!allowQrWork || !publicLink || !qrReady || qrCodeBase64) return;
-
-    (async () => {
-      await InteractionManager.runAfterInteractions();
-      await nextFrame();
+    if (!allowQrWork || !publicLink || !qrReady || qrCodeBase64) return
+    ;(async () => {
+      await InteractionManager.runAfterInteractions()
+      await nextFrame()
       qrCodeRef.current?.toDataURL((data: string) => {
-        setQrCodeBase64(data);
-      });
-    })();
-  }, [allowQrWork, publicLink, qrReady, qrCodeBase64]);
+        setQrCodeBase64(data)
+      })
+    })()
+  }, [allowQrWork, publicLink, qrReady, qrCodeBase64])
 
   // Generate PDF once we have both link & captured QR (PDF flow only)
   useEffect(() => {
-    if (!allowQrWork || !publicLink || !qrCodeBase64) return;
-
-    (async () => {
+    if (!allowQrWork || !publicLink || !qrCodeBase64) return
+    ;(async () => {
       try {
-        const rawPdf = await convertSVGtoPDF(credential, publicLink, qrCodeBase64);
-        setPdf(rawPdf);
+        const rawPdf = await convertSVGtoPDF(
+          credential,
+          publicLink,
+          qrCodeBase64
+        )
+        setPdf(rawPdf)
       } catch (e) {
-        console.log('ERROR GENERATING PDF:', e);
+        console.log('ERROR GENERATING PDF:', e)
         await presentErrorModal(
           'Unable to Export PDF',
           'An error occurred while generating the PDF.',
           String(e)
-        );
+        )
       }
-    })();
-  }, [allowQrWork, credential, publicLink, qrCodeBase64]);
+    })()
+  }, [allowQrWork, credential, publicLink, qrCodeBase64])
 
   // Auto open share sheet for PDF once ready
   useEffect(() => {
     if (pdf && pdf.filePath && openedExportPdfModal) {
-      (async () => {
-        if (presentingNative) return;
-        setPresentingNative(true);
+      ;(async () => {
+        if (presentingNative) return
+        setPresentingNative(true)
         try {
-          await safelyBeforeNativePresent();
-          await Share.open({ url: `file://${pdf.filePath}` });
+          await safelyBeforeNativePresent()
+          await Share.open({ url: `file://${pdf.filePath}` })
         } catch (err) {
-          console.error('Share failed:', err);
+          console.error('Share failed:', err)
         } finally {
-          setOpenedExportPdfModal(false);
-          setPresentingNative(false);
+          setOpenedExportPdfModal(false)
+          setPresentingNative(false)
         }
-      })();
+      })()
     }
-  }, [pdf, openedExportPdfModal, presentingNative]);
+  }, [pdf, openedExportPdfModal, presentingNative])
 
-  const screenTitle = {
-    [PublicLinkScreenMode.Default]: 'Public Link',
-    [PublicLinkScreenMode.ShareCredential]: 'Share Credential',
-  }[screenMode as PublicLinkScreenMode] ?? 'Public Link';
+  const screenTitle =
+    {
+      [PublicLinkScreenMode.Default]: 'Public Link',
+      [PublicLinkScreenMode.ShareCredential]: 'Share Credential'
+    }[screenMode as PublicLinkScreenMode] ?? 'Public Link'
 
   // ---------- Global modal variants (UI unchanged) ----------
   const displayLoadingModal = () => {
@@ -224,11 +228,15 @@ export default function PublicLinkScreen({
       title: 'Creating Public Link',
       confirmButton: false,
       cancelButton: false,
-      body: <LoadingIndicatorDots />,
-    });
-  };
+      body: <LoadingIndicatorDots />
+    })
+  }
 
-  async function presentErrorModal(title: string, message: string, detail?: string) {
+  async function presentErrorModal(
+    title: string,
+    message: string,
+    detail?: string
+  ) {
     await presentModalSafely({
       title,
       cancelOnBackgroundPress: true,
@@ -243,17 +251,17 @@ export default function PublicLinkScreen({
             containerStyle={mixins.buttonClearContainer}
             title="Details"
             onPress={async () => {
-              clearGlobalModal();
-              await tearDownModalIOS();
+              clearGlobalModal()
+              await tearDownModalIOS()
               navigationRef.navigate('ViewSourceScreen', {
                 screenTitle: title,
-                data: detail ?? '',
-              });
+                data: detail ?? ''
+              })
             }}
           />
         </>
-      ),
-    });
+      )
+    })
   }
 
   async function presentNotVerifiedModal(action: 'create' | 'export' | 'linkedin' | 'share') {
@@ -261,15 +269,15 @@ export default function PublicLinkScreen({
       create: 'Unable to Create Public Link',
       export: 'Unable to Export PDF',
       linkedin: 'Unable to Add to LinkedIn',
-      share: 'Unable to Share Credential',
-    } as const;
+      share: 'Unable to Share Credential'
+    } as const
 
     const anchors = {
       create: 'public-link',
       export: 'export-to-pdf',
       linkedin: 'add-to-linkedin',
-      share: 'public-link',
-    } as const;
+      share: 'public-link'
+    } as const
 
     await presentModalSafely({
       title: titles[action],
@@ -287,41 +295,43 @@ export default function PublicLinkScreen({
             containerStyle={mixins.buttonClearContainer}
             title="What does this mean?"
             onPress={async () => {
-              await safelyBeforeNativePresent();
-              await Linking.openURL(`${LinkConfig.appWebsite.faq}#${anchors[action]}`);
+              await safelyBeforeNativePresent()
+              await Linking.openURL(
+                `${LinkConfig.appWebsite.faq}#${anchors[action]}`
+              )
             }}
           />
         </>
-      ),
-    });
+      )
+    })
   }
   // ------------------------------------------------------------------
 
   // Used by auto-create and “create if needed” flows (PDF/LinkedIn)
   async function createPublicLink() {
     try {
-      await tearDownModalIOS(); // ensure previous confirm is gone
-      displayLoadingModal(); // show spinner (no await)
+      await tearDownModalIOS() // ensure previous confirm is gone
+      displayLoadingModal() // show spinner (no await)
 
-      const createdLink = await createPublicLinkFor(rawCredentialRecord);
+      const createdLink = await createPublicLinkFor(rawCredentialRecord)
 
-      clearGlobalModal();
-      await tearDownModalIOS();
+      clearGlobalModal()
+      await tearDownModalIOS()
 
-      setPublicLink(createdLink);
-      setJustCreated(true);
+      setPublicLink(createdLink)
+      setJustCreated(true)
 
       // Belt-and-suspenders: ensure any lingering modal is cleared after UI settles
-      setTimeout(() => clearGlobalModal(), 0);
-      setTimeout(() => clearGlobalModal(), 300);
+      setTimeout(() => clearGlobalModal(), 0)
+      setTimeout(() => clearGlobalModal(), 300)
     } catch (err) {
-      clearGlobalModal();
-      await tearDownModalIOS();
+      clearGlobalModal()
+      await tearDownModalIOS()
       await presentErrorModal(
         'Unable to Create Public Link',
         'An error occurred while creating the Public Link for this credential.',
         String(err)
-      );
+      )
     }
   }
 
@@ -336,7 +346,8 @@ export default function PublicLinkScreen({
           <Text style={mixins.modalBodyText}>
             Creating a public link will allow anyone with the link to view the
             credential. The link will automatically expire 1 year after
-            creation. A public link expiration date is not the same as the expiration date for your credential.
+            creation. A public link expiration date is not the same as the
+            expiration date for your credential.
           </Text>
           <Button
             buttonStyle={mixins.buttonClear}
@@ -344,43 +355,43 @@ export default function PublicLinkScreen({
             containerStyle={mixins.buttonClearContainer}
             title="What does this mean?"
             onPress={async () => {
-              await safelyBeforeNativePresent();
-              await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`);
+              await safelyBeforeNativePresent()
+              await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`)
             }}
           />
         </>
-      ),
-    });
+      )
+    })
 
     if (!confirmed) {
-      clearGlobalModal();
-      return;
+      clearGlobalModal()
+      return
     }
 
     // 🔑 Swap existing confirm modal → loading (no close/open → no flash)
-    clearGlobalModal();
-    await tearDownModalIOS();
-    swapModalToLoading();
+    clearGlobalModal()
+    await tearDownModalIOS()
+    swapModalToLoading()
 
     try {
-      const createdLink = await createPublicLinkFor(rawCredentialRecord);
-      setPublicLink(createdLink);
-      setJustCreated(true);
+      const createdLink = await createPublicLinkFor(rawCredentialRecord)
+      setPublicLink(createdLink)
+      setJustCreated(true)
 
-      clearGlobalModal(); // close after success
-      await tearDownModalIOS();
+      clearGlobalModal() // close after success
+      await tearDownModalIOS()
 
       // Extra safety to avoid stuck spinner in edge cases
-      setTimeout(() => clearGlobalModal(), 0);
-      setTimeout(() => clearGlobalModal(), 300);
+      setTimeout(() => clearGlobalModal(), 0)
+      setTimeout(() => clearGlobalModal(), 300)
     } catch (err) {
-      clearGlobalModal(); // close loading first
-      await tearDownModalIOS();
+      clearGlobalModal() // close loading first
+      await tearDownModalIOS()
       await presentErrorModal(
         'Unable to Create Public Link',
         'An error occurred while creating the Public Link for this credential.',
         String(err)
-      );
+      )
     }
   }
 
@@ -401,47 +412,49 @@ export default function PublicLinkScreen({
             containerStyle={mixins.buttonClearContainer}
             title="What does this mean?"
             onPress={async () => {
-              await safelyBeforeNativePresent();
-              await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link-unshare`);
+              await safelyBeforeNativePresent()
+              await Linking.openURL(
+                `${LinkConfig.appWebsite.faq}#public-link-unshare`
+              )
             }}
           />
         </>
-      ),
-    });
+      )
+    })
 
-    if (!confirmed) return;
+    if (!confirmed) return
 
-    clearGlobalModal();
-    await tearDownModalIOS();
+    clearGlobalModal()
+    await tearDownModalIOS()
 
     try {
-      await unshareCredential(rawCredentialRecord);
+      await unshareCredential(rawCredentialRecord)
     } catch (err) {
-      console.log('Error unsharing credential:', err);
+      console.log('Error unsharing credential:', err)
     }
 
-    setPublicLink(null);
-    setJustCreated(false);
+    setPublicLink(null)
+    setJustCreated(false)
 
     if (screenMode === PublicLinkScreenMode.Default) {
-      navigation.popToTop();
+      navigation.popToTop()
     }
   }
 
   async function openLink() {
-    if (!publicLink || presentingNative) return;
+    if (!publicLink || presentingNative) return
     try {
-      setPresentingNative(true);
-      await safelyBeforeNativePresent();
-      await Linking.canOpenURL(publicLink);
-      await Linking.openURL(publicLink);
+      setPresentingNative(true)
+      await safelyBeforeNativePresent()
+      await Linking.canOpenURL(publicLink)
+      await Linking.openURL(publicLink)
     } finally {
-      setPresentingNative(false);
+      setPresentingNative(false)
     }
   }
 
   function copyToClipboard() {
-    if (publicLink) Clipboard.setString(publicLink);
+    if (publicLink) Clipboard.setString(publicLink)
   }
 
   async function exportToPdf() {
@@ -462,27 +475,29 @@ export default function PublicLinkScreen({
             containerStyle={mixins.buttonClearContainer}
             title="What does this mean?"
             onPress={async () => {
-              await safelyBeforeNativePresent();
-              await Linking.openURL(`${LinkConfig.appWebsite.faq}#export-to-pdf`);
+              await safelyBeforeNativePresent()
+              await Linking.openURL(
+                `${LinkConfig.appWebsite.faq}#export-to-pdf`
+              )
             }}
           />
         </>
-      ),
-    });
+      )
+    })
 
     if (!confirmed) {
-      clearGlobalModal();
-      return;
+      clearGlobalModal()
+      return
     }
 
-    clearGlobalModal();
-    await tearDownModalIOS();
+    clearGlobalModal()
+    await tearDownModalIOS()
 
-    setAllowQrWork(true);
-    setOpenedExportPdfModal(true);
+    setAllowQrWork(true)
+    setOpenedExportPdfModal(true)
 
     if (!publicLink) {
-      await createPublicLink();
+      await createPublicLink()
     }
   }
 
@@ -504,33 +519,35 @@ export default function PublicLinkScreen({
             containerStyle={mixins.buttonClearContainer}
             title="What does this mean?"
             onPress={async () => {
-              await safelyBeforeNativePresent();
-              await Linking.openURL(`${LinkConfig.appWebsite.faq}#add-to-linkedin`);
+              await safelyBeforeNativePresent()
+              await Linking.openURL(
+                `${LinkConfig.appWebsite.faq}#add-to-linkedin`
+              )
             }}
           />
         </>
-      ),
-    });
+      )
+    })
 
     if (!confirmed) {
-      clearGlobalModal();
-      return;
+      clearGlobalModal()
+      return
     }
 
-    await safelyBeforeNativePresent();
+    await safelyBeforeNativePresent()
 
     if (!publicLink) {
-      await createPublicLink();
+      await createPublicLink()
     }
 
-    if (presentingNative) return;
-    setPresentingNative(true);
+    if (presentingNative) return
+    setPresentingNative(true)
     try {
-      const url = await linkedinUrlFrom(rawCredentialRecord);
-      await Linking.canOpenURL(url);
-      await Linking.openURL(url);
+      const url = await linkedinUrlFrom(rawCredentialRecord)
+      await Linking.canOpenURL(url)
+      await Linking.openURL(url)
     } finally {
-      setPresentingNative(false);
+      setPresentingNative(false)
     }
   }
 
@@ -539,36 +556,36 @@ export default function PublicLinkScreen({
     if (presentingNative) return;
     setPresentingNative(true);
     try {
-      await safelyBeforeNativePresent();
-      await share([rawCredentialRecord]);
+      await safelyBeforeNativePresent()
+      await share([rawCredentialRecord])
     } catch (e) {
-      console.log('Share JSON failed:', e);
+      console.log('Share JSON failed:', e)
     } finally {
-      setPresentingNative(false);
+      setPresentingNative(false)
     }
-  };
+  }
 
   function onFocusInput() {
-    const len = publicLink?.length ?? 0;
-    setSelection({ start: 0, end: len });
+    const len = publicLink?.length ?? 0
+    setSelection({ start: 0, end: len })
   }
 
   function blurInput() {
-    inputRef.current?.blur();
+    inputRef.current?.blur()
   }
 
   const instructionsText = useMemo(() => {
     switch (screenMode) {
       case PublicLinkScreenMode.Default:
-        return 'Copy the link to share, or add to your LinkedIn profile.';
+        return 'Copy the link to share, or add to your LinkedIn profile.'
       case PublicLinkScreenMode.ShareCredential:
         if (!publicLink)
-          return 'Create a public link that anyone can use to view this credential, export to PDF, add to your LinkedIn profile, or send a json copy.';
+          return 'Create a public link that anyone can use to view this credential, export to PDF, add to your LinkedIn profile, or send a json copy.'
         if (justCreated)
-          return 'Public link created. Copy the link to share, export to PDF, add to your LinkedIn profile, or send a json copy.';
-        return 'Public link already created. Copy the link to share, add to your LinkedIn profile, or send a json copy.';
+          return 'Public link created. Copy the link to share, export to PDF, add to your LinkedIn profile, or send a json copy.'
+        return 'Public link already created. Copy the link to share, add to your LinkedIn profile, or send a json copy.'
     }
-  }, [screenMode, publicLink, justCreated]);
+  }, [screenMode, publicLink, justCreated])
 
   function LinkInstructions() {
     return (
@@ -578,7 +595,7 @@ export default function PublicLinkScreen({
         )}
         <Text style={styles.instructions}>{instructionsText}</Text>
       </>
-    );
+    )
   }
 
   return (
@@ -607,8 +624,8 @@ export default function PublicLinkScreen({
                           placeholder: theme.color.textPrimary,
                           text: theme.color.textPrimary,
                           disabled: theme.color.textPrimary,
-                          primary: theme.color.brightAccent,
-                        },
+                          primary: theme.color.brightAccent
+                        }
                       }}
                       autoCorrect={false}
                       spellCheck={false}
@@ -620,16 +637,19 @@ export default function PublicLinkScreen({
                       onSelectionChange={(e) =>
                         setSelection(e.nativeEvent.selection)
                       }
-                      tvParallaxProperties={{}}   // <-- add back to satisfy TS types
+                      tvParallaxProperties={{}} // <-- add back to satisfy TS types
                     />
                   </OutsidePressHandler>
 
                   <Button
                     title="Copy"
-                    buttonStyle={{ ...mixins.buttonPrimary, ...styles.copyButton }}
+                    buttonStyle={{
+                      ...mixins.buttonPrimary,
+                      ...styles.copyButton
+                    }}
                     containerStyle={{
                       ...mixins.buttonContainer,
-                      ...styles.copyButtonContainer,
+                      ...styles.copyButtonContainer
                     }}
                     titleStyle={mixins.buttonTitle}
                     onPress={copyToClipboard}
@@ -639,7 +659,10 @@ export default function PublicLinkScreen({
                 <View style={styles.actions}>
                   <Button
                     title="Unshare"
-                    buttonStyle={{ ...mixins.buttonIcon, ...styles.actionButton }}
+                    buttonStyle={{
+                      ...mixins.buttonIcon,
+                      ...styles.actionButton
+                    }}
                     containerStyle={{ ...mixins.buttonContainer }}
                     titleStyle={mixins.buttonIconTitle}
                     onPress={unshareLink}
@@ -655,7 +678,10 @@ export default function PublicLinkScreen({
                   <View style={styles.spacer} />
                   <Button
                     title="View Link"
-                    buttonStyle={{ ...mixins.buttonIcon, ...styles.actionButton }}
+                    buttonStyle={{
+                      ...mixins.buttonIcon,
+                      ...styles.actionButton
+                    }}
                     containerStyle={mixins.buttonContainer}
                     titleStyle={mixins.buttonIconTitle}
                     onPress={openLink}
@@ -676,7 +702,7 @@ export default function PublicLinkScreen({
                 buttonStyle={{ ...mixins.buttonIcon, ...mixins.buttonPrimary }}
                 containerStyle={{
                   ...mixins.buttonIconContainer,
-                  ...styles.createLinkButtonContainer,
+                  ...styles.createLinkButtonContainer
                 }}
                 titleStyle={mixins.buttonTitle}
                 iconRight
@@ -771,5 +797,5 @@ export default function PublicLinkScreen({
         </ScrollView>
       </View>
     </>
-  );
+  )
 }

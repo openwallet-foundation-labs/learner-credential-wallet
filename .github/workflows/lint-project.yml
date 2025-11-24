@@ -1,4 +1,4 @@
-name: static-analysis
+name: format-check
 
 on:
   pull_request:
@@ -8,7 +8,6 @@ on:
 
 jobs:
   lint:
-
     runs-on: ubuntu-latest
 
     strategy:
@@ -17,11 +16,11 @@ jobs:
         # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm i --legacy-peer-deps
-    - run: npm run lint
+      - uses: actions/checkout@v4
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+      - run: npm i --legacy-peer-deps
+      - run: npm run lint

@@ -1,58 +1,58 @@
-import React, { useMemo } from 'react';
-import * as SplashScreen from 'expo-splash-screen';
-import { StatusBar } from 'expo-status-bar';
-import { NavigationContainer, DefaultTheme } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import React, { useMemo } from 'react'
+import * as SplashScreen from 'expo-splash-screen'
+import { StatusBar } from 'expo-status-bar'
+import { NavigationContainer, DefaultTheme } from '@react-navigation/native'
+import { useSelector } from 'react-redux'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
-import RootNavigation from '../RootNavigation/RootNavigation';
-import SetupNavigation from '../SetupNavigation/SetupNavigation';
-import { RestartScreen, LoginScreen } from '../../screens';
-import { useAppLoading, useDynamicStyles } from '../../hooks';
-import { selectWalletState } from '../../store/slices/wallet';
-import { EventProvider } from 'react-native-outside-press';
-import { deepLinkConfig } from '../../lib/deepLinkConfig';
-import GlobalConfirmModal from '../../components/GlobalConfirmModal/GlobalConfirmModal';
-import { navigationRef } from '../navigationRef';
+import RootNavigation from '../RootNavigation/RootNavigation'
+import SetupNavigation from '../SetupNavigation/SetupNavigation'
+import { RestartScreen, LoginScreen } from '../../screens'
+import { useAppLoading, useDynamicStyles } from '../../hooks'
+import { selectWalletState } from '../../store/slices/wallet'
+import { EventProvider } from 'react-native-outside-press'
+import { deepLinkConfig } from '../../lib/deepLinkConfig'
+import GlobalConfirmModal from '../../components/GlobalConfirmModal/GlobalConfirmModal'
+import { navigationRef } from '../navigationRef'
 
-export { navigationRef };
+export { navigationRef }
 
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync()
 
 export default function AppNavigation(): React.ReactElement | null {
-  const { mixins, theme } = useDynamicStyles();
+  const { mixins, theme } = useDynamicStyles()
 
-  const navigatorTheme = useMemo(() => ({
-    ...DefaultTheme,
-    colors: {
-      ...DefaultTheme.colors,
-      background: theme.color.backgroundPrimary,
-    },
-  }), [theme]);
+  const navigatorTheme = useMemo(
+    () => ({
+      ...DefaultTheme,
+      colors: {
+        ...DefaultTheme.colors,
+        background: theme.color.backgroundPrimary
+      }
+    }),
+    [theme]
+  )
 
-  const loading = useAppLoading();
-  const {
-    isUnlocked,
-    isInitialized,
-    needsRestart,
-  } = useSelector(selectWalletState);
+  const loading = useAppLoading()
+  const { isUnlocked, isInitialized, needsRestart } =
+    useSelector(selectWalletState)
 
   function renderScreen(): React.ReactElement | null {
     if (needsRestart) {
-      return <RestartScreen />;
+      return <RestartScreen />
     } else if (isUnlocked && isInitialized) {
-      return <RootNavigation />;
+      return <RootNavigation />
     } else if (!isUnlocked && isInitialized) {
-      return <LoginScreen />;
+      return <LoginScreen />
     } else if (!isUnlocked && !isInitialized) {
-      return <SetupNavigation />;
+      return <SetupNavigation />
     } else {
-      return null;
+      return null
     }
   }
 
   if (loading) {
-    return <GlobalConfirmModal />;
+    return <GlobalConfirmModal />
   }
 
   return (
@@ -70,5 +70,5 @@ export default function AppNavigation(): React.ReactElement | null {
         </NavigationContainer>
       </EventProvider>
     </SafeAreaProvider>
-  );
+  )
 }

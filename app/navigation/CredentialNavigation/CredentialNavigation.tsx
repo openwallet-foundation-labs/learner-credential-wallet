@@ -1,15 +1,22 @@
-import React from 'react';
+import React from 'react'
 
-import { createStackNavigator } from '@react-navigation/stack';
+import { createStackNavigator } from '@react-navigation/stack'
 
-import { HomeScreen, CredentialScreen, PublicLinkScreen, IssuerInfoScreen } from '../../screens';
-import { CredentialNavigationProps, CredentialNavigationParamList } from '../';
-import { useResetNavigationOnBlur } from '../../hooks';
+import {
+  HomeScreen,
+  CredentialScreen,
+  PublicLinkScreen,
+  IssuerInfoScreen
+} from '../../screens'
+import { CredentialNavigationProps, CredentialNavigationParamList } from '../'
+import { useResetNavigationOnBlur } from '../../hooks'
 
-const Stack = createStackNavigator<CredentialNavigationParamList>();
+const Stack = createStackNavigator<CredentialNavigationParamList>()
 
-export default function CredentialNavigation({ navigation }: CredentialNavigationProps): React.ReactElement {
-  useResetNavigationOnBlur(navigation);
+export default function CredentialNavigation({
+  navigation
+}: CredentialNavigationProps): React.ReactElement {
+  useResetNavigationOnBlur(navigation)
 
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
@@ -18,5 +25,5 @@ export default function CredentialNavigation({ navigation }: CredentialNavigatio
       <Stack.Screen name="PublicLinkScreen" component={PublicLinkScreen} />
       <Stack.Screen name="IssuerInfoScreen" component={IssuerInfoScreen} />
     </Stack.Navigator>
-  );
+  )
 }

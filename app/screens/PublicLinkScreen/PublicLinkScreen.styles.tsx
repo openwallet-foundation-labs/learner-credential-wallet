@@ -1,9 +1,9 @@
-import { Color } from '../../styles';
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { Color } from '../../styles'
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   container: {
-    padding: 16,
+    padding: 16
   },
   instructions: {
     ...mixins.paragraphText,
@@ -12,19 +12,19 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     marginBottom: 16
   },
   scrollContainer: {
-    flexGrow: 1,
+    flexGrow: 1
   },
   outerContainer: {
-    flex: 1,
+    flex: 1
   },
   link: {
     display: 'flex',
-    flexDirection: 'row',
+    flexDirection: 'row'
   },
   copyButton: {
     paddingLeft: 24,
     paddingRight: 24,
-    flexGrow: 1,
+    flexGrow: 1
   },
   copyButtonContainer: {
     ...mixins.shadow,
@@ -32,15 +32,15 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     display: 'flex',
     flexDirection: 'row',
     flex: 0,
-    marginTop: 6,
+    marginTop: 6
   },
   createLinkButtonContainer: {
     marginVertical: 0,
-    marginTop: 8,
+    marginTop: 8
   },
   linkText: {
     flex: 1,
-    textAlign: 'auto',
+    textAlign: 'auto'
   },
   actions: {
     display: 'flex',
@@ -52,7 +52,7 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     flex: 1,
     justifyContent: 'center',
     paddingTop: 8,
-    paddingBottom: 8,
+    paddingBottom: 8
   },
   spacer: {
     width: 8
@@ -64,17 +64,17 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     marginTop: 8
   },
   bottomSection: {
-    marginTop: 16,
+    marginTop: 16
   },
   qrCodeContainer: {
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 16
   },
   qrCode: {
     padding: 8,
-    backgroundColor: Color.White,
+    backgroundColor: Color.White
   },
   title: {
     ...mixins.headerText,
@@ -85,5 +85,5 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     fontSize: 14,
     color: theme.color.textPrimary,
     marginTop: 8
-  },
-}));
+  }
+}))

@@ -1,14 +1,14 @@
-import { ProfileRecordRaw } from '../../model';
+import { ProfileRecordRaw } from '../../model'
 
-export type { ProfileSelectionScreenProps } from '../../navigation';
+export type { ProfileSelectionScreenProps } from '../../navigation'
 
 export type ProfileButtonProps = {
   rawProfileRecord: ProfileRecordRaw
-  onPress: () => void;
+  onPress: () => void
 }
 
 export type ProfileSelectionScreenParams = {
-  onSelectProfile: (rawProfileRecord: ProfileRecordRaw) => void;
-  instructionText?: string;
-  goBack?: () => void;
-};
+  onSelectProfile: (rawProfileRecord: ProfileRecordRaw) => void
+  instructionText?: string
+  goBack?: () => void
+}

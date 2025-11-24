@@ -1,6 +1,12 @@
-import React from 'react';
-import { View, FlatList, Linking, Platform, InteractionManager } from 'react-native';
-import { Button, Text } from 'react-native-elements';
+import React from 'react'
+import {
+  View,
+  FlatList,
+  Linking,
+  Platform,
+  InteractionManager
+} from 'react-native'
+import { Button, Text } from 'react-native-elements'
 
 import { CredentialItem, NavHeader, LoadingIndicatorDots } from '../../components';
 import dynamicStyleSheet from './PresentationPreviewScreen.styles';
@@ -20,51 +26,49 @@ import { DidRegistryContext } from '../../init/registries';
 
 export default function PresentationPreviewScreen({
   navigation,
-  route,
+  route
 }: PresentationPreviewScreenProps): React.ReactElement {
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
   const { selectedCredentials, mode = 'send' } = route.params;
   const share = useShareCredentials();
   const registries = useContext(DidRegistryContext);
 
-  const isCreateLinkMode = mode === 'createLink';
-  const buttonTitle = isCreateLinkMode ? 'Create Public Link' : 'Send';
+  const isCreateLinkMode = mode === 'createLink'
+  const buttonTitle = isCreateLinkMode ? 'Create Public Link' : 'Send'
 
-  const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+  const wait = (ms: number) =>
+    new Promise<void>((resolve) => setTimeout(resolve, ms))
   const tearDownModalIOS = async () => {
-    if (Platform.OS !== 'ios') return;
-    await InteractionManager.runAfterInteractions();
-    await wait(160);
-  };
+    if (Platform.OS !== 'ios') return
+    await InteractionManager.runAfterInteractions()
+    await wait(160)
+  }
 
   function renderItem({ item }: RenderItemProps) {
-    const { credential } = item;
-    const onSelect = () => navigation.navigate('CredentialScreen', { rawCredentialRecord: item });
+    const { credential } = item
+    const onSelect = () =>
+      navigation.navigate('CredentialScreen', { rawCredentialRecord: item })
 
     return (
-      <CredentialItem
-        credential={credential}
-        onSelect={onSelect}
-        chevron
-      />
-    );
+      <CredentialItem credential={credential} onSelect={onSelect} chevron />
+    )
   }
 
   async function handleButtonPress() {
     if (isCreateLinkMode && selectedCredentials.length > 0) {
-      const rawCredentialRecord = selectedCredentials[0];
+      const rawCredentialRecord = selectedCredentials[0]
 
       // If a public link already exists, navigate directly to PublicLinkScreen
       try {
-        const existing = await getPublicViewLink(rawCredentialRecord);
+        const existing = await getPublicViewLink(rawCredentialRecord)
         if (existing) {
-          clearGlobalModal();
-          await tearDownModalIOS();
+          clearGlobalModal()
+          await tearDownModalIOS()
           navigation.navigate('PublicLinkScreen', {
             rawCredentialRecord,
-            screenMode: PublicLinkScreenMode.ShareCredential,
-          });
-          return;
+            screenMode: PublicLinkScreenMode.ShareCredential
+          })
+          return
         }
       } catch (_) {
         // non-fatal: fall through to creation flow
@@ -79,7 +83,8 @@ export default function PresentationPreviewScreen({
             <Text style={mixins.modalBodyText}>
               Creating a public link will allow anyone with the link to view the
               credential. The link will automatically expire 1 year after
-              creation. A public link expiration date is not the same as the expiration date for your credential.
+              creation. A public link expiration date is not the same as the
+              expiration date for your credential.
             </Text>
             <Button
               buttonStyle={mixins.buttonClear}
@@ -87,49 +92,51 @@ export default function PresentationPreviewScreen({
               containerStyle={mixins.buttonClearContainer}
               title="What does this mean?"
               onPress={async () => {
-                await Linking.openURL(`${LinkConfig.appWebsite.faq}#public-link`);
+                await Linking.openURL(
+                  `${LinkConfig.appWebsite.faq}#public-link`
+                )
               }}
             />
           </>
-        ),
-      });
+        )
+      })
 
       if (!confirmed) {
-        clearGlobalModal();
-        return;
+        clearGlobalModal()
+        return
       }
 
       // Show loading modal (ensure no modal is mid-transition)
-      clearGlobalModal();
-      await tearDownModalIOS();
+      clearGlobalModal()
+      await tearDownModalIOS()
       displayGlobalModal({
         title: 'Creating Public Link',
         confirmButton: false,
         cancelButton: false,
-        body: <LoadingIndicatorDots />,
-      });
+        body: <LoadingIndicatorDots />
+      })
 
       try {
         // Create the public link
-        const createdLink = await createPublicLinkFor(rawCredentialRecord);
+        const createdLink = await createPublicLinkFor(rawCredentialRecord)
 
-        clearGlobalModal();
-        await tearDownModalIOS();
+        clearGlobalModal()
+        await tearDownModalIOS()
 
         // Navigate to PublicLinkScreen with the created link
-        navigation.navigate('PublicLinkScreen', { 
+        navigation.navigate('PublicLinkScreen', {
           rawCredentialRecord,
-          screenMode: PublicLinkScreenMode.ShareCredential 
-        });
+          screenMode: PublicLinkScreenMode.ShareCredential
+        })
       } catch (err) {
-        clearGlobalModal();
+        clearGlobalModal()
         await displayGlobalModal({
           title: 'Unable to Create Public Link',
           cancelButton: false,
           confirmText: 'Close',
           cancelOnBackgroundPress: true,
-          body: 'An error occurred while creating the Public Link for this credential.',
-        });
+          body: 'An error occurred while creating the Public Link for this credential.'
+        })
       }
     } else {
       // Send mode: share the credentials via JSON
@@ -173,5 +180,5 @@ export default function PresentationPreviewScreen({
         />
       </View>
     </>
-  );
+  )
 }

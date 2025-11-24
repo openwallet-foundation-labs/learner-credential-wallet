@@ -1,16 +1,18 @@
-import React from 'react';
-import { Text } from 'react-native';
-import { Button } from 'react-native-elements';
-import LoadingIndicatorDots from '../components/LoadingIndicatorDots/LoadingIndicatorDots';
-import { errorMessageMatches } from '../lib/error';
-import { clearGlobalModal, displayGlobalModal } from '../lib/globalModal';
-import { createUnsignedPresentation, sharePresentation } from '../lib/present';
-import { navigationRef } from '../navigation/navigationRef';
-import { useDynamicStyles } from './useDynamicStyles';
-import { CredentialRecordRaw } from '../types/credential';
+import React from 'react'
+import { Text } from 'react-native'
+import { Button } from 'react-native-elements'
+import LoadingIndicatorDots from '../components/LoadingIndicatorDots/LoadingIndicatorDots'
+import { errorMessageMatches } from '../lib/error'
+import { clearGlobalModal, displayGlobalModal } from '../lib/globalModal'
+import { createUnsignedPresentation, sharePresentation } from '../lib/present'
+import { navigationRef } from '../navigation/navigationRef'
+import { useDynamicStyles } from './useDynamicStyles'
+import { CredentialRecordRaw } from '../types/credential'
 
-export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => Promise<void> {
-  const { mixins } = useDynamicStyles();
+export function useShareCredentials(): (
+  credentials: CredentialRecordRaw[]
+) => Promise<void> {
+  const { mixins } = useDynamicStyles()
   // const getDidFor = useSelectorCallback(makeSelectDidForCredential);
 
   function displayLoadingModal() {
@@ -19,16 +21,16 @@ export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => P
       confirmButton: false,
       cancelButton: false,
       body: <LoadingIndicatorDots />
-    });
+    })
   }
 
   function displayErrorModal(err: Error) {
     function goToErrorSource() {
-      clearGlobalModal();
+      clearGlobalModal()
       navigationRef.navigate('ViewSourceScreen', {
         screenTitle: 'Send Credential Error',
-        data: String(err),
-      });
+        data: String(err)
+      })
     }
 
     displayGlobalModal({
@@ -38,7 +40,9 @@ export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => P
       confirmText: 'Close',
       body: (
         <>
-          <Text style={mixins.modalBodyText}>An error occurred while sending credential(s).</Text>
+          <Text style={mixins.modalBodyText}>
+            An error occurred while sending credential(s).
+          </Text>
           <Button
             buttonStyle={mixins.buttonClear}
             titleStyle={[mixins.buttonClearTitle, mixins.modalLinkText]}
@@ -48,7 +52,7 @@ export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => P
           />
         </>
       )
-    });
+    })
   }
 
   async function shareCredentials(rawCredentialRecords: CredentialRecordRaw[]) {
@@ -61,22 +65,23 @@ export function useShareCredentials(): (credentials: CredentialRecordRaw[]) => P
     // }
 
     // const rawDidRecord = getDidFor({ rawCredentialRecord: credentials[0] });
-    const credentials = rawCredentialRecords.map(({ credential }) => credential);
-    const presentation = createUnsignedPresentation(credentials);
+    const credentials = rawCredentialRecords.map(({ credential }) => credential)
+    const presentation = createUnsignedPresentation(credentials)
 
-    await sharePresentation(presentation);
+    await sharePresentation(presentation)
   }
 
   return async (rawCredentialRecords: CredentialRecordRaw[]) => {
     try {
-      displayLoadingModal();
-      await shareCredentials(rawCredentialRecords);
-      clearGlobalModal();
-    } catch(err) {
-      if (errorMessageMatches(err, 'User did not share')) return clearGlobalModal();
-      displayErrorModal(err as Error);
+      displayLoadingModal()
+      await shareCredentials(rawCredentialRecords)
+      clearGlobalModal()
+    } catch (err) {
+      if (errorMessageMatches(err, 'User did not share'))
+        return clearGlobalModal()
+      displayErrorModal(err as Error)
     }
-  };
+  }
 }
 
 // function verifyMatchingProfiles(credentials: CredentialRecordRaw[]): boolean {

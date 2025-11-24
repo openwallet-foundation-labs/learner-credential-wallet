@@ -15,7 +15,7 @@ import { getRootSigner } from './getRootSigner';
 import { ISigner } from '@digitalcredentials/ssi';
 import { getCredentialName } from './credentialName';
 
-let cachedSigner: ISigner | undefined;
+let cachedSigner: ISigner | undefined
 
 export async function createPublicLinkFor(
   rawCredentialRecord: CredentialRecordRaw
@@ -23,7 +23,9 @@ export async function createPublicLinkFor(
   // Use credentialIdFor() which returns the unique database record ID
   const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
-  const wasLink = WAS.enabled ? await createWasPublicLinkIfAvailable(rawCredentialRecord) : null;
+  const wasLink = WAS.enabled
+    ? await createWasPublicLinkIfAvailable(rawCredentialRecord)
+    : null
 
   if (WAS.enabled && wasLink) {
     try {
@@ -32,21 +34,21 @@ export async function createPublicLinkFor(
         url: {
           view: wasLink,
           unshare: wasLink
-        },
-      });
-      return wasLink;
+        }
+      })
+      return wasLink
     } catch (error) {
-      console.error('[publicLink.ts] Error checking WAS link:', error);
+      console.error('[publicLink.ts] Error checking WAS link:', error)
       // Fall through to verifierInstance
     }
   }
 
   // Fall back to verifierInstance
-  console.log('[publicLink.ts] Using verifierInstance to create public link');
-  const links = await verifierInstance.postCredential(rawCredentialRecord);
+  console.log('[publicLink.ts] Using verifierInstance to create public link')
+  const links = await verifierInstance.postCredential(rawCredentialRecord)
 
-  await Cache.getInstance().store(CacheKey.PublicLinks, id, links);
-  return `${links.server}${links.url.view}`;
+  await Cache.getInstance().store(CacheKey.PublicLinks, id, links)
+  return `${links.server}${links.url.view}`
 }
 
 /**
@@ -58,89 +60,96 @@ async function createWasPublicLinkIfAvailable(
   rawCredentialRecord: CredentialRecordRaw
 ): Promise<string | null> {
   try {
-    const signer = await getRootSigner();
+    const signer = await getRootSigner()
     if (!signer) {
-      console.log('Cannot create public link, root signer not found.');
-      return null;
+      console.log('Cannot create public link, root signer not found.')
+      return null
     }
-    cachedSigner = signer;
+    cachedSigner = signer
 
-    console.log('Using signer with ID:', signer.id);
+    console.log('Using signer with ID:', signer.id)
 
     // Get stored space UUID
-    const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
-    console.log('Stored space UUID:', storedSpaceUUID);
+    const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID)
+    console.log('Stored space UUID:', storedSpaceUUID)
 
     if (!storedSpaceUUID) {
-      console.log('[publicLink.ts] No stored space ID found, falling back to verifierInstance');
-      return null;
+      console.log(
+        '[publicLink.ts] No stored space ID found, falling back to verifierInstance'
+      )
+      return null
     }
 
-    const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
+    const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`
 
-    const storage = getStorageClient();
+    const storage = getStorageClient()
 
     const space = storage.space({
       signer,
       id: spaceId
-    });
-    console.log('Using space:', space.path);
+    })
+    console.log('Using space:', space.path)
 
-    const resourceUUID = uuidv4();
-    console.log('Resource UUID:', resourceUUID);
+    const resourceUUID = uuidv4()
+    console.log('Resource UUID:', resourceUUID)
 
     // Extract just the credential object
-    const credentialJson = JSON.stringify(rawCredentialRecord.credential);
+    const credentialJson = JSON.stringify(rawCredentialRecord.credential)
 
     const resource = space.resource(resourceUUID, {
       uuid: `urn:uuid:${resourceUUID}` as `urn:uuid:${string}`
-    });
-    console.log('Resource path:', resource.path);
+    })
+    console.log('Resource path:', resource.path)
 
     // Create the credential blob with correct content type
     const credentialBlob = new Blob([credentialJson], {
       type: 'application/json'
-    });
-    console.log('Storing credential in WAS with signer:', signer.id);
+    })
+    console.log('Storing credential in WAS with signer:', signer.id)
 
     // Manually create HTTP signature authorization for the resource PUT request
     const response = await resource.put(credentialBlob, {
-      signer,
-    });
+      signer
+    })
 
     console.log('WAS storage response:', {
       status: response.status,
       ok: response.ok
-    });
+    })
 
     if (!response.ok) {
       console.error(
         '[publicLink.ts] Failed to store credential in WAS. Status:',
-        response.status,
-      );
-      return null;
+        response.status
+      )
+      return null
     }
 
     // Create the public link using the resource path
-    const publicLink = `${VERIFIER_INSTANCE_URL}/#verify?vc=${WAS.BASE_URL}${resource.path}`;
-    console.log('Created WAS public link:', publicLink);
+    const publicLink = `${VERIFIER_INSTANCE_URL}/#verify?vc=${WAS.BASE_URL}${resource.path}`
+    console.log('Created WAS public link:', publicLink)
 
-    return publicLink;
+    return publicLink
   } catch (error) {
-    if (error instanceof Error &&
-        error.message === 'Root signer not found in wallet.') {
+    if (
+      error instanceof Error &&
+      error.message === 'Root signer not found in wallet.'
+    ) {
       console.log('Now connected to WAS, so root signer not found.')
-      return null;
+      return null
     }
-    console.error('[publicLink.ts] Error in createWasPublicLinkIfAvailable:', error);
+    console.error(
+      '[publicLink.ts] Error in createWasPublicLinkIfAvailable:',
+      error
+    )
     if (error instanceof Error) {
       console.error('Error details:', {
         name: error.name,
         message: error.message,
         stack: error.stack
-      });
+      })
     }
-    return null;
+    return null
   }
 }
 
@@ -149,44 +158,46 @@ export async function unshareCredential(rawCredentialRecord: CredentialRecordRaw
   const vcId = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
-    const publicLinks = await Cache.getInstance()
-      .load(CacheKey.PublicLinks, vcId) as StoreCredentialResult;
+    const publicLinks = (await Cache.getInstance().load(
+      CacheKey.PublicLinks,
+      vcId
+    )) as StoreCredentialResult
 
     if (WAS.enabled && publicLinks.server === WAS.BASE_URL) {
       // This is a WAS link
-      console.log('Unsharing WAS credential');
+      console.log('Unsharing WAS credential')
 
       if (!cachedSigner) {
-        cachedSigner = await getRootSigner()!;
+        cachedSigner = await getRootSigner()!
       }
 
       if (cachedSigner) {
-        const signer = cachedSigner;
+        const signer = cachedSigner
 
-        const resourcePath = publicLinks.url.unshare;
-        const resourceName = resourcePath.split('/').pop();
+        const resourcePath = publicLinks.url.unshare
+        const resourceName = resourcePath.split('/').pop()
 
-        const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID);
+        const storedSpaceUUID = await AsyncStorage.getItem(WAS.KEYS.SPACE_ID)
         if (storedSpaceUUID) {
-          const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`;
-          const storage = getStorageClient();
+          const spaceId = `urn:uuid:${storedSpaceUUID}` as `urn:uuid:${string}`
+          const storage = getStorageClient()
           const space = storage.space({
             signer,
             id: spaceId
-          });
-          const resource = space.resource(resourceName);
-          await resource.delete({ signer });
+          })
+          const resource = space.resource(resourceName)
+          await resource.delete({ signer })
         }
       }
     } else {
       // This is a verifierInstance link
-      const unshareUrl = `${publicLinks.server}${publicLinks.url.unshare}`;
-      await verifierInstance.deleteCredential(rawCredentialRecord, unshareUrl);
+      const unshareUrl = `${publicLinks.server}${publicLinks.url.unshare}`
+      await verifierInstance.deleteCredential(rawCredentialRecord, unshareUrl)
     }
   } catch (error) {
-    console.error('Error unsharing credential:', error);
+    console.error('Error unsharing credential:', error)
   }
-  await Cache.getInstance().remove(CacheKey.PublicLinks, vcId);
+  await Cache.getInstance().remove(CacheKey.PublicLinks, vcId)
 }
 
 export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw): Promise<string | null> {
@@ -194,55 +205,65 @@ export async function getPublicViewLink(rawCredentialRecord: CredentialRecordRaw
   const id = `${credentialIdFor(rawCredentialRecord)}::${rawCredentialRecord.profileRecordId.toHexString?.() || rawCredentialRecord.profileRecordId}`;
 
   try {
-    const publicLinks = await Cache.getInstance()
-      .load(CacheKey.PublicLinks, id) as StoreCredentialResult;
-    
+    const publicLinks = (await Cache.getInstance().load(
+      CacheKey.PublicLinks,
+      id
+    )) as StoreCredentialResult
+
     // Check if url.view is already a full URL (for WAS links)
     // or if it needs the server prepended (for verifierInstance links)
-    const viewUrl = publicLinks.url.view;
+    const viewUrl = publicLinks.url.view
     if (viewUrl.startsWith('http://') || viewUrl.startsWith('https://')) {
-      return viewUrl;
+      return viewUrl
     }
-    
+
     // Use URL constructor to handle extra '/' characters properly
-    return (new URL(viewUrl, publicLinks.server)).toString();
+    return new URL(viewUrl, publicLinks.server).toString()
   } catch (err) {
-    if ((err as Error).name === 'NotFoundError') return null;
-    throw err;
+    if ((err as Error).name === 'NotFoundError') return null
+    throw err
   }
 }
 
-export async function hasPublicLink(rawCredentialRecord: CredentialRecordRaw): Promise<boolean> {
-  const url = await getPublicViewLink(rawCredentialRecord);
-  return url !== null;
+export async function hasPublicLink(
+  rawCredentialRecord: CredentialRecordRaw
+): Promise<boolean> {
+  const url = await getPublicViewLink(rawCredentialRecord)
+  return url !== null
 }
 
-export async function linkedinUrlFrom(rawCredentialRecord: CredentialRecordRaw): Promise<string> {
-  const publicLink = await getPublicViewLink(rawCredentialRecord);
+export async function linkedinUrlFrom(
+  rawCredentialRecord: CredentialRecordRaw
+): Promise<string> {
+  const publicLink = await getPublicViewLink(rawCredentialRecord)
 
   let issuerName;
   const { issuer } = rawCredentialRecord.credential as any;
   if (typeof issuer === 'string') {
-    issuerName = issuer;
+    issuerName = issuer
   } else {
-    issuerName = issuer.name;
+    issuerName = issuer.name
   }
 
-  const title = getCredentialName(rawCredentialRecord.credential);
-  const issuanceDateString = getIssuanceDate(rawCredentialRecord.credential);
-  const hasIssuanceDate = issuanceDateString !== undefined;
-  const issuanceDate = hasIssuanceDate && new Date(issuanceDateString);
-  const expirationDateString = getExpirationDate(rawCredentialRecord.credential);
-  const hasExpirationDate = expirationDateString !== undefined;
-  const expirationDate = hasExpirationDate && new Date(expirationDateString);
-  const organizationInfo = `&name=${title}&organizationName=${issuerName}`;
-  const issuance = issuanceDate ? `&issueYear=${issuanceDate.getFullYear()}` +
-    `&issueMonth=${new Date(issuanceDate).getMonth() + 1}` : '';
-  const expiration = expirationDate ? `&expirationYear=${expirationDate.getFullYear()}` +
-    `&expirationMonth=${new Date(expirationDate).getMonth() + 1}` : '';
-  const certUrl = publicLink ? `&certUrl=${publicLink}` : '';
+  const title = getCredentialName(rawCredentialRecord.credential)
+  const issuanceDateString = getIssuanceDate(rawCredentialRecord.credential)
+  const hasIssuanceDate = issuanceDateString !== undefined
+  const issuanceDate = hasIssuanceDate && new Date(issuanceDateString)
+  const expirationDateString = getExpirationDate(rawCredentialRecord.credential)
+  const hasExpirationDate = expirationDateString !== undefined
+  const expirationDate = hasExpirationDate && new Date(expirationDateString)
+  const organizationInfo = `&name=${title}&organizationName=${issuerName}`
+  const issuance = issuanceDate
+    ? `&issueYear=${issuanceDate.getFullYear()}` +
+      `&issueMonth=${new Date(issuanceDate).getMonth() + 1}`
+    : ''
+  const expiration = expirationDate
+    ? `&expirationYear=${expirationDate.getFullYear()}` +
+      `&expirationMonth=${new Date(expirationDate).getMonth() + 1}`
+    : ''
+  const certUrl = publicLink ? `&certUrl=${publicLink}` : ''
 
-  const url = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME${organizationInfo}${issuance}${expiration}${certUrl}`;
+  const url = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME${organizationInfo}${issuance}${expiration}${certUrl}`
 
-  return url;
+  return url
 }

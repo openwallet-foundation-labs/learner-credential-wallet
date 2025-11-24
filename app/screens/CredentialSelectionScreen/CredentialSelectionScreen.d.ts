@@ -1,10 +1,10 @@
-import type { CredentialRecordRaw } from '../../model/credential';
-export type { ShareHomeScreenProps } from '../../navigation';
+import type { CredentialRecordRaw } from '../../model/credential'
+export type { ShareHomeScreenProps } from '../../navigation'
 
 export type RenderItemProps = {
-  item: CredentialRecordRaw;
-  index: number;
-};
+  item: CredentialRecordRaw
+  index: number
+}
 
 export type CredentialSelectionScreenParams = {
   title: string;

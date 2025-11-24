@@ -1,19 +1,19 @@
-import moment from 'moment';
-import React, { useContext } from 'react';
-import { View, Text, ImageSourcePropType } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { CredentialNavigationParamList } from '../../navigation/CredentialNavigation/CredentialNavigation.d';
-import { Button } from 'react-native-elements';
-import { mixins } from '../../styles';
+import moment from 'moment'
+import React, { useContext } from 'react'
+import { View, Text, ImageSourcePropType } from 'react-native'
+import { useNavigation } from '@react-navigation/native'
+import { StackNavigationProp } from '@react-navigation/stack'
+import { CredentialNavigationParamList } from '../../navigation/CredentialNavigation/CredentialNavigation.d'
+import { Button } from 'react-native-elements'
+import { mixins } from '../../styles'
 
-import CredentialStatusBadges from '../../components/CredentialStatusBadges/CredentialStatusBadges';
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
-import { getExpirationDate, getIssuanceDate } from '../credentialValidityPeriod';
-import type { CredentialCardProps, CredentialDisplayConfig } from '.';
-import defaultIssuerImage from '../../assets/defaultIssuer.png';
-import { DidRegistryContext } from '../../init/registries';
-import { shouldDisableUrls } from '../credentialSecurity';
+import CredentialStatusBadges from '../../components/CredentialStatusBadges/CredentialStatusBadges'
+import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { getExpirationDate, getIssuanceDate } from '../credentialValidityPeriod'
+import type { CredentialCardProps, CredentialDisplayConfig } from '.'
+import defaultIssuerImage from '../../assets/defaultIssuer.png'
+import { DidRegistryContext } from '../../init/registries'
+import { shouldDisableUrls } from '../credentialSecurity'
 
 import {
   CardLink,
@@ -22,34 +22,42 @@ import {
   CardImage,
   issuerRenderInfoWithVerification,
   IssuerInfoButton,
-  credentialSubjectRenderInfoFrom, getSubject,
+  credentialSubjectRenderInfoFrom,
+  getSubject,
   AlignmentsList
-} from './shared';
+} from './shared'
 
-import { DATE_FORMAT } from '../../../app.config';
-import { getCredentialName } from '../credentialName';
+import { DATE_FORMAT } from '../../../app.config'
+import { getCredentialName } from '../credentialName'
 
 const getSafeImageSource = (imageUri?: string | null): ImageSourcePropType => {
-  return imageUri && imageUri.trim() !== '' ? { uri: imageUri } : defaultIssuerImage;
-};
+  return imageUri && imageUri.trim() !== ''
+    ? { uri: imageUri }
+    : defaultIssuerImage
+}
 
+type NavigationProp = StackNavigationProp<CredentialNavigationParamList>
+const OpenBadgeCredentialCard = ({
+  rawCredentialRecord
+}: CredentialCardProps): React.ReactElement => {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
+  const { credential } = rawCredentialRecord
+  const verifyCredential = useVerifyCredential(rawCredentialRecord)
+  const registries = useContext(DidRegistryContext)
+  const urlsDisabled = shouldDisableUrls(credential, registries)
 
-type NavigationProp = StackNavigationProp<CredentialNavigationParamList>;
-const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): React.ReactElement => {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
-  const { credential } = rawCredentialRecord;
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
-  const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries, verifyCredential?.result);
+  const navigation = useNavigation<NavigationProp>()
 
-  const navigation = useNavigation<NavigationProp>();
+  const { credentialSubject, issuer, name } = credential
 
-  const { credentialSubject, issuer, name } = credential;
-
-  const issuanceDate = getIssuanceDate(credential);
-  const expirationDate = getExpirationDate(credential);
-  const formattedIssuanceDate = issuanceDate ? moment(issuanceDate).format(DATE_FORMAT) : 'N/A';
-  const formattedExpirationDate = expirationDate ? moment(expirationDate).format(DATE_FORMAT) : 'N/A';
+  const issuanceDate = getIssuanceDate(credential)
+  const expirationDate = getExpirationDate(credential)
+  const formattedIssuanceDate = issuanceDate
+    ? moment(issuanceDate).format(DATE_FORMAT)
+    : 'N/A'
+  const formattedExpirationDate = expirationDate
+    ? moment(expirationDate).format(DATE_FORMAT)
+    : 'N/A'
 
   const {
     issuedTo,
@@ -61,17 +69,13 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
     achievementImage,
     achievementType,
     alignment
-  } = credentialSubjectRenderInfoFrom(credentialSubject);
+  } = credentialSubjectRenderInfoFrom(credentialSubject)
 
-  const issuedToName: string = issuedTo || (name as string);
-  const credentialName = getCredentialName(credential);
+  const issuedToName: string = issuedTo || (name as string)
+  const credentialName = getCredentialName(credential)
 
-  const {
-    issuerName,
-    issuerUrl,
-    issuerId,
-    issuerImage,
-  } = issuerRenderInfoWithVerification(issuer, verifyCredential?.result);
+  const { issuerName, issuerUrl, issuerId, issuerImage } =
+    issuerRenderInfoWithVerification(issuer, verifyCredential?.result)
 
   return (
     <View style={styles.cardContainer}>
@@ -89,7 +93,10 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
         <View style={[styles.flexRow, styles.dataContainer]}>
           <View>
             {achievementImage && (
-              <CardImage source={achievementImage} accessibilityLabel={issuerName} />
+              <CardImage
+                source={achievementImage}
+                accessibilityLabel={issuerName}
+              />
             )}
           </View>
           <View style={styles.spaceBetween}>
@@ -98,13 +105,20 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
                 {credentialName}
               </Text>
             </View>
-            <CardDetail label="Achievement Type" value={achievementType} inRow={true} />
+            <CardDetail
+              label="Achievement Type"
+              value={achievementType}
+              inRow={true}
+            />
           </View>
         </View>
 
         <Text style={styles.dataLabel}>Issuer</Text>
         <View style={styles.flexRow}>
-          <CardImage source={getSafeImageSource(issuerImage)} accessibilityLabel={issuerName} />
+          <CardImage
+            source={getSafeImageSource(issuerImage)}
+            accessibilityLabel={issuerName}
+          />
           <View style={styles.spaceBetween}>
             <IssuerInfoButton
               issuerId={issuerId}
@@ -113,10 +127,10 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
                 if (issuerId && rawCredentialRecord) {
                   navigation.navigate('IssuerInfoScreen', {
                     issuerId,
-                    rawCredentialRecord,
-                  });
+                    rawCredentialRecord
+                  })
                 } else {
-                  console.warn('Missing issuerId or rawCredentialRecord');
+                  console.warn('Missing issuerId or rawCredentialRecord')
                 }
               }}
             />
@@ -135,10 +149,10 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
             if (issuerId && rawCredentialRecord) {
               navigation.navigate('IssuerInfoScreen', {
                 issuerId,
-                rawCredentialRecord,
-              });
+                rawCredentialRecord
+              })
             } else {
-              console.warn('Missing issuerId or rawCredentialRecord');
+              console.warn('Missing issuerId or rawCredentialRecord')
             }
           }}
         />
@@ -158,8 +172,8 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
         <AlignmentsList alignment={alignment} disabled={urlsDisabled} />
       </View>
     </View>
-  );
-};
+  )
+}
 
 export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
   credentialType: 'OpenBadgeCredential',
@@ -167,13 +181,16 @@ export const openBadgeCredentialDisplayConfig: CredentialDisplayConfig = {
   itemPropsResolver: (credential) => {
     const subject = getSubject(credential)
     const title = getCredentialName(credential)
-    const { achievementImage } = credentialSubjectRenderInfoFrom(subject);
-    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(credential.issuer, undefined);
+    const { achievementImage } = credentialSubjectRenderInfoFrom(subject)
+    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(
+      credential.issuer,
+      undefined
+    )
 
     return {
       title,
       subtitle: issuerName,
-      image: achievementImage || issuerImage || defaultIssuerImage,
-    };
+      image: achievementImage || issuerImage || defaultIssuerImage
+    }
   }
-};
+}

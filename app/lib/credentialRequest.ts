@@ -1,82 +1,100 @@
-import { DidRecordRaw } from '../model';
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
+import { DidRecordRaw } from '../model'
+import { IVerifiableCredential } from '@digitalcredentials/ssi'
 
-import { createVerifiablePresentation } from './present';
-import { parseResponseBody } from './parseResponse';
-import { extractCredentialsFrom, VerifiableObject } from './verifiableObject';
-import { verifyVerifiableObject } from './validate';
+import { createVerifiablePresentation } from './present'
+import { parseResponseBody } from './parseResponse'
+import { extractCredentialsFrom, VerifiableObject } from './verifiableObject'
+import { verifyVerifiableObject } from './validate'
 
 export type CredentialRequestParams = {
-  auth_type?: string;
-  issuer: string;
-  vc_request_url: string;
-  challenge?: string;
+  auth_type?: string
+  issuer: string
+  vc_request_url: string
+  challenge?: string
 }
 
-export function isCredentialRequestParams(params?: Record<string, unknown>): params is CredentialRequestParams {
-  const { issuer, vc_request_url } = (params || {} as CredentialRequestParams);
-  return issuer !== undefined && vc_request_url !== undefined;
+export function isCredentialRequestParams(
+  params?: Record<string, unknown>
+): params is CredentialRequestParams {
+  const { issuer, vc_request_url } = params || ({} as CredentialRequestParams)
+  return issuer !== undefined && vc_request_url !== undefined
 }
 
 export async function requestCredential(
-  credentialRequestParams: CredentialRequestParams, didRecord: DidRecordRaw
+  credentialRequestParams: CredentialRequestParams,
+  didRecord: DidRecordRaw
 ): Promise<IVerifiableCredential[]> {
   const {
     auth_type = 'code',
     vc_request_url,
-    challenge,
-  } = credentialRequestParams;
+    challenge
+  } = credentialRequestParams
 
-  console.log('[requestCredential] Credential request params', credentialRequestParams);
+  console.log(
+    '[requestCredential] Credential request params',
+    credentialRequestParams
+  )
 
-  let accessToken;
+  let accessToken
 
   switch (auth_type) {
-  case 'bearer':
-    // Bearer token - do nothing. The 'challenge' param will be passed in the VP
-    break;
-  default:
-    throw new Error(`Unsupported auth_type value: "${auth_type}".`);
+    case 'bearer':
+      // Bearer token - do nothing. The 'challenge' param will be passed in the VP
+      break
+    default:
+      throw new Error(`Unsupported auth_type value: "${auth_type}".`)
   }
 
-  const requestBody = await createVerifiablePresentation({didRecord, challenge});
+  const requestBody = await createVerifiablePresentation({
+    didRecord,
+    challenge
+  })
 
-  console.log(JSON.stringify(requestBody, null, 2));
+  console.log(JSON.stringify(requestBody, null, 2))
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json'
-  };
+  }
 
   if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`;
+    headers.Authorization = `Bearer ${accessToken}`
   }
 
   const request = {
     method: 'POST',
     headers,
-    body: JSON.stringify(requestBody),
-  };
+    body: JSON.stringify(requestBody)
+  }
 
-  const response = await fetch(vc_request_url, request);
+  const response = await fetch(vc_request_url, request)
 
   if (!response.ok) {
-    console.error(`Issuer response (failed): ${JSON.stringify(response, null, 2)}`);
-    console.log('Response body:', JSON.stringify(await response.json(), null, 2));
-    throw new Error('Unable to receive credential: The issuer failed to return a valid response');
+    console.error(
+      `Issuer response (failed): ${JSON.stringify(response, null, 2)}`
+    )
+    console.log(
+      'Response body:',
+      JSON.stringify(await response.json(), null, 2)
+    )
+    throw new Error(
+      'Unable to receive credential: The issuer failed to return a valid response'
+    )
   }
 
-  const responseBody = await parseResponseBody(response);
-  const verifiableObject = responseBody as VerifiableObject;
+  const responseBody = await parseResponseBody(response)
+  const verifiableObject = responseBody as VerifiableObject
 
-  const verified = await verifyVerifiableObject(verifiableObject);
+  const verified = await verifyVerifiableObject(verifiableObject)
   if (!verified) {
-    console.warn('Response was received, but could not be verified');
+    console.warn('Response was received, but could not be verified')
   }
 
-  const credentials = extractCredentialsFrom(verifiableObject);
+  const credentials = extractCredentialsFrom(verifiableObject)
   if (credentials === null) {
-    throw new Error('Unable to receive credential: The issuer failed to return a Verifiable Credential (VC) or Verifiable Presentation (VP)');
+    throw new Error(
+      'Unable to receive credential: The issuer failed to return a Verifiable Credential (VC) or Verifiable Presentation (VP)'
+    )
   }
 
-  return credentials;
+  return credentials
 }

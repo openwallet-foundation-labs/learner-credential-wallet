@@ -1,1 +1,1 @@
-export type { CredentialScreenProps } from '../../navigation';
+export type { CredentialScreenProps } from '../../navigation'

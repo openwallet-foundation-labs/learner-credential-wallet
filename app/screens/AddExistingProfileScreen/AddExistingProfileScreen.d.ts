@@ -1,1 +1,1 @@
-export type { AddExistingProfileScreenProps } from '../../navigation';
+export type { AddExistingProfileScreenProps } from '../../navigation'

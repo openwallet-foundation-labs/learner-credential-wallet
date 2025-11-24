@@ -1,18 +1,18 @@
-import moment from 'moment';
-import React, { useContext } from 'react';
-import { View, Text, ImageSourcePropType } from 'react-native';
-import { Button } from 'react-native-elements';
-import { mixins } from '../../styles';
-import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
-import { CredentialNavigationParamList } from '../../navigation/CredentialNavigation/CredentialNavigation.d';
-import CredentialStatusBadges from '../../components/CredentialStatusBadges/CredentialStatusBadges';
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
-import { getIssuanceDate } from '../credentialValidityPeriod';
-import type { CredentialCardProps, CredentialDisplayConfig } from '.';
-import defaultIssuerImage from '../../assets/defaultIssuer.png';
-import { DidRegistryContext } from '../../init/registries';
-import { shouldDisableUrls } from '../credentialSecurity';
+import moment from 'moment'
+import React, { useContext } from 'react'
+import { View, Text, ImageSourcePropType } from 'react-native'
+import { Button } from 'react-native-elements'
+import { mixins } from '../../styles'
+import { useNavigation } from '@react-navigation/native'
+import { StackNavigationProp } from '@react-navigation/stack'
+import { CredentialNavigationParamList } from '../../navigation/CredentialNavigation/CredentialNavigation.d'
+import CredentialStatusBadges from '../../components/CredentialStatusBadges/CredentialStatusBadges'
+import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { getIssuanceDate } from '../credentialValidityPeriod'
+import type { CredentialCardProps, CredentialDisplayConfig } from '.'
+import defaultIssuerImage from '../../assets/defaultIssuer.png'
+import { DidRegistryContext } from '../../init/registries'
+import { shouldDisableUrls } from '../credentialSecurity'
 import {
   CardLink,
   CardDetail,
@@ -20,29 +20,35 @@ import {
   CardImage,
   issuerRenderInfoWithVerification,
   credentialSubjectRenderInfoFrom,
-  IssuerInfoButton, getSubject
-} from './shared';
+  IssuerInfoButton,
+  getSubject
+} from './shared'
 
-
-import { DATE_FORMAT } from '../../../app.config';
-import { getCredentialName } from '../credentialName';
+import { DATE_FORMAT } from '../../../app.config'
+import { getCredentialName } from '../credentialName'
 const getSafeImageSource = (imageUri?: string | null): ImageSourcePropType => {
-  return imageUri && imageUri.trim() !== '' ? { uri: imageUri } : defaultIssuerImage;
-};
+  return imageUri && imageUri.trim() !== ''
+    ? { uri: imageUri }
+    : defaultIssuerImage
+}
 
-type NavigationProp = StackNavigationProp<CredentialNavigationParamList>;
+type NavigationProp = StackNavigationProp<CredentialNavigationParamList>
 
-function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
-  const { credential } = rawCredentialRecord;
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
-  const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries, verifyCredential?.result);
-  const navigation = useNavigation<NavigationProp>();
-  const { credentialSubject, issuer } = credential;
+function VerifiableCredentialCard({
+  rawCredentialRecord
+}: CredentialCardProps): React.ReactElement {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
+  const { credential } = rawCredentialRecord
+  const verifyCredential = useVerifyCredential(rawCredentialRecord)
+  const registries = useContext(DidRegistryContext)
+  const urlsDisabled = shouldDisableUrls(credential, registries)
+  const navigation = useNavigation<NavigationProp>()
+  const { credentialSubject, issuer } = credential
 
-  const issuanceDate = getIssuanceDate(credential);
-  const formattedIssuanceDate = issuanceDate ? moment(issuanceDate).format(DATE_FORMAT) : 'N/A';
+  const issuanceDate = getIssuanceDate(credential)
+  const formattedIssuanceDate = issuanceDate
+    ? moment(issuanceDate).format(DATE_FORMAT)
+    : 'N/A'
   const title = getCredentialName(credential)
   const {
     description,
@@ -50,15 +56,11 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
     subjectName,
     numberOfCredits,
     startDateFmt,
-    endDateFmt,
-  } = credentialSubjectRenderInfoFrom(credentialSubject);
+    endDateFmt
+  } = credentialSubjectRenderInfoFrom(credentialSubject)
 
-  const {
-    issuerName,
-    issuerUrl,
-    issuerId,
-    issuerImage,
-  } = issuerRenderInfoWithVerification(issuer, verifyCredential?.result);
+  const { issuerName, issuerUrl, issuerId, issuerImage } =
+    issuerRenderInfoWithVerification(issuer, verifyCredential?.result)
 
   return (
     <View style={styles.cardContainer}>
@@ -69,13 +71,18 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
         />
         {urlsDisabled && (
           <Text style={styles.warningText}>
-           ⚠️ Links disabled - unrecognized issuer
+            ⚠️ Links disabled - unrecognized issuer
           </Text>
         )}
-        <Text style={styles.header} accessibilityRole="header">{title}</Text>
+        <Text style={styles.header} accessibilityRole="header">
+          {title}
+        </Text>
         <Text style={styles.dataLabel}>Issuer</Text>
         <View style={styles.flexRow}>
-          <CardImage source={getSafeImageSource(issuerImage)} accessibilityLabel={issuerName} />
+          <CardImage
+            source={getSafeImageSource(issuerImage)}
+            accessibilityLabel={issuerName}
+          />
           <View style={styles.spaceBetween}>
             <IssuerInfoButton
               issuerId={issuerId}
@@ -84,10 +91,10 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
                 if (issuerId && rawCredentialRecord) {
                   navigation.navigate('IssuerInfoScreen', {
                     issuerId,
-                    rawCredentialRecord,
-                  });
+                    rawCredentialRecord
+                  })
                 } else {
-                  console.warn('Missing issuerId or rawCredentialRecord');
+                  console.warn('Missing issuerId or rawCredentialRecord')
                 }
               }}
             />
@@ -106,10 +113,10 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
             if (issuerId && rawCredentialRecord) {
               navigation.navigate('IssuerInfoScreen', {
                 issuerId,
-                rawCredentialRecord,
-              });
+                rawCredentialRecord
+              })
             } else {
-              console.warn('Missing issuerId or rawCredentialRecord');
+              console.warn('Missing issuerId or rawCredentialRecord')
             }
           }}
         />
@@ -124,7 +131,7 @@ function VerifiableCredentialCard({ rawCredentialRecord }: CredentialCardProps):
       <CardDetail label="Description" value={description} />
       <CardDetail label="Criteria" value={criteria} />
     </View>
-  );
+  )
 }
 
 export const verifiableCredentialDisplayConfig: CredentialDisplayConfig = {
@@ -133,13 +140,15 @@ export const verifiableCredentialDisplayConfig: CredentialDisplayConfig = {
   itemPropsResolver: (credential) => {
     const subject = getSubject(credential)
     const title = getCredentialName(credential)
-    const { achievementImage } = credentialSubjectRenderInfoFrom(subject);
-    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(credential.issuer);
+    const { achievementImage } = credentialSubjectRenderInfoFrom(subject)
+    const { issuerName, issuerImage } = issuerRenderInfoWithVerification(
+      credential.issuer
+    )
 
     return {
       title,
       subtitle: issuerName,
-      image: achievementImage || issuerImage || defaultIssuerImage,
-    };
+      image: achievementImage || issuerImage || defaultIssuerImage
+    }
   }
-};
+}

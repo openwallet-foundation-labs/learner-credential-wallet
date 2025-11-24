@@ -1,4 +1,4 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   credentialStatusContainer: {
@@ -8,24 +8,24 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     backgroundColor: theme.color.backgroundPrimary,
     borderRadius: theme.borderRadius,
     width: '100%',
-    height: 40,
+    height: 40
   },
   statusText: {
     fontFamily: theme.fontFamily.bold,
     fontSize: 14,
     color: theme.color.textPrimary,
-    paddingLeft: 8,
+    paddingLeft: 8
   },
   statusTextOutside: {
     color: theme.color.textSecondary,
     fontFamily: theme.fontFamily.regular,
     fontSize: 14,
-    marginTop: 12,
+    marginTop: 12
   },
   approvalContainer: {
     ...mixins.buttonGroup,
     display: 'flex',
-    marginTop: 16,
+    marginTop: 16
   },
   button: {
     ...mixins.button,
@@ -36,10 +36,10 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
+    flex: 1
   },
   buttonPrimary: {
-    ...mixins.button, 
+    ...mixins.button,
     ...mixins.buttonPrimary,
     minHeight: undefined,
     height: 36,
@@ -47,19 +47,19 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    flex: 1,
+    flex: 1
   },
   buttonText: {
     color: theme.color.textPrimary,
     fontSize: 14,
-    fontFamily: theme.fontFamily.medium,
+    fontFamily: theme.fontFamily.medium
   },
   buttonTextPrimary: {
     color: theme.color.textPrimaryDark,
     fontSize: 14,
-    fontFamily: theme.fontFamily.medium,
+    fontFamily: theme.fontFamily.medium
   },
   buttonSpacer: {
-    width: 16,
-  },
-}));
+    width: 16
+  }
+}))

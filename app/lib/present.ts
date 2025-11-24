@@ -1,20 +1,23 @@
-import uuid from 'react-native-uuid';
-import * as vc from '@digitalcredentials/vc';
-import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020';
-import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020';
+import uuid from 'react-native-uuid'
+import * as vc from '@digitalcredentials/vc'
+import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020'
+import { Ed25519Signature2020 } from '@digitalcredentials/ed25519-signature-2020'
 
-import type { DidRecordRaw } from '../model/did';
+import type { DidRecordRaw } from '../model/did'
 
-import { securityLoader } from '@digitalcredentials/security-document-loader';
-import { shareData } from './shareData';
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { securityLoader } from '@digitalcredentials/security-document-loader'
+import { shareData } from './shareData'
+import {
+  IVerifiableCredential,
+  IVerifiablePresentation
+} from '@digitalcredentials/ssi'
 
-const documentLoader = securityLoader({ fetchRemoteContexts: true }).build();
+const documentLoader = securityLoader({ fetchRemoteContexts: true }).build()
 
 type SignPresentationParams = {
-  didRecord: DidRecordRaw;
-  verifiableCredential?: IVerifiableCredential[] | IVerifiableCredential;
-  challenge?: string;
+  didRecord: DidRecordRaw
+  verifiableCredential?: IVerifiableCredential[] | IVerifiableCredential
+  challenge?: string
 }
 
 /**
@@ -27,10 +30,14 @@ type SignPresentationParams = {
  * replay attacks.
  */
 export async function createVerifiablePresentation({
-  didRecord, verifiableCredential, challenge = uuid.v4() as string,
+  didRecord,
+  verifiableCredential,
+  challenge = uuid.v4() as string
 }: SignPresentationParams): Promise<IVerifiablePresentation> {
-  const verificationKeyPair = await Ed25519VerificationKey2020.from(didRecord.verificationKey);
-  const suite = new Ed25519Signature2020({ key: verificationKeyPair });
+  const verificationKeyPair = await Ed25519VerificationKey2020.from(
+    didRecord.verificationKey
+  )
+  const suite = new Ed25519Signature2020({ key: verificationKeyPair })
 
   const holder = didRecord.didDocument.id;
   
@@ -46,8 +53,8 @@ export async function createVerifiablePresentation({
     presentation,
     suite,
     challenge,
-    documentLoader,
-  });
+    documentLoader
+  })
 }
 
 export function createUnsignedPresentation(verifiableCredential: IVerifiableCredential[] | IVerifiableCredential): IVerifiablePresentation {
@@ -56,11 +63,23 @@ export function createUnsignedPresentation(verifiableCredential: IVerifiableCred
   return vc.createPresentation({ verifiableCredential, verify: false });
 }
 
-export async function sharePresentation(verifiablePresentation: IVerifiablePresentation): Promise<void> {
-  const { verifiableCredential } = verifiablePresentation;
-  const plurality = verifiableCredential instanceof Array && verifiableCredential.length > 1 ? 's' : '';
+export async function sharePresentation(
+  verifiablePresentation: IVerifiablePresentation
+): Promise<void> {
+  const { verifiableCredential } = verifiablePresentation
+  const plurality =
+    verifiableCredential instanceof Array && verifiableCredential.length > 1
+      ? 's'
+      : ''
 
-  const verifiablePresentationString = JSON.stringify(verifiablePresentation, null, 2);
+  const verifiablePresentationString = JSON.stringify(
+    verifiablePresentation,
+    null,
+    2
+  )
 
-  await shareData(`SharedCredential${plurality}.txt`, verifiablePresentationString);
+  await shareData(
+    `SharedCredential${plurality}.txt`,
+    verifiablePresentationString
+  )
 }

@@ -1,7 +1,10 @@
-import type { StackScreenProps } from '@react-navigation/stack';
+import type { StackScreenProps } from '@react-navigation/stack'
 
 export type AddNavigationParamList = {
-  AddScreen: undefined;
-};
+  AddScreen: undefined
+}
 
-export type AddScreenProps = StackScreenProps<AddNavigationParamList, 'AddScreen'>;
+export type AddScreenProps = StackScreenProps<
+  AddNavigationParamList,
+  'AddScreen'
+>

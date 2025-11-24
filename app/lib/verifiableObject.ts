@@ -1,77 +1,90 @@
-import { LruCache } from '@digitalcredentials/lru-memoize';
-import { isVerifiableCredential, isVerifiablePresentation, ResultLog, verifyCredential } from './validate';
-import { RegistryClient } from '@digitalcredentials/issuer-registry-client';
-import { CredentialRecordRaw } from '../model';
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
+import { LruCache } from '@digitalcredentials/lru-memoize'
+import {
+  isVerifiableCredential,
+  isVerifiablePresentation,
+  ResultLog,
+  verifyCredential
+} from './validate'
+import { RegistryClient } from '@digitalcredentials/issuer-registry-client'
+import { CredentialRecordRaw } from '../model'
+import {
+  IVerifiableCredential,
+  IVerifiablePresentation
+} from '@digitalcredentials/ssi'
 
 /**
  * This type is used to identify a request response that could be a
  * Verifiable Credential or Verifiable Presentation.
  */
-export type VerifiableObject = IVerifiableCredential | IVerifiablePresentation;
+export type VerifiableObject = IVerifiableCredential | IVerifiablePresentation
 
-export function extractCredentialsFrom(obj: IVerifiableCredential | IVerifiablePresentation):
-  IVerifiableCredential[] | null {
+export function extractCredentialsFrom(
+  obj: IVerifiableCredential | IVerifiablePresentation
+): IVerifiableCredential[] | null {
   if (isVerifiableCredential(obj)) {
-    return [obj];
+    return [obj]
   }
   if (isVerifiablePresentation(obj) && 'verifiableCredential' in obj) {
-    const verifiableCredential = obj.verifiableCredential!;
+    const verifiableCredential = obj.verifiableCredential!
 
     if (Array.isArray(verifiableCredential)) {
-      return verifiableCredential;
+      return verifiableCredential
     }
-    return [verifiableCredential];
+    return [verifiableCredential]
   }
 
-  return null;
+  return null
 }
 
 /* Verification expiration = 30 days */
-const VERIFICATION_EXPIRATION = 1000 * 30;
-const lruCache = new LruCache({ maxAge: VERIFICATION_EXPIRATION });
+const VERIFICATION_EXPIRATION = 1000 * 30
+const lruCache = new LruCache({ maxAge: VERIFICATION_EXPIRATION })
 export type VerificationResult = {
-  timestamp: number | null;
-  log: ResultLog[];
-  verified: boolean | null;
-  error?: Error;
+  timestamp: number | null
+  log: ResultLog[]
+  verified: boolean | null
+  error?: Error
 }
 
 export type VerifyPayload = {
-  loading: boolean;
-  error: string | null;
-  result: VerificationResult;
+  loading: boolean
+  error: string | null
+  result: VerificationResult
 }
 
-export async function verificationResultFor(
-  { rawCredentialRecord, forceFresh = false}:
-  { rawCredentialRecord: CredentialRecordRaw, forceFresh?: boolean, registries: RegistryClient },
-): Promise<VerificationResult> {
-  const cachedRecordId = String(rawCredentialRecord._id);
+export async function verificationResultFor({
+  rawCredentialRecord,
+  forceFresh = false
+}: {
+  rawCredentialRecord: CredentialRecordRaw
+  forceFresh?: boolean
+  registries: RegistryClient
+}): Promise<VerificationResult> {
+  const cachedRecordId = String(rawCredentialRecord._id)
 
   if (!forceFresh) {
-    const cachedResult = await lruCache.memoize({
+    const cachedResult = (await lruCache.memoize({
       key: cachedRecordId,
       fn: () => {
-        return verifyCredential(rawCredentialRecord.credential);
-      },
-    }) as VerificationResult;
-    return cachedResult;
+        return verifyCredential(rawCredentialRecord.credential)
+      }
+    })) as VerificationResult
+    return cachedResult
   }
 
-  let response, error;
+  let response, error
   try {
-    response = await verifyCredential(rawCredentialRecord.credential);
+    response = await verifyCredential(rawCredentialRecord.credential)
   } catch (err) {
-    error = err as Error;
+    error = err as Error
   }
 
   const result: VerificationResult = {
     verified: response?.verified ?? false,
     log: response?.results ? response.results[0].log : [],
     timestamp: Date.now(),
-    error,
-  };
+    error
+  }
 
-  return result;
+  return result
 }

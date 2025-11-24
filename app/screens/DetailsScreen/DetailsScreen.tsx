@@ -1,15 +1,18 @@
-import React from 'react';
-import { View, Text } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-import { BulletList, NavHeader } from '../../components';
+import React from 'react'
+import { View, Text } from 'react-native'
+import { ScrollView } from 'react-native-gesture-handler'
+import { BulletList, NavHeader } from '../../components'
 
-import dynamicStyleSheet from './DetailsScreen.styles';
-import { DetailsScreenProps } from './DetailsScreen.d';
-import { useDynamicStyles } from '../../hooks';
+import dynamicStyleSheet from './DetailsScreen.styles'
+import { DetailsScreenProps } from './DetailsScreen.d'
+import { useDynamicStyles } from '../../hooks'
 
-export default function DetailsScreen({ navigation, route }: DetailsScreenProps): React.ReactElement {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const { header, details, goBack = navigation.goBack } = route.params;
+export default function DetailsScreen({
+  navigation,
+  route
+}: DetailsScreenProps): React.ReactElement {
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const { header, details, goBack = navigation.goBack } = route.params
 
   return (
     <>
@@ -23,5 +26,5 @@ export default function DetailsScreen({ navigation, route }: DetailsScreenProps)
         ))}
       </ScrollView>
     </>
-  );
+  )
 }

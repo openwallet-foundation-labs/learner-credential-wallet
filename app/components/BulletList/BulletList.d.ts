@@ -1,6 +1,6 @@
-import { ViewStyle } from 'react-native';
+import { ViewStyle } from 'react-native'
 
 export type BulletListProps = {
-  items: string[];
-  style?: StyleProp<ViewStyle>;
-};
+  items: string[]
+  style?: StyleProp<ViewStyle>
+}

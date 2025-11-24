@@ -1,16 +1,16 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme }) => ({
   container: {
-    flex: 1,
+    flex: 1
   },
   contentContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingVertical: 16
   },
   credentialList: {
     borderRadius: theme.borderRadius,
-    overflow: 'hidden',
+    overflow: 'hidden'
   },
   paragraph: {
     fontSize: 14,
@@ -18,6 +18,6 @@ export default createDynamicStyleSheet(({ theme }) => ({
     marginTop: 8
   },
   sendButton: {
-    marginTop: 32,
-  },
-}));
+    marginTop: 32
+  }
+}))

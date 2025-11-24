@@ -2,7 +2,7 @@ name: move new, edited, reopened issues to DCC Enginnering project
 
 on:
   issues:
-    types: [ opened, edited, reopened ]
+    types: [opened, edited, reopened]
 jobs:
   add-to-project:
     name: Add issue to project

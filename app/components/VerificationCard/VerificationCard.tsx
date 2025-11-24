@@ -1,26 +1,30 @@
-import React from 'react';
-import moment from 'moment';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import React from 'react'
+import moment from 'moment'
+import { View, Text, TouchableOpacity } from 'react-native'
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons'
 
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
-import { VerifyPayload } from '../../lib/verifiableObject';
-import dynamicStyleSheet from './VerificationCard.styles';
-import { navigationRef } from '../../navigation/navigationRef';
-import { CredentialRecordRaw } from '../../model';
+import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { VerifyPayload } from '../../lib/verifiableObject'
+import dynamicStyleSheet from './VerificationCard.styles'
+import { navigationRef } from '../../navigation/navigationRef'
+import { CredentialRecordRaw } from '../../model'
 
-import { DATE_FORMAT } from '../../../app.config';
+import { DATE_FORMAT } from '../../../app.config'
 
 type CommonProps = {
-  isButton?: boolean;
+  isButton?: boolean
   showDetails?: boolean
 }
 
 type VerifyProps =
-  | { rawCredentialRecord: CredentialRecordRaw, verifyPayload?: never; }
-  | { rawCredentialRecord?: never; verifyPayload: VerifyPayload; isButton?: never | false; };
+  | { rawCredentialRecord: CredentialRecordRaw; verifyPayload?: never }
+  | {
+      rawCredentialRecord?: never
+      verifyPayload: VerifyPayload
+      isButton?: never | false
+    }
 
-type VerificationCardProps = CommonProps & VerifyProps;
+type VerificationCardProps = CommonProps & VerifyProps
 
 /**
  * The VerificationCard is used to render the verification status of a
@@ -28,26 +32,43 @@ type VerificationCardProps = CommonProps & VerifyProps;
  *   1) Pass in a `credential` to generate a `verifyPayload` and render the status.
  *   2) Pass in a `verifyPayload` to render the status (cannot be a button).
  */
-export default function VerificationCard({ rawCredentialRecord, verifyPayload, isButton, showDetails = false }: VerificationCardProps): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
-  const generatedVerifyPayload = useVerifyCredential(rawCredentialRecord, true);
-  const { credential } = rawCredentialRecord || {};
+export default function VerificationCard({
+  rawCredentialRecord,
+  verifyPayload,
+  isButton,
+  showDetails = false
+}: VerificationCardProps): React.ReactElement {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
+  const generatedVerifyPayload = useVerifyCredential(rawCredentialRecord, true)
+  const { credential } = rawCredentialRecord || {}
 
   if (generatedVerifyPayload !== null) {
-    verifyPayload = generatedVerifyPayload;
+    verifyPayload = generatedVerifyPayload
   }
 
   if (verifyPayload === undefined) {
-    throw new Error('The VerificationCard component was implemented incorrectly.');
+    throw new Error(
+      'The VerificationCard component was implemented incorrectly.'
+    )
   }
 
-  const { loading, result: { verified, timestamp } } = verifyPayload;
+  const {
+    loading,
+    result: { verified, timestamp }
+  } = verifyPayload
 
-  const lastCheckedDate = moment(timestamp).format(DATE_FORMAT);
+  const lastCheckedDate = moment(timestamp).format(DATE_FORMAT)
 
   function goToStatus() {
-    if (navigationRef.isReady() && verifyPayload !== undefined && credential !== undefined) {
-      navigationRef.navigate('VerificationStatusScreen', { credential, verifyPayload });
+    if (
+      navigationRef.isReady() &&
+      verifyPayload !== undefined &&
+      credential !== undefined
+    ) {
+      navigationRef.navigate('VerificationStatusScreen', {
+        credential,
+        verifyPayload
+      })
     }
   }
 
@@ -61,11 +82,9 @@ export default function VerificationCard({ rawCredentialRecord, verifyPayload, i
             color={theme.color.iconInactive}
             accessibilityLabel="Pending, Icon"
           />
-          <Text style={[styles.dataValue, styles.proofText]}>
-            Verifying...
-          </Text>
+          <Text style={[styles.dataValue, styles.proofText]}>Verifying...</Text>
         </View>
-      );
+      )
     }
 
     if (verified) {
@@ -82,11 +101,19 @@ export default function VerificationCard({ rawCredentialRecord, verifyPayload, i
               Credential Verified
             </Text>
             {showDetails && (
-              <Text style={[styles.dataValue, styles.proofText, styles.lastCheckedText]}>Last Checked: {lastCheckedDate}</Text>
+              <Text
+                style={[
+                  styles.dataValue,
+                  styles.proofText,
+                  styles.lastCheckedText
+                ]}
+              >
+                Last Checked: {lastCheckedDate}
+              </Text>
             )}
           </View>
         </View>
-      );
+      )
     }
 
     return (
@@ -102,26 +129,34 @@ export default function VerificationCard({ rawCredentialRecord, verifyPayload, i
             Invalid Credential
           </Text>
           {showDetails && (
-            <Text style={[styles.dataValue, styles.proofText, styles.lastCheckedText]}>Last Checked: {lastCheckedDate}</Text>
+            <Text
+              style={[
+                styles.dataValue,
+                styles.proofText,
+                styles.lastCheckedText
+              ]}
+            >
+              Last Checked: {lastCheckedDate}
+            </Text>
           )}
         </View>
       </View>
-    );
+    )
   }
 
   return (
     <TouchableOpacity disabled={loading || !isButton} onPress={goToStatus}>
       <View style={[styles.flexRow, styles.proofContainer]}>
-        <VerificationContent/>
-        {!loading && isButton &&
+        <VerificationContent />
+        {!loading && isButton && (
           <MaterialCommunityIcons
             name="chevron-right"
             size={theme.iconSize}
             color={theme.color.iconActive}
             accessibilityLabel="Chevron Right, Icon"
           />
-        }
+        )}
       </View>
     </TouchableOpacity>
-  );
+  )
 }
