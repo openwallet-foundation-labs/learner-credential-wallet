@@ -1,60 +1,73 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { View, TextInput, StyleProp, ViewStyle } from 'react-native';
-import { useDynamicStyles } from '../../hooks';
-import { Color } from '../../styles';
-import ErrorDialog from '../ErrorDialog/ErrorDialog';
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { View, TextInput, StyleProp, ViewStyle } from 'react-native'
+import { useDynamicStyles } from '../../hooks'
+import { Color } from '../../styles'
+import ErrorDialog from '../ErrorDialog/ErrorDialog'
 
-import PasswordInput from '../PasswordInput/PasswordInput';
-import dynamicStyleSheet from './PasswordForm.styles';
+import PasswordInput from '../PasswordInput/PasswordInput'
+import dynamicStyleSheet from './PasswordForm.styles'
 
 type PasswordFormProps = {
-  onChangePassword: (password: string | undefined) => void;
-  focusOnMount?: boolean;
-  style?: StyleProp<ViewStyle>;
-  textInputBackgroundColor?: Color;
+  onChangePassword: (password: string | undefined) => void
+  focusOnMount?: boolean
+  style?: StyleProp<ViewStyle>
+  textInputBackgroundColor?: Color
 }
 
-const PASSWORD_LENGTH_REQUIREMENT = 6;
+const PASSWORD_LENGTH_REQUIREMENT = 6
 
-export default function PasswordForm({ focusOnMount, onChangePassword, style, textInputBackgroundColor }: PasswordFormProps): React.ReactElement {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const [password, setPassword] = useState('');
-  const [passwordConfirm, setPasswordConfirm] = useState('');
-  const [errorText, setErrorText] = useState('');
-  const passwordRef = useRef<TextInput>(null);
+export default function PasswordForm({
+  focusOnMount,
+  onChangePassword,
+  style,
+  textInputBackgroundColor
+}: PasswordFormProps): React.ReactElement {
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const [password, setPassword] = useState('')
+  const [passwordConfirm, setPasswordConfirm] = useState('')
+  const [errorText, setErrorText] = useState('')
+  const passwordRef = useRef<TextInput>(null)
 
-  const isPasswordValid = useMemo(() =>
-    password.length >= PASSWORD_LENGTH_REQUIREMENT
-    && password === passwordConfirm
-  , [password, passwordConfirm]);
+  const isPasswordValid = useMemo(
+    () =>
+      password.length >= PASSWORD_LENGTH_REQUIREMENT &&
+      password === passwordConfirm,
+    [password, passwordConfirm]
+  )
 
-  const textInputStyle = textInputBackgroundColor ? {
-    ...mixins.input,
-    backgroundColor: textInputBackgroundColor,
-  } : mixins.input;
+  const textInputStyle = textInputBackgroundColor
+    ? {
+        ...mixins.input,
+        backgroundColor: textInputBackgroundColor
+      }
+    : mixins.input
 
   useEffect(() => {
     if (focusOnMount) {
-      passwordRef.current?.focus();
+      passwordRef.current?.focus()
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
     if (isPasswordValid) {
-      setErrorText('');
-      onChangePassword(password);
+      setErrorText('')
+      onChangePassword(password)
     } else {
-      onChangePassword(undefined);
+      onChangePassword(undefined)
     }
-  }, [isPasswordValid]);
+  }, [isPasswordValid])
 
   function _onInputBlur() {
     if (password && passwordConfirm) {
       if (password.length < PASSWORD_LENGTH_REQUIREMENT)
-        setErrorText(`Password must contain at least ${PASSWORD_LENGTH_REQUIREMENT} characters`);
+        setErrorText(
+          `Password must contain at least ${PASSWORD_LENGTH_REQUIREMENT} characters`
+        )
       else if (password !== passwordConfirm)
-        setErrorText(`Passwords must match and be at least ${PASSWORD_LENGTH_REQUIREMENT} characters`);
-      else setErrorText('');
+        setErrorText(
+          `Passwords must match and be at least ${PASSWORD_LENGTH_REQUIREMENT} characters`
+        )
+      else setErrorText('')
     }
   }
 
@@ -86,5 +99,5 @@ export default function PasswordForm({ focusOnMount, onChangePassword, style, te
         </>
       ) : null}
     </View>
-  );
+  )
 }

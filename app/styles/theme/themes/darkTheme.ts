@@ -1,7 +1,7 @@
-import type { ThemeType } from '..';
-import { Color } from '../../colors';
-import { FontFamily } from '../../fonts';
-import { ColorScheme } from '../../colorScheme';
+import type { ThemeType } from '..'
+import { Color } from '../../colors'
+import { FontFamily } from '../../fonts'
+import { ColorScheme } from '../../colorScheme'
 
 export const darkTheme: ThemeType = {
   name: 'DarkTheme',
@@ -29,25 +29,25 @@ export const darkTheme: ThemeType = {
     transparent: Color.Transparent,
     switchActive: Color.DarkCyan,
     modalBackground: Color.Gray900,
-    highlightAndroid: Color.TransparentCyan,
+    highlightAndroid: Color.TransparentCyan
   },
   fontFamily: {
     regular: FontFamily.RubikRegular,
     medium: FontFamily.RubikMedium,
     bold: FontFamily.RubikBold,
-    mono: FontFamily.RobotoMonoRegular,
+    mono: FontFamily.RobotoMonoRegular
   },
   fontSize: {
     title: 36,
     header: 24,
     medium: 18,
     regular: 16,
-    small: 12,
+    small: 12
   },
   borderRadius: 5,
   iconSize: 24,
   issuerIconSize: 48,
   statusBarStyle: ColorScheme.Light,
   keyboardAppearance: ColorScheme.Dark,
-  shadowOpacity: 0.15,
-};
+  shadowOpacity: 0.15
+}

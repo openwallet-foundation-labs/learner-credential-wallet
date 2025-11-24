@@ -1,10 +1,10 @@
-import { ProfileWithCredentialRecords } from '../../model';
+import { ProfileWithCredentialRecords } from '../../model'
 
 export type ProfileItemProps = {
-  rawProfileRecord: ProfileWithCredentialRecords;
-};
+  rawProfileRecord: ProfileWithCredentialRecords
+}
 
 export type ActionModalProps = {
-  rawProfileRecord: ProfileWithCredentialRecords;
-  onRequestClose: () => void;
-};
+  rawProfileRecord: ProfileWithCredentialRecords
+  onRequestClose: () => void
+}

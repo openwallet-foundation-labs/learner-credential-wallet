@@ -1,8 +1,8 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme }) => ({
   container: {
-    padding: 16,
+    padding: 16
   },
   warningText: {
     fontSize: theme.fontSize.small,
@@ -11,6 +11,6 @@ export default createDynamicStyleSheet(({ theme }) => ({
     backgroundColor: '#FFF3CD',
     padding: 8,
     borderRadius: 4,
-    marginBottom: 12,
-  },
-}));
+    marginBottom: 12
+  }
+}))

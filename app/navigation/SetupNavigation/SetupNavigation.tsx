@@ -1,54 +1,66 @@
-import React, { useState, useEffect } from 'react';
-import { Text, View, Image, AccessibilityInfo } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { Button, CheckBox } from 'react-native-elements';
-import { createStackNavigator } from '@react-navigation/stack';
-import { useAppDispatch, useDynamicStyles } from '../../hooks';
-import { TouchableWithoutFeedback } from 'react-native-gesture-handler';
+import React, { useState, useEffect } from 'react'
+import { Text, View, Image, AccessibilityInfo } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
+import { Button, CheckBox } from 'react-native-elements'
+import { createStackNavigator } from '@react-navigation/stack'
+import { useAppDispatch, useDynamicStyles } from '../../hooks'
+import { TouchableWithoutFeedback } from 'react-native-gesture-handler'
 
-import appConfig, {FEATURE_FLAGS} from '../../../app.config';
-import { initialize, pollWalletState, selectWalletState } from '../../store/slices/wallet';
-import LoadingIndicator from '../../components/LoadingIndicator/LoadingIndicator';
-import SafeScreenView from '../../components/SafeScreenView/SafeScreenView';
-import AccessibleView from '../../components/AccessibleView/AccessibleView';
-import PasswordForm from '../../components/PasswordForm/PasswordForm';
-import walletImage from '../../assets/wallet.png';
-import { useAccessibilityFocus } from '../../hooks';
+import appConfig, { FEATURE_FLAGS } from '../../../app.config'
+import {
+  initialize,
+  pollWalletState,
+  selectWalletState
+} from '../../store/slices/wallet'
+import LoadingIndicator from '../../components/LoadingIndicator/LoadingIndicator'
+import SafeScreenView from '../../components/SafeScreenView/SafeScreenView'
+import AccessibleView from '../../components/AccessibleView/AccessibleView'
+import PasswordForm from '../../components/PasswordForm/PasswordForm'
+import walletImage from '../../assets/wallet.png'
+import { useAccessibilityFocus } from '../../hooks'
 
-import dynamicStyleSheet from './SetupNavigation.styles';
+import dynamicStyleSheet from './SetupNavigation.styles'
 import type {
   StartStepProps,
   CreateStepProps,
   PasswordStepProps,
   SetupNavigationParamList,
-  ForFadeType,
-} from './SetupNavigation.d';
+  ForFadeType
+} from './SetupNavigation.d'
 
-import { DetailsScreen } from '../../screens';
-import { useSelector } from 'react-redux';
-import { v4 as uuidv4 } from 'uuid';
+import { DetailsScreen } from '../../screens'
+import { useSelector } from 'react-redux'
+import { v4 as uuidv4 } from 'uuid'
 
-const Stack = createStackNavigator<SetupNavigationParamList>();
+const Stack = createStackNavigator<SetupNavigationParamList>()
 
 const forFade: ForFadeType = ({ current }) => ({
   cardStyle: {
-    opacity: current.progress,
-  },
-});
+    opacity: current.progress
+  }
+})
 
 export default function SetupNavigation(): React.ReactElement {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false, gestureEnabled: false }}>
+    <Stack.Navigator
+      screenOptions={{ headerShown: false, gestureEnabled: false }}
+    >
       <Stack.Screen name="StartStep" component={StartStep} />
-      {FEATURE_FLAGS.passwordProtect && <Stack.Screen name="PasswordStep" component={PasswordStep} />}
-      <Stack.Screen name="CreateStep" component={CreateStep} options={{ cardStyleInterpolator: forFade }} />
+      {FEATURE_FLAGS.passwordProtect && (
+        <Stack.Screen name="PasswordStep" component={PasswordStep} />
+      )}
+      <Stack.Screen
+        name="CreateStep"
+        component={CreateStep}
+        options={{ cardStyleInterpolator: forFade }}
+      />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
     </Stack.Navigator>
-  );
+  )
 }
 
 function StartStep({ navigation }: StartStepProps) {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
 
   return (
     <SafeScreenView style={[styles.container, styles.containerMiddle]}>
@@ -73,34 +85,37 @@ function StartStep({ navigation }: StartStepProps) {
           title="Quick Setup"
           onPress={() => {
             if (FEATURE_FLAGS.passwordProtect) {
-              navigation.navigate('PasswordStep');
+              navigation.navigate('PasswordStep')
             } else {
-              const generatedPassword = uuidv4();
-              console.log('generatedPassword', generatedPassword);
-              navigation.navigate('CreateStep', { password: generatedPassword, enableBiometrics: false });
+              const generatedPassword = uuidv4()
+              console.log('generatedPassword', generatedPassword)
+              navigation.navigate('CreateStep', {
+                password: generatedPassword,
+                enableBiometrics: false
+              })
             }
           }}
         />
       </View>
     </SafeScreenView>
-  );
+  )
 }
 
 function PasswordStep({ navigation }: PasswordStepProps) {
-  const { theme, mixins, styles } = useDynamicStyles(dynamicStyleSheet);
+  const { theme, mixins, styles } = useDynamicStyles(dynamicStyleSheet)
 
-  const [enableBiometrics, setEnableBiometrics] = useState(false);
-  const { isBiometricsSupported } = useSelector(selectWalletState);
-  const [password, setPassword] = useState<string>();
+  const [enableBiometrics, setEnableBiometrics] = useState(false)
+  const { isBiometricsSupported } = useSelector(selectWalletState)
+  const [password, setPassword] = useState<string>()
 
   function _goToNextStep() {
     if (password !== undefined) {
-      navigation.navigate('CreateStep', { password, enableBiometrics });
+      navigation.navigate('CreateStep', { password, enableBiometrics })
     }
   }
 
   function _onPressBiometrics() {
-    setEnableBiometrics(!enableBiometrics);
+    setEnableBiometrics(!enableBiometrics)
   }
 
   return (
@@ -118,7 +133,11 @@ function PasswordStep({ navigation }: PasswordStepProps) {
         a lost password.
       </Text>
       <View style={styles.body}>
-        <PasswordForm onChangePassword={setPassword} style={styles.inputGroup} focusOnMount />
+        <PasswordForm
+          onChangePassword={setPassword}
+          style={styles.inputGroup}
+          focusOnMount
+        />
         {isBiometricsSupported && (
           <>
             <View style={styles.inputSeparator} />
@@ -127,9 +146,14 @@ function PasswordStep({ navigation }: PasswordStepProps) {
                 <CheckBox
                   checked={enableBiometrics}
                   checkedColor={theme.color.buttonPrimary}
-                  containerStyle={[mixins.checkboxContainer, styles.checkboxContainer]}
+                  containerStyle={[
+                    mixins.checkboxContainer,
+                    styles.checkboxContainer
+                  ]}
                 />
-                <Text style={styles.biometricsButtonText}>Use biometrics to unlock</Text>
+                <Text style={styles.biometricsButtonText}>
+                  Use biometrics to unlock
+                </Text>
               </View>
             </TouchableWithoutFeedback>
           </>
@@ -165,31 +189,31 @@ function PasswordStep({ navigation }: PasswordStepProps) {
         />
       </View>
     </SafeScreenView>
-  );
+  )
 }
 
 function CreateStep({ route }: CreateStepProps) {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
 
-  const { password, enableBiometrics } = route.params;
-  const dispatch = useAppDispatch();
-  const [loading, setLoading] = useState(true);
-  const [titleRef, focusTitle] = useAccessibilityFocus<Text>();
+  const { password, enableBiometrics } = route.params
+  const dispatch = useAppDispatch()
+  const [loading, setLoading] = useState(true)
+  const [titleRef, focusTitle] = useAccessibilityFocus<Text>()
 
   async function _initializeWallet() {
-    await dispatch(initialize({ passphrase: password, enableBiometrics }));
-    await dispatch(pollWalletState());
+    await dispatch(initialize({ passphrase: password, enableBiometrics }))
+    await dispatch(pollWalletState())
   }
 
   useEffect(() => {
-    focusTitle();
+    focusTitle()
     const t = setTimeout(() => {
-      setLoading(false);
-      AccessibilityInfo.announceForAccessibility('Finished creating wallet');
-    }, 2000);
+      setLoading(false)
+      AccessibilityInfo.announceForAccessibility('Finished creating wallet')
+    }, 2000)
 
-    return () => clearTimeout(t);
-  }, []);
+    return () => clearTimeout(t)
+  }, [])
 
   return (
     <SafeScreenView style={styles.container}>
@@ -218,5 +242,5 @@ function CreateStep({ route }: CreateStepProps) {
         />
       </View>
     </SafeScreenView>
-  );
+  )
 }

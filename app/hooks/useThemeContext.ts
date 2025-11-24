@@ -1,12 +1,12 @@
-import { useContext } from 'react';
-import { ThemeContext, ThemeContextValue } from '../styles';
+import { useContext } from 'react'
+import { ThemeContext, ThemeContextValue } from '../styles'
 
-export function useThemeContext(): ThemeContextValue  {
-  const themeContext = useContext(ThemeContext);
+export function useThemeContext(): ThemeContextValue {
+  const themeContext = useContext(ThemeContext)
 
   if (themeContext === null) {
-    throw new Error('ThemeProvider not found');
+    throw new Error('ThemeProvider not found')
   }
 
-  return themeContext;
+  return themeContext
 }

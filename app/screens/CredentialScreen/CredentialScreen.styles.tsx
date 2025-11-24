@@ -1,4 +1,4 @@
-import { createDynamicStyleSheet } from '../../lib/dynamicStyles';
+import { createDynamicStyleSheet } from '../../lib/dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   menuContainer: {
@@ -8,34 +8,34 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     borderRadius: 3,
     position: 'absolute',
     overflow: 'hidden',
-    zIndex: 1,
+    zIndex: 1
   },
   container: {
-    padding: 16,
+    padding: 16
   },
   header: {
     ...mixins.headerText,
     color: theme.color.textPrimary,
     fontSize: theme.fontSize.header,
     lineHeight: 30,
-    marginVertical: 8,
+    marginVertical: 8
   },
   link: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.regular,
     color: theme.color.textPrimary,
-    textDecorationLine: 'underline',
+    textDecorationLine: 'underline'
   },
   scrollContainer: {
-    flexGrow: 1,
+    flexGrow: 1
   },
   outerContainer: {
-    flex: 1,
+    flex: 1
   },
   profileContainer: {
-    marginVertical: 16,
+    marginVertical: 16
   },
   textBold: {
-    fontFamily: theme.fontFamily.medium,
+    fontFamily: theme.fontFamily.medium
   }
-}));
+}))

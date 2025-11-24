@@ -1,1 +1,1 @@
-export { RestoreWalletScreenProps } from '../../navigation';
+export { RestoreWalletScreenProps } from '../../navigation'

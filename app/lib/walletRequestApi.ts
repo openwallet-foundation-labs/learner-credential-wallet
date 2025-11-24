@@ -15,90 +15,108 @@
  * - Deep links / universal app links
  * - JSON objects fetched or pasted into the Add screen
  */
-import { IVerifiableCredential, IVerifiablePresentation } from '@digitalcredentials/ssi';
-import qs from 'query-string';
-import { LinkConfig } from '../../app.config';
-import { HumanReadableError } from './error';
-import { ISelectedProfile } from './did';
+import {
+  IVerifiableCredential,
+  IVerifiablePresentation
+} from '@digitalcredentials/ssi'
+import qs from 'query-string'
+import { LinkConfig } from '../../app.config'
+import { HumanReadableError } from './error'
+import { ISelectedProfile } from './did'
 
-export function isDeepLink (text: string): boolean {
-  return text.startsWith(LinkConfig.schemes.universalAppLink) ||
-    !!LinkConfig.schemes.customProtocol.find((link) => text.startsWith(link));
+export function isDeepLink(text: string): boolean {
+  return (
+    text.startsWith(LinkConfig.schemes.universalAppLink) ||
+    !!LinkConfig.schemes.customProtocol.find((link) => text.startsWith(link))
+  )
 }
 
-export function isWalletApiMessage (text: string): boolean {
+export function isWalletApiMessage(text: string): boolean {
   let messageObject
   try {
-    messageObject = JSON.parse(text);
+    messageObject = JSON.parse(text)
   } catch (_) {
-    return false;
+    return false
   }
-  return ('protocols' in messageObject) ||
-    ('verifiablePresentationRequest' in messageObject) ||
-    ('verifiablePresentation' in messageObject) ||
-    ('issueRequest' in messageObject)
+  return (
+    'protocols' in messageObject ||
+    'verifiablePresentationRequest' in messageObject ||
+    'verifiablePresentation' in messageObject ||
+    'issueRequest' in messageObject
+  )
 }
 
-export function parseWalletApiMessage ({ messageObject }: { messageObject: object }): WalletApiMessage | undefined {
+export function parseWalletApiMessage({
+  messageObject
+}: {
+  messageObject: object
+}): WalletApiMessage | undefined {
   if ('protocols' in messageObject) {
-    return messageObject as IExchangeInvitation;
+    return messageObject as IExchangeInvitation
   }
   if ('verifiablePresentationRequest' in messageObject) {
-    return messageObject as IVpRequest;
+    return messageObject as IVpRequest
   }
   if ('verifiablePresentation' in messageObject) {
-    return messageObject as IVpOffer;
+    return messageObject as IVpOffer
   }
   if ('issueRequest' in messageObject) {
-    return messageObject as IIssueRequest;
+    return messageObject as IIssueRequest
   }
   // Message not recognized / not supported, return undefined
-  console.log('[parseWalletApiUrl] Unrecognized message type');
+  console.log('[parseWalletApiUrl] Unrecognized message type')
 }
 
-export function parseWalletApiUrl ({ url }: { url: string }): any | undefined {
-  const { query } = qs.parseUrl(url);
-  const messageText = query.request;
+export function parseWalletApiUrl({ url }: { url: string }): any | undefined {
+  const { query } = qs.parseUrl(url)
+  const messageText = query.request
 
   if (messageText === undefined) {
-    console.log('[parseWalletApiUrl] URL does not contain "request" param.');
-    return;
+    console.log('[parseWalletApiUrl] URL does not contain "request" param.')
+    return
   }
-  let messageObject;
+  let messageObject
   try {
-    messageObject = JSON.parse(decodeURI(messageText as string));
+    messageObject = JSON.parse(decodeURI(messageText as string))
   } catch (err) {
-    console.log(`Error parsing incoming wallet API message: "${messageText}"`,
-      err);
-    return;
+    console.log(
+      `Error parsing incoming wallet API message: "${messageText}"`,
+      err
+    )
+    return
   }
-  return messageObject;
+  return messageObject
 }
 
 /**
  * Filters an incoming VCALM query for zCap requests, and returns only those.
  */
-export function zcapsRequested ({ queries }:
-  { queries: IVprQuery[] }
-): { zcapRequests?: IVprQuery[] } {
-  const zcapRequests = queries.filter(q => q.type === 'ZcapQuery');
+export function zcapsRequested({ queries }: { queries: IVprQuery[] }): {
+  zcapRequests?: IVprQuery[]
+} {
+  const zcapRequests = queries.filter((q) => q.type === 'ZcapQuery')
   if (zcapRequests.length > 0) {
-    return { zcapRequests };
+    return { zcapRequests }
   }
-  return {};
+  return {}
 }
 
-export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): boolean {
-  const didAuthRequests = queries.filter(q => q.type === 'DIDAuthentication');
+export function isDidAuthRequested({
+  queries
+}: {
+  queries: IVprQuery[]
+}): boolean {
+  const didAuthRequests = queries.filter((q) => q.type === 'DIDAuthentication')
   if (didAuthRequests.length > 1) {
     // If there's more than one DIDAuth request, fail
     throw new HumanReadableError(
-      'More than one DIDAuthentication request found, exiting.');
+      'More than one DIDAuthentication request found, exiting.'
+    )
   }
   if (didAuthRequests.length === 1) {
-    return true;
+    return true
   }
-  return false;
+  return false
 }
 
 /**
@@ -119,13 +137,18 @@ export function isDidAuthRequested ({ queries }: { queries: IVprQuery[] }): bool
  * @param zcapRequests - One or more requests containing a capabilityQuery.
  * @param selectedProfile - Selected user DID profile, with signers.
  */
-export async function delegateZcaps({ zcapRequests, selectedProfile }:
-  { zcapRequests: IVprQuery[], selectedProfile: ISelectedProfile }
-): Promise<IZcap[]> {
+export async function delegateZcaps({
+  zcapRequests,
+  selectedProfile
+}: {
+  zcapRequests: IVprQuery[]
+  selectedProfile: ISelectedProfile
+}): Promise<IZcap[]> {
   return []
 }
 
-export type WalletApiMessage = IExchangeInvitation
+export type WalletApiMessage =
+  | IExchangeInvitation
   | IVpRequest
   | IVpOffer
   | IIssueRequest
@@ -134,7 +157,7 @@ export type WalletApiMessage = IExchangeInvitation
  * @see https://vcplayground.org/docs/n/chapi/wallets/native/#verifiable-credential-storage
  */
 export type IExchangeInvitation = {
-  credentialRequestOrigin?: string;
+  credentialRequestOrigin?: string
   /**
    * "vcapi": "https://exchanger.example.com/...",
    * "OID4VCI": "openid-credential-offer://?...",
@@ -144,10 +167,10 @@ export type IExchangeInvitation = {
 }
 
 export type IIssueRequest = {
-  credentialRequestOrigin?: string;
+  credentialRequestOrigin?: string
   issueRequest: {
-    credential: IVerifiableCredential | IVerifiableCredential[];
-  },
+    credential: IVerifiableCredential | IVerifiableCredential[]
+  }
   redirectUrl: string
 }
 
@@ -155,51 +178,49 @@ export type IIssueRequest = {
  * @see https://vcplayground.org/docs/n/chapi/wallets/native/#vc-api
  */
 export type IVpOffer = {
-  credentialRequestOrigin?: string;
-  verifiablePresentation: IVerifiablePresentation;
-  redirectUrl?: string;
+  credentialRequestOrigin?: string
+  verifiablePresentation: IVerifiablePresentation
+  redirectUrl?: string
 }
 
 /**
  * @see https://vcplayground.org/docs/n/chapi/wallets/native/#oid4vci
  */
 export type IOid4VCIOffer = {
-  credential_issuer: string;
-  credentials: any[];
-  grants: any;
+  credential_issuer: string
+  credentials: any[]
+  grants: any
 }
 
 /**
  * @see https://w3c-ccg.github.io/vp-request-spec/
  */
 export type IVpRequest = {
-  credentialRequestOrigin?: string;
-  verifiablePresentationRequest: IVprDetails;
-  redirectUrl?: string;
+  credentialRequestOrigin?: string
+  verifiablePresentationRequest: IVprDetails
+  redirectUrl?: string
 }
 
 export type IVprDetails = {
-  query: IVprQuery | IVprQuery[];
-  challenge?: string;
-  domain?: string;
+  query: IVprQuery | IVprQuery[]
+  challenge?: string
+  domain?: string
 }
 
-export type IVprQuery = IQueryByExample
-  | IDidAuthenticationQuery
-  | IZcapQuery
+export type IVprQuery = IQueryByExample | IDidAuthenticationQuery | IZcapQuery
 
 /**
  * @see https://w3c-ccg.github.io/vp-request-spec/#query-by-example
  */
 export type IQueryByExample = {
-  type: "QueryByExample";
+  type: 'QueryByExample'
   credentialQuery: {
-    reason?: string;
+    reason?: string
     example: {
-      "@context"?: string | object | Array<string | object>;
-      type?: string | string[];
-      issuer?: string | object | Array<string | object>;
-      [x: string]: any;
+      '@context'?: string | object | Array<string | object>
+      type?: string | string[]
+      issuer?: string | object | Array<string | object>
+      [x: string]: any
     }
   }
 }
@@ -208,34 +229,34 @@ export type IQueryByExample = {
  * @see https://w3c-ccg.github.io/vp-request-spec/#the-did-authentication-query-format
  */
 export type IDidAuthenticationQuery = {
-  type: "DIDAuthentication";
-  acceptedMethods?: Array<{ method: string }>;
-  acceptedCryptosuites?: Array<{ cryptosuite: string }>;
+  type: 'DIDAuthentication'
+  acceptedMethods?: Array<{ method: string }>
+  acceptedCryptosuites?: Array<{ cryptosuite: string }>
 }
 
 /**
  * @see https://w3c-ccg.github.io/vp-request-spec/#authorization-capability-request
  */
 export type IZcapQuery = {
-  type: "ZcapQuery";
+  type: 'ZcapQuery'
   capabilityQuery: {
-    referenceId?: string;
-    reason?: string;
-    allowedAction?: string | object | Array<string | object>;
-    controller: string | string[];
-    invocationTarget: string | object | Array<string | object>;
-  };
-  challenge?: string;
+    referenceId?: string
+    reason?: string
+    allowedAction?: string | object | Array<string | object>
+    controller: string | string[]
+    invocationTarget: string | object | Array<string | object>
+  }
+  challenge?: string
 }
 
 export type IZcap = {
-  "@context"?: string | object | Array<string | object>;
-  id: `urn:zcap:${string}`;
-  controller: string | string[];
-  invocationTarget: string | object | Array<string | object>;
-  referenceId?: string;
-  allowedAction?: string | object | Array<string | object>;
-  parentCapability?: string | Array<string | object>;
-  expires?: string;
-  proof: any;
+  '@context'?: string | object | Array<string | object>
+  id: `urn:zcap:${string}`
+  controller: string | string[]
+  invocationTarget: string | object | Array<string | object>
+  referenceId?: string
+  allowedAction?: string | object | Array<string | object>
+  parentCapability?: string | Array<string | object>
+  expires?: string
+  proof: any
 }

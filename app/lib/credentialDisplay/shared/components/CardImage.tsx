@@ -1,25 +1,30 @@
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import React, { ComponentProps } from 'react';
-import { Image, ImageSourcePropType, View } from 'react-native';
-import { useDynamicStyles } from '../../../../hooks';
-import { Color } from '../../../../styles';
-import { createDynamicStyleSheet } from '../../../dynamicStyles';
+import { MaterialCommunityIcons } from '@expo/vector-icons'
+import React, { ComponentProps } from 'react'
+import { Image, ImageSourcePropType, View } from 'react-native'
+import { useDynamicStyles } from '../../../../hooks'
+import { Color } from '../../../../styles'
+import { createDynamicStyleSheet } from '../../../dynamicStyles'
 
 type CardImageProps = {
-  source: string | ImageSourcePropType | null,
-  accessibilityLabel?: string | null,
-  defaultIcon?: ComponentProps<typeof MaterialCommunityIcons>['name'];
-  size?: number,
-};
+  source: string | ImageSourcePropType | null
+  accessibilityLabel?: string | null
+  defaultIcon?: ComponentProps<typeof MaterialCommunityIcons>['name']
+  size?: number
+}
 
-export default function CardImage({ source, accessibilityLabel, defaultIcon = 'certificate', size }: CardImageProps): React.ReactElement | null {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
+export default function CardImage({
+  source,
+  accessibilityLabel,
+  defaultIcon = 'certificate',
+  size
+}: CardImageProps): React.ReactElement | null {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
   if (size === undefined) {
-    size = theme.issuerIconSize;
+    size = theme.issuerIconSize
   }
 
-  const containerStyle = { width: size, height: size };
+  const containerStyle = { width: size, height: size }
 
   if (source === null) {
     return (
@@ -30,12 +35,12 @@ export default function CardImage({ source, accessibilityLabel, defaultIcon = 'c
           color={Color.Gray800}
         />
       </View>
-    );
+    )
   }
 
   // Determine if source is a string or already a valid image source
   const imageSource: ImageSourcePropType =
-    typeof source === 'string' ? { uri: source } : source;
+    typeof source === 'string' ? { uri: source } : source
 
   return (
     <View style={[styles.imageContainer, containerStyle]}>
@@ -47,14 +52,14 @@ export default function CardImage({ source, accessibilityLabel, defaultIcon = 'c
         accessibilityRole="image"
       />
     </View>
-  );
+  )
 }
 
 const dynamicStyleSheet = createDynamicStyleSheet(({ theme }) => ({
   image: {
     width: '100%',
     height: '100%',
-    resizeMode: 'contain',
+    resizeMode: 'contain'
   },
   imageContainer: {
     width: theme.issuerIconSize,
@@ -64,6 +69,6 @@ const dynamicStyleSheet = createDynamicStyleSheet(({ theme }) => ({
     marginRight: 12,
     padding: 2,
     justifyContent: 'center',
-    alignItems: 'center',
-  },
-}));
+    alignItems: 'center'
+  }
+}))

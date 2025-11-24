@@ -1,46 +1,53 @@
-import React, { useEffect, useState } from 'react';
-import { View, Animated, Easing } from 'react-native';
-import { Svg, Path } from 'react-native-svg';
-import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import React, { useEffect, useState } from 'react'
+import { View, Animated, Easing } from 'react-native'
+import { Svg, Path } from 'react-native-svg'
+import { AnimatedCircularProgress } from 'react-native-circular-progress'
 
-import { useAnimation, useDynamicStyles } from '../../hooks';
-import dynamicStyleSheet from './LoadingIndicator.styles';
-import type { LoadingIndicatorProps } from './LoadingIndicator.d';
-import AccessibleView from '../AccessibleView/AccessibleView';
+import { useAnimation, useDynamicStyles } from '../../hooks'
+import dynamicStyleSheet from './LoadingIndicator.styles'
+import type { LoadingIndicatorProps } from './LoadingIndicator.d'
+import AccessibleView from '../AccessibleView/AccessibleView'
 
 /**
  * react-native-svg has a typescript error where the Path props type is not
  * recognized when it becomes an animated component.
  */
-const AnimatedPath = Animated.createAnimatedComponent(Path);
+const AnimatedPath = Animated.createAnimatedComponent(Path)
 
-export default function LoadingIndicator({ loading }: LoadingIndicatorProps): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
-  const [percent, setPercent] = useState(25);
+export default function LoadingIndicator({
+  loading
+}: LoadingIndicatorProps): React.ReactElement {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
+  const [percent, setPercent] = useState(25)
 
-  const rotate = useAnimation(['0deg', '360deg'], { duration: 1000 });
-  const path = useAnimation([35, 0], { duration: 300, easing: Easing.in(Easing.ease) });
+  const rotate = useAnimation(['0deg', '360deg'], { duration: 1000 })
+  const path = useAnimation([35, 0], {
+    duration: 300,
+    easing: Easing.in(Easing.ease)
+  })
 
   useEffect(() => {
     if (loading) {
-      setPercent(25);
-      rotate.reset();
-      path.reset();
-      Animated.loop(rotate).start();
+      setPercent(25)
+      rotate.reset()
+      path.reset()
+      Animated.loop(rotate).start()
     } else {
-      setPercent(100);
-      rotate.stop();
-      path.start();
+      setPercent(100)
+      rotate.stop()
+      path.start()
     }
 
     return () => {
-      rotate.stop();
-      path.stop();
-    };
-  }, [loading]);
+      rotate.stop()
+      path.stop()
+    }
+  }, [loading])
 
   return (
-    <AccessibleView label={`LoadingIndicator, ${loading ? 'Loading' : 'Complete'}`}>
+    <AccessibleView
+      label={`LoadingIndicator, ${loading ? 'Loading' : 'Complete'}`}
+    >
       <Animated.View style={{ transform: [{ rotate: rotate.value }] }}>
         <AnimatedCircularProgress
           size={100}
@@ -52,7 +59,7 @@ export default function LoadingIndicator({ loading }: LoadingIndicatorProps): Re
         />
       </Animated.View>
       <View style={styles.checkmarkContainer}>
-        <Svg width="52" height="40" >
+        <Svg width="52" height="40">
           <AnimatedPath
             fill="none"
             stroke={theme.color.success}
@@ -67,5 +74,5 @@ export default function LoadingIndicator({ loading }: LoadingIndicatorProps): Re
         </Svg>
       </View>
     </AccessibleView>
-  );
+  )
 }

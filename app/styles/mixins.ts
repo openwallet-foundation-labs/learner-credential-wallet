@@ -1,5 +1,5 @@
-import { StyleSheet, ViewStyle } from 'react-native';
-import defaultTheme, { ThemeType } from './theme';
+import { StyleSheet, ViewStyle } from 'react-native'
+import defaultTheme, { ThemeType } from './theme'
 
 const mixins = (theme: ThemeType) => {
   const sharedMixins = StyleSheet.create({
@@ -11,17 +11,17 @@ const mixins = (theme: ThemeType) => {
       shadowRadius: 15,
       shadowOffset: {
         height: 5,
-        width: 0,
+        width: 0
       },
-      backgroundColor: theme.color.backgroundPrimary,
+      backgroundColor: theme.color.backgroundPrimary
     },
     paragraphText: {
       fontFamily: theme.fontFamily.regular,
       fontSize: theme.fontSize.regular,
       color: theme.color.textSecondary,
-      lineHeight: 24,
-    },
-  });
+      lineHeight: 24
+    }
+  })
 
   return StyleSheet.create({
     /* Shared mixins */
@@ -31,37 +31,37 @@ const mixins = (theme: ThemeType) => {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: theme.color.backgroundPrimary,
+      backgroundColor: theme.color.backgroundPrimary
     },
 
     /* Header mixins */
     headerContainer: {
       backgroundColor: theme.color.backgroundSecondary,
       borderBottomWidth: 0,
-      zIndex: 1,
+      zIndex: 1
     },
     headerTitle: {
       color: theme.color.textPrimary,
       fontFamily: theme.fontFamily.bold,
-      fontSize: theme.fontSize.regular,
+      fontSize: theme.fontSize.regular
     },
     headerIcon: {
       color: theme.color.textPrimary,
       fontSize: theme.iconSize,
-      padding: 4,
+      padding: 4
     },
     headerComponentContainer: {
-      justifyContent: 'center',
+      justifyContent: 'center'
     },
 
     /* Typographic mixins */
     headerText: {
       fontFamily: theme.fontFamily.bold,
       color: theme.color.textHeader,
-      fontSize: theme.fontSize.medium,
+      fontSize: theme.fontSize.medium
     },
     boldText: {
-      fontFamily: theme.fontFamily.bold,
+      fontFamily: theme.fontFamily.bold
     },
 
     /* Button mixins */
@@ -70,42 +70,42 @@ const mixins = (theme: ThemeType) => {
       borderRadius: theme.borderRadius,
       paddingVertical: 12,
       paddingHorizontal: 18,
-      minHeight: 48,
+      minHeight: 48
     },
     buttonPrimary: {
       backgroundColor: theme.color.buttonPrimary,
       padding: 16,
-      borderRadius: theme.borderRadius,
+      borderRadius: theme.borderRadius
     },
     buttonSecondary: {
       backgroundColor: theme.color.foregroundPrimary,
       padding: 16,
-      borderRadius: theme.borderRadius,
+      borderRadius: theme.borderRadius
     },
     buttonError: {
       backgroundColor: theme.color.error,
       padding: 16,
-      borderRadius: theme.borderRadius,
+      borderRadius: theme.borderRadius
     },
     buttonContainer: {
       ...sharedMixins.shadow,
-      flex: 1,
+      flex: 1
     },
     buttonGroup: {
-      flexDirection: 'row',
+      flexDirection: 'row'
     },
     buttonSeparator: {
-      width: 16,
+      width: 16
     },
     buttonTitle: {
       fontFamily: theme.fontFamily.medium,
       fontSize: theme.fontSize.regular,
-      color: theme.color.backgroundSecondary,
+      color: theme.color.backgroundSecondary
     },
     buttonTitleSecondary: {
       fontFamily: theme.fontFamily.medium,
       fontSize: theme.fontSize.regular,
-      color: theme.color.textPrimary,
+      color: theme.color.textPrimary
     },
     buttonIcon: {
       justifyContent: 'space-between',
@@ -113,68 +113,68 @@ const mixins = (theme: ThemeType) => {
       borderRadius: theme.borderRadius,
       paddingVertical: 12,
       paddingHorizontal: 18,
-      minHeight: 48,
+      minHeight: 48
     },
     buttonIconContainer: {
       ...sharedMixins.shadow,
       marginVertical: 8,
-      flex: 1,
+      flex: 1
     },
     buttonContainerVertical: {
       ...sharedMixins.shadow,
-      marginVertical: 8,
+      marginVertical: 8
     },
     buttonIconTitle: {
       fontFamily: theme.fontFamily.medium,
       fontSize: theme.fontSize.regular,
-      color: theme.color.textPrimary,
+      color: theme.color.textPrimary
     },
     buttonClear: {
       padding: 16,
       borderRadius: theme.borderRadius,
-      backgroundColor: theme.color.transparent,
+      backgroundColor: theme.color.transparent
     },
     buttonClearContainer: {
-      width: '100%',
+      width: '100%'
     },
     buttonClearTitle: {
       fontSize: theme.fontSize.regular,
       color: theme.color.textSecondary,
-      fontFamily: theme.fontFamily.regular,
+      fontFamily: theme.fontFamily.regular
     },
     buttonDisabled: {
-      backgroundColor: theme.color.buttonDisabled,
+      backgroundColor: theme.color.buttonDisabled
     },
 
     /* Input mixins */
     input: {
       fontSize: theme.fontSize.regular,
       backgroundColor: theme.color.backgroundPrimary,
-      height: 48,
+      height: 48
     },
 
     /* Credential list mixins */
     credentialListContainer: {
-      padding: 16,
+      padding: 16
     },
 
     flex: {
-      flex: 1,
+      flex: 1
     },
 
     noFlex: {
-      flex: 0,
+      flex: 0
     },
 
     modalBodyText: {
       ...sharedMixins.paragraphText,
       textAlign: 'center',
       lineHeight: 24,
-      marginVertical: 8,
+      marginVertical: 8
     },
     modalLinkText: {
       color: theme.color.brightAccent,
-      textDecorationLine: 'underline',
+      textDecorationLine: 'underline'
     },
 
     /* Checkbox mixins */
@@ -193,16 +193,17 @@ const mixins = (theme: ThemeType) => {
       height: theme.issuerIconSize,
 
       justifyContent: 'center',
-      alignItems: 'center',
+      alignItems: 'center'
     },
     checkboxText: {
-      margin: 0,
-    },
-  });
-};
+      margin: 0
+    }
+  })
+}
 
-export const dynamicMixins = (theme: ThemeType): ReturnType<typeof mixins> => mixins(theme);
-export type Mixins = ReturnType<typeof mixins>;
+export const dynamicMixins = (theme: ThemeType): ReturnType<typeof mixins> =>
+  mixins(theme)
+export type Mixins = ReturnType<typeof mixins>
 
 /* Temporary static definition */
-export default dynamicMixins(defaultTheme);
+export default dynamicMixins(defaultTheme)

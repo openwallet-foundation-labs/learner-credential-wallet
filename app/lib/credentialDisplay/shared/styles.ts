@@ -1,11 +1,11 @@
-import { createDynamicStyleSheet } from '../../dynamicStyles';
+import { createDynamicStyleSheet } from '../../dynamicStyles'
 
 export default createDynamicStyleSheet(({ theme, mixins }) => ({
   cardContainer: {
     backgroundColor: theme.color.backgroundSecondary,
     borderRadius: theme.borderRadius,
     paddingVertical: 4,
-    paddingHorizontal: 16,
+    paddingHorizontal: 16
   },
   header: {
     ...mixins.headerText,
@@ -13,7 +13,7 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     fontSize: theme.fontSize.header,
     lineHeight: 30,
     marginBottom: 8,
-    flex: 1,
+    flex: 1
   },
   headerInRow: {
     ...mixins.headerText,
@@ -21,66 +21,65 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     fontSize: theme.fontSize.header,
     lineHeight: 30,
     marginBottom: -8,
-    flex: 1,
+    flex: 1
   },
   dataContainer: {
     flexGrow: 1,
-    marginVertical: 12,
+    marginVertical: 12
   },
   dataLabel: {
     fontSize: theme.fontSize.small,
     fontFamily: theme.fontFamily.bold,
     color: theme.color.textPrimary,
-    marginBottom: 8,
+    marginBottom: 8
   },
 
   issuerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 8
   },
-  
+
   issuerContent: {
     flex: 1,
     // marginLeft: 12,
-    justifyContent: 'center',
+    justifyContent: 'center'
   },
-  
+
   issuerButton: {
     alignSelf: 'flex-start',
     marginTop: 8,
     borderRadius: 6,
     // paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 10
   },
-  
 
   dataValue: {
     fontFamily: theme.fontFamily.regular,
     fontSize: theme.fontSize.regular,
     color: theme.color.textPrimary,
-    flex: 1,
+    flex: 1
   },
   spaceBetween: {
     flex: 1,
-    justifyContent: 'space-between',
+    justifyContent: 'space-between'
   },
   flexRow: {
-    flexDirection: 'row',
+    flexDirection: 'row'
   },
   flexColumn: {
-    flexDirection: 'column',
+    flexDirection: 'column'
   },
   fullWidthImage: {
     width: '100%',
     aspectRatio: 1,
-    resizeMode: 'contain',
+    resizeMode: 'contain'
   },
   imageBackground: {
-    backgroundColor: theme.color.foregroundPrimary,
+    backgroundColor: theme.color.foregroundPrimary
   },
   dateStyles: {
-    flexDirection: 'row',
+    flexDirection: 'row'
   },
   warningText: {
     fontSize: theme.fontSize.small,
@@ -89,6 +88,6 @@ export default createDynamicStyleSheet(({ theme, mixins }) => ({
     backgroundColor: '#FFF3CD',
     padding: 8,
     borderRadius: 4,
-    marginBottom: 12,
-  },
-}));
+    marginBottom: 12
+  }
+}))

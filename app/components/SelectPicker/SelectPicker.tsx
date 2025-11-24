@@ -1,20 +1,28 @@
-import React, { useState } from 'react';
-import { Text, View } from 'react-native';
-import DropDownPicker, { DropDownPickerProps, ValueType } from 'react-native-dropdown-picker';
+import React, { useState } from 'react'
+import { Text, View } from 'react-native'
+import DropDownPicker, {
+  DropDownPickerProps,
+  ValueType
+} from 'react-native-dropdown-picker'
 
-import { useDynamicStyles } from '../../hooks';
-import dynamicStyleSheet from './SelectPicker.styles';
+import { useDynamicStyles } from '../../hooks'
+import dynamicStyleSheet from './SelectPicker.styles'
 
 type SelectPickerProps<T> = DropDownPickerProps<T> & {
-  label: string;
-  onChangeValue: DropDownPickerProps<T>['setValue'];
-  multiple?: never;
+  label: string
+  onChangeValue: DropDownPickerProps<T>['setValue']
+  multiple?: never
 }
 
-export default function SelectPicker<T extends ValueType>({ items: initialItems, value, onChangeValue, label }: SelectPickerProps<T>): React.ReactElement {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const [isOpen, setIsOpen] = useState(false);
-  const [items, setItems] = useState(initialItems);
+export default function SelectPicker<T extends ValueType>({
+  items: initialItems,
+  value,
+  onChangeValue,
+  label
+}: SelectPickerProps<T>): React.ReactElement {
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const [isOpen, setIsOpen] = useState(false)
+  const [items, setItems] = useState(initialItems)
 
   return (
     <View style={styles.headerComponentContainer}>
@@ -35,5 +43,5 @@ export default function SelectPicker<T extends ValueType>({ items: initialItems,
         setItems={setItems}
       />
     </View>
-  );
+  )
 }

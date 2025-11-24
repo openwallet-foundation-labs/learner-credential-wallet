@@ -1,13 +1,17 @@
-import React from 'react';
-import { TouchableHighlight, View, Text } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import React from 'react'
+import { TouchableHighlight, View, Text } from 'react-native'
+import { MaterialIcons } from '@expo/vector-icons'
 
-import dynamicStyleSheet from './MenuItem.styles';
-import type { MenuItemProps } from './MenuItem.d';
-import { useDynamicStyles } from '../../hooks';
+import dynamicStyleSheet from './MenuItem.styles'
+import type { MenuItemProps } from './MenuItem.d'
+import { useDynamicStyles } from '../../hooks'
 
-export default function MenuItem({ icon, title, onPress }: MenuItemProps): React.ReactElement {
-  const { styles, theme } = useDynamicStyles(dynamicStyleSheet);
+export default function MenuItem({
+  icon,
+  title,
+  onPress
+}: MenuItemProps): React.ReactElement {
+  const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
   return (
     <TouchableHighlight
@@ -16,7 +20,7 @@ export default function MenuItem({ icon, title, onPress }: MenuItemProps): React
       onPress={onPress}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        { icon && (
+        {icon && (
           <MaterialIcons
             name={icon}
             size={theme.iconSize}
@@ -28,5 +32,5 @@ export default function MenuItem({ icon, title, onPress }: MenuItemProps): React
         </View>
       </View>
     </TouchableHighlight>
-  );
+  )
 }

@@ -1,32 +1,39 @@
-import React, { useContext, useEffect } from 'react';
-import { ScrollView } from 'react-native';
-import { Text, Button } from 'react-native-elements';
-import { MaterialIcons } from '@expo/vector-icons';
+import React, { useContext, useEffect } from 'react'
+import { ScrollView } from 'react-native'
+import { Text, Button } from 'react-native-elements'
+import { MaterialIcons } from '@expo/vector-icons'
 
-import { LoadingIndicatorDots, NavHeader } from '../../components';
-import dynamicStyleSheet from './ShareHomeScreen.styles';
-import { ShareHomeScreenProps } from '../../navigation';
-import { useDynamicStyles } from '../../hooks';
-import { isShareRequestParams, performShareRequest, ShareRequestParams } from '../../lib/shareRequest';
-import { fmtCredentialCount } from '../../lib/text';
-import { NavigationUtil } from '../../lib/navigationUtil';
-import { displayGlobalModal } from '../../lib/globalModal';
-import { DidRegistryContext } from '../../init/registries';
+import { LoadingIndicatorDots, NavHeader } from '../../components'
+import dynamicStyleSheet from './ShareHomeScreen.styles'
+import { ShareHomeScreenProps } from '../../navigation'
+import { useDynamicStyles } from '../../hooks'
+import {
+  isShareRequestParams,
+  performShareRequest,
+  ShareRequestParams
+} from '../../lib/shareRequest'
+import { fmtCredentialCount } from '../../lib/text'
+import { NavigationUtil } from '../../lib/navigationUtil'
+import { displayGlobalModal } from '../../lib/globalModal'
+import { DidRegistryContext } from '../../init/registries'
 
-export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenProps): React.ReactElement {
-  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { shareRequestParams } = route.params || {};
-  const registries = useContext(DidRegistryContext);
+export default function ShareHomeScreen({
+  navigation,
+  route
+}: ShareHomeScreenProps): React.ReactElement {
+  const { styles, theme, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const { shareRequestParams } = route.params || {}
+  const registries = useContext(DidRegistryContext)
 
   useEffect(() => {
     if (isShareRequestParams(shareRequestParams)) {
-      startShareRequest(shareRequestParams);
+      startShareRequest(shareRequestParams)
     }
-  }, [shareRequestParams]);
+  }, [shareRequestParams])
 
   async function startShareRequest(params: ShareRequestParams) {
-    const issuerName = registries.didEntry(params.client_id)?.name ||
-      'Unknown Issuer';
+    const issuerName =
+      registries.didEntry(params.client_id)?.name || 'Unknown Issuer'
 
     const confirmedShare = await displayGlobalModal({
       title: 'Share Credentials?',
@@ -39,18 +46,18 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
           is requesting you share credentials. If you trust this requester,
           continue to select the credentials to share.
         </Text>
-      ),
-    });
-    if (!confirmedShare) return goToShareHome();
+      )
+    })
+    if (!confirmedShare) return goToShareHome()
     const rawCredentialRecords = await NavigationUtil.selectCredentials({
       title: 'Share Credentials',
       instructionText: `Select the credential(s) you want to share with ${issuerName}.`,
-      goBack: goToShareHome,
-    });
+      goBack: goToShareHome
+    })
     const rawProfileRecord = await NavigationUtil.selectProfile({
       instructionText: 'Select a profile to associate with the credential(s).',
-      goBack: goToShareHome,
-    });
+      goBack: goToShareHome
+    })
 
     const confirmedSelection = await displayGlobalModal({
       title: 'Are You Sure?',
@@ -64,19 +71,19 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
           </Text>
           .
         </Text>
-      ),
-    });
-    if (!confirmedSelection) return goToShareHome();
+      )
+    })
+    if (!confirmedSelection) return goToShareHome()
 
     try {
       displayGlobalModal({
         title: 'Sharing Credentials',
         confirmButton: false,
         cancelButton: false,
-        body: <LoadingIndicatorDots />,
-      });
+        body: <LoadingIndicatorDots />
+      })
 
-      await performShareRequest(params, rawCredentialRecords, rawProfileRecord);
+      await performShareRequest(params, rawCredentialRecords, rawProfileRecord)
       await displayGlobalModal({
         title: 'Share Successful',
         confirmText: 'Done',
@@ -89,10 +96,10 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
             </Text>
             .
           </Text>
-        ),
-      });
+        )
+      })
     } catch (err) {
-      console.error(err);
+      console.error(err)
       await displayGlobalModal({
         title: 'Share Failed',
         confirmText: 'Done',
@@ -104,43 +111,48 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
             </Text>
             .
           </Text>
-        ),
-      });
+        )
+      })
     }
 
-    goToShareHome();
+    goToShareHome()
   }
 
   async function goToSendSelect() {
     const selectedCredentials = await NavigationUtil.selectCredentials({
       title: 'Send Credentials',
-      instructionText: 'Start by selecting which credential(s) you want to share.',
-    });
+      instructionText:
+        'Start by selecting which credential(s) you want to share.'
+    })
 
-    navigation.navigate('PresentationPreviewScreen', { selectedCredentials });
+    navigation.navigate('PresentationPreviewScreen', { selectedCredentials })
   }
 
   async function goToLinkSelect(): Promise<void> {
     const selectedCredentials = await NavigationUtil.selectCredentials({
       title: 'Create Public Link',
-      instructionText: 'Select which credential you want to create a public link to.',
-      singleSelect: true,
-    });
+      instructionText:
+        'Select which credential you want to create a public link to.',
+      singleSelect: true
+    })
 
     navigation.navigate('PresentationPreviewScreen', {
       selectedCredentials,
       mode: 'createLink'
-    });
+    })
   }
 
   function goToShareHome() {
-    navigation.navigate('ShareHomeScreen');
+    navigation.navigate('ShareHomeScreen')
   }
 
   return (
     <>
       <NavHeader title="Share" />
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+      >
         <Button
           title="Create a public link"
           buttonStyle={mixins.buttonIcon}
@@ -157,7 +169,7 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
           }
         />
         <Text style={styles.paragraph}>
-            Allows publicly sharing one credential at a time
+          Allows publicly sharing one credential at a time
         </Text>
         <Button
           title="Send a credential"
@@ -175,9 +187,9 @@ export default function ShareHomeScreen({ navigation, route }: ShareHomeScreenPr
           }
         />
         <Text style={styles.paragraph}>
-            Allows sending one or more credentials as a JSON file
+          Allows sending one or more credentials as a JSON file
         </Text>
       </ScrollView>
     </>
-  );
+  )
 }

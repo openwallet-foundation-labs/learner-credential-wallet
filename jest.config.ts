@@ -1,4 +1,4 @@
-import type { Config } from 'jest';
+import type { Config } from 'jest'
 
 const packagesToTransformWithBabel = [
   '@react-native',
@@ -18,24 +18,24 @@ const packagesToTransformWithBabel = [
   'react-native-securerandom',
   'rn-animated-ellipsis',
   'react-native-outside-press'
-];
+]
 
 const transformIgnorePatterns = [
-  `/node_modules/(?!(${packagesToTransformWithBabel.join('|')}))`,
-];
+  `/node_modules/(?!(${packagesToTransformWithBabel.join('|')}))`
+]
 
 const config: Config = {
   preset: 'react-native',
   testPathIgnorePatterns: ['test-node/'],
   transform: {
-    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest',
+    '^.+\\.(js|jsx|ts|tsx)$': 'babel-jest'
   },
   transformIgnorePatterns,
   moduleNameMapper: {
-    '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js',
+    '\\.(jpg|jpeg|png|svg)$': '<rootDir>/__mocks__/fileMock.js'
   },
-  setupFiles: ['<rootDir>/jest.setup.js'],
+  setupFiles: ['<rootDir>/jest.setup.js']
   // Coverage disabled for default test runs - use jest.config.coverage.ts for coverage
-};
+}
 
-export default config;
+export default config

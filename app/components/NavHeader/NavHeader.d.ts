@@ -1,6 +1,6 @@
-import { HeaderProps } from 'react-native-elements';
+import { HeaderProps } from 'react-native-elements'
 
 export type NavHeaderProps = HeaderProps & {
-  title: string;
-  goBack?: () => void;
+  title: string
+  goBack?: () => void
 }

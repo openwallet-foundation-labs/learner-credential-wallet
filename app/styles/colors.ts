@@ -26,10 +26,9 @@ export enum Color {
   Gray600 = '#4B5563',
   Gray700 = '#374151',
   Gray800 = '#1F2937',
-  Gray900 = '#111827',
+  Gray900 = '#111827'
 }
 
 /* Gray values follow css guide:
  * https://tailwindcss.com/docs/customizing-colors
  */
- 
