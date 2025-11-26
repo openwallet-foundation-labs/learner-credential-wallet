@@ -22,7 +22,7 @@ export default function ApproveCredentialScreen({ navigation, route }: ApproveCr
   const rawCredentialRecord = useMemo(() => CredentialRecord.rawFrom({ credential, profileRecordId }), [credential]);
   const verifyPayload = useVerifyCredential(rawCredentialRecord, true);
   const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries);
+  const urlsDisabled = shouldDisableUrls(credential, registries, verifyPayload?.result);
 
   function goToIssuerInfo(issuerId: string) {
     if (navigationRef.isReady()) {

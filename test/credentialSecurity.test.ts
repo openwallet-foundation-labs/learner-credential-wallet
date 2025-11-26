@@ -45,5 +45,33 @@ describe('credentialSecurity', () => {
       
       expect(result).toBe(true);
     });
+
+    it('should return false when verification confirms registered issuer', () => {
+      (issuerInRegistries as jest.Mock).mockReturnValue(null);
+
+      const verificationResult = {
+        log: [
+          { id: 'registered_issuer', valid: true, matchingIssuers: [{}] },
+        ],
+      };
+
+      const result = shouldDisableUrls(mockCredential, mockRegistries, verificationResult as any);
+
+      expect(result).toBe(false);
+    });
+
+    it('should ignore verification log entries that are invalid', () => {
+      (issuerInRegistries as jest.Mock).mockReturnValue([]);
+
+      const verificationResult = {
+        log: [
+          { id: 'registered_issuer', valid: false, matchingIssuers: [] },
+        ],
+      };
+
+      const result = shouldDisableUrls(mockCredential, mockRegistries, verificationResult as any);
+
+      expect(result).toBe(true);
+    });
   });
 });
