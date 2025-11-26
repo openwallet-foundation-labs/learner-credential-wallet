@@ -40,7 +40,7 @@ const OpenBadgeCredentialCard = ({ rawCredentialRecord }: CredentialCardProps): 
   const { credential } = rawCredentialRecord;
   const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries);
+  const urlsDisabled = shouldDisableUrls(credential, registries, verifyCredential?.result);
 
   const navigation = useNavigation<NavigationProp>();
 

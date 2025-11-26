@@ -21,7 +21,7 @@ export default function IssuerInfoScreen({
   const verifyCredential = useVerifyCredential(rawCredentialRecord);
   const credential = rawCredentialRecord.credential;
   const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries);
+  const urlsDisabled = shouldDisableUrls(credential, registries, verifyCredential?.result);
 
   const getImageUri = (img?: string | { id?: string }): string | undefined => {
     if (!img) return undefined;
