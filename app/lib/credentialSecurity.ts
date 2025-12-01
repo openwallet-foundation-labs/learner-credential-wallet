@@ -1,22 +1,31 @@
-import type { RegistryClient } from '@digitalcredentials/issuer-registry-client';
-import { issuerInRegistries } from './issuerInRegistries';
-import { IVerifiableCredential } from '@digitalcredentials/ssi';
-import type { ResultLog } from './validate';
+import type { RegistryClient } from '@digitalcredentials/issuer-registry-client'
+import { issuerInRegistries } from './issuerInRegistries'
+import { IVerifiableCredential } from '@digitalcredentials/ssi'
+import type { ResultLog } from './validate'
 
-type VerificationResultLike = {
-  log?: ResultLog[];
-} | null | undefined;
+type VerificationResultLike =
+  | {
+      log?: ResultLog[]
+    }
+  | null
+  | undefined
 
-function issuerRecognizedByVerification(verificationResult?: VerificationResultLike): boolean {
+function issuerRecognizedByVerification(
+  verificationResult?: VerificationResultLike
+): boolean {
   if (!Array.isArray(verificationResult?.log)) {
-    return false;
+    return false
   }
 
   return verificationResult.log.some((entry) => {
-    if (entry.id !== 'registered_issuer') return false;
-    const matchingIssuers = (entry as ResultLog & { matchingIssuers?: unknown[] }).matchingIssuers;
-    return entry.valid && Array.isArray(matchingIssuers) ? matchingIssuers.length > 0 : entry.valid;
-  });
+    if (entry.id !== 'registered_issuer') return false
+    const matchingIssuers = (
+      entry as ResultLog & { matchingIssuers?: unknown[] }
+    ).matchingIssuers
+    return entry.valid && Array.isArray(matchingIssuers)
+      ? matchingIssuers.length > 0
+      : entry.valid
+  })
 }
 
 /**
@@ -29,11 +38,14 @@ export function shouldDisableUrls(
 ): boolean {
   try {
     if (issuerRecognizedByVerification(verificationResult)) {
-      return false;
+      return false
     }
 
-    const registryNames = issuerInRegistries({ issuer: credential.issuer, registries });
-    const shouldDisable = !registryNames || registryNames.length === 0;
+    const registryNames = issuerInRegistries({
+      issuer: credential.issuer,
+      registries
+    })
+    const shouldDisable = !registryNames || registryNames.length === 0
 
     return shouldDisable
   } catch (error) {

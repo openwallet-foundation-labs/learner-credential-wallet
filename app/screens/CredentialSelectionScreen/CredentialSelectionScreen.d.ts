@@ -7,11 +7,11 @@ export type RenderItemProps = {
 }
 
 export type CredentialSelectionScreenParams = {
-  title: string;
-  instructionText: string;
-  credentialFilter?: (rawCredentialRecord: CredentialRecordRaw) => boolean;
-  singleSelect?: boolean;
-  onSelectCredentials: (selectedCredentials: CredentialRecordRaw[]) => void;
-  goBack?: () => void;
-  isVPRFlow?: boolean;
-};
+  title: string
+  instructionText: string
+  credentialFilter?: (rawCredentialRecord: CredentialRecordRaw) => boolean
+  singleSelect?: boolean
+  onSelectCredentials: (selectedCredentials: CredentialRecordRaw[]) => void
+  goBack?: () => void
+  isVPRFlow?: boolean
+}

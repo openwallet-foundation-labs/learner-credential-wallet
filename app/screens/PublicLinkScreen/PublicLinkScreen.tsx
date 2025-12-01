@@ -23,18 +23,18 @@ import {
   createPublicLinkFor,
   getPublicViewLink,
   linkedinUrlFrom,
-  unshareCredential,
-} from '../../lib/publicLink';
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
-import { useShareCredentials } from '../../hooks/useShareCredentials';
-import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal';
-import { navigationRef } from '../../navigation/navigationRef';
+  unshareCredential
+} from '../../lib/publicLink'
+import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { useShareCredentials } from '../../hooks/useShareCredentials'
+import { clearGlobalModal, displayGlobalModal } from '../../lib/globalModal'
+import { navigationRef } from '../../navigation/navigationRef'
 
-import { convertSVGtoPDF } from '../../lib/svgToPdf';
-import { PDF } from '../../types/pdf';
+import { convertSVGtoPDF } from '../../lib/svgToPdf'
+import { PDF } from '../../types/pdf'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - app.config.js doesn't have type declarations
-import { LinkConfig } from '../../../app.config';
+import { LinkConfig } from '../../../app.config'
 
 export enum PublicLinkScreenMode {
   Default,
@@ -69,7 +69,7 @@ export default function PublicLinkScreen({
   const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null)
   const [openedExportPdfModal, setOpenedExportPdfModal] = useState(false)
 
-  const qrCodeRef = useRef<any>(null);
+  const qrCodeRef = useRef<any>(null)
 
   // ---- Selection (no setNativeProps) ----
   const inputRef = useRef<RNTextInput | null>(null)
@@ -154,13 +154,13 @@ export default function PublicLinkScreen({
     ;(async () => {
       const url = await getPublicViewLink(rawCredentialRecord)
       if (url === null && screenMode === PublicLinkScreenMode.Default) {
-        if (Platform.OS === 'ios') await wait(300);
-        await createPublicLink(); // auto path can still use standard loading modal
+        if (Platform.OS === 'ios') await wait(300)
+        await createPublicLink() // auto path can still use standard loading modal
       } else if (url !== null) {
         setPublicLink(url)
       }
-    })();
-  }, [rawCredentialRecord, screenMode]); // exhaustive deps
+    })()
+  }, [rawCredentialRecord, screenMode]) // exhaustive deps
 
   // Safely capture QR only when allowed (PDF flow), link exists, and view is laid out
   useEffect(() => {
@@ -264,7 +264,9 @@ export default function PublicLinkScreen({
     })
   }
 
-  async function presentNotVerifiedModal(action: 'create' | 'export' | 'linkedin' | 'share') {
+  async function presentNotVerifiedModal(
+    action: 'create' | 'export' | 'linkedin' | 'share'
+  ) {
     const titles = {
       create: 'Unable to Create Public Link',
       export: 'Unable to Export PDF',
@@ -287,7 +289,8 @@ export default function PublicLinkScreen({
       body: (
         <>
           <Text style={mixins.modalBodyText}>
-            This credential has not been verified (invalid signature or revoked status), so this action is not allowed.
+            This credential has not been verified (invalid signature or revoked
+            status), so this action is not allowed.
           </Text>
           <Button
             buttonStyle={mixins.buttonClear}
@@ -553,8 +556,8 @@ export default function PublicLinkScreen({
 
   // Send credential as JSON
   const onSendCredential = async () => {
-    if (presentingNative) return;
-    setPresentingNative(true);
+    if (presentingNative) return
+    setPresentingNative(true)
     try {
       await safelyBeforeNativePresent()
       await share([rawCredentialRecord])

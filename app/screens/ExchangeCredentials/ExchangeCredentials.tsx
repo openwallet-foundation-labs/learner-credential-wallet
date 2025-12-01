@@ -1,20 +1,20 @@
-import React, { useLayoutEffect, useState, useRef }from 'react';
-import { Text } from 'react-native-elements';
-import { AppState } from 'react-native';
-import { ConfirmModal } from '../../components';
-import { useAppDispatch, useDynamicStyles } from '../../hooks';
-import { navigationRef } from '../../navigation/navigationRef';
-import { selectWithFactory } from '../../store/selectorFactories';
-import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile';
-import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer';
-import { processMessageChain, sendToExchanger } from '../../lib/exchanges';
-import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal';
-import GlobalModalBody, { getGlobalModalBody } from '../../lib/globalModalBody';
-import { NavigationUtil } from '../../lib/navigationUtil';
-import { delay } from '../../lib/time';
-import { ExchangeCredentialsProps } from './ExchangeCredentials.d';
-import { HumanReadableError } from '../../lib/error';
-import { useThemeContext } from '../../hooks/useThemeContext';
+import React, { useLayoutEffect, useState, useRef } from 'react'
+import { Text } from 'react-native-elements'
+import { AppState } from 'react-native'
+import { ConfirmModal } from '../../components'
+import { useAppDispatch, useDynamicStyles } from '../../hooks'
+import { navigationRef } from '../../navigation/navigationRef'
+import { selectWithFactory } from '../../store/selectorFactories'
+import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile'
+import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer'
+import { processMessageChain, sendToExchanger } from '../../lib/exchanges'
+import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
+import GlobalModalBody, { getGlobalModalBody } from '../../lib/globalModalBody'
+import { NavigationUtil } from '../../lib/navigationUtil'
+import { delay } from '../../lib/time'
+import { ExchangeCredentialsProps } from './ExchangeCredentials.d'
+import { HumanReadableError } from '../../lib/error'
+import { useThemeContext } from '../../hooks/useThemeContext'
 
 import { profileWithSigners } from '../../lib/profile'
 import { CredentialRecord } from '../../model'
@@ -128,25 +128,32 @@ export default function ExchangeCredentials({
     }
 
     // Regardless if request is an offer or a request, select profile
-    const isVPRFlow = 'verifiablePresentationRequest' in requestOrOffer;
+    const isVPRFlow = 'verifiablePresentationRequest' in requestOrOffer
     const rawProfileRecord = await NavigationUtil.selectProfile(
-      isVPRFlow ? {
-        goBack: () => {
-          displayGlobalModal({
-            title: 'Cancel Send',
-            confirmButton: false,
-            cancelButton: false,
-            body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
-          });
-          navigationRef.navigate('HomeNavigation', {
-            screen: 'CredentialNavigation',
-            params: { screen: 'HomeScreen' }
-          });
-          setTimeout(clearGlobalModal, 10000);
-        }
-      } : undefined
-    );
-    const selectedDidRecord = selectWithFactory(makeSelectDidFromProfile, { rawProfileRecord });
+      isVPRFlow
+        ? {
+            goBack: () => {
+              displayGlobalModal({
+                title: 'Cancel Send',
+                confirmButton: false,
+                cancelButton: false,
+                body: getGlobalModalBody(
+                  'Ending credential request. To send credentials, open another request.',
+                  true
+                )
+              })
+              navigationRef.navigate('HomeNavigation', {
+                screen: 'CredentialNavigation',
+                params: { screen: 'HomeScreen' }
+              })
+              setTimeout(clearGlobalModal, 10000)
+            }
+          }
+        : undefined
+    )
+    const selectedDidRecord = selectWithFactory(makeSelectDidFromProfile, {
+      rawProfileRecord
+    })
     const selectedProfile = await profileWithSigners({
       profileName: rawProfileRecord.profileName,
       loadCredentials: CredentialRecord.getAllCredentialRecords,
@@ -160,8 +167,13 @@ export default function ExchangeCredentials({
     //  1) we're issued some credentials, or
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
-    const { acceptCredentials } = await processMessageChain(
-      { exchangeUrl, requestOrOffer, selectedProfile, modalConfirmZcapRequest, profileRecordId: rawProfileRecord._id.toHexString() });
+    const { acceptCredentials } = await processMessageChain({
+      exchangeUrl,
+      requestOrOffer,
+      selectedProfile,
+      modalConfirmZcapRequest,
+      profileRecordId: rawProfileRecord._id.toHexString()
+    })
 
     // We've been issued some credentials - present to user for accepting
     if (acceptCredentials && navigationRef.isReady()) {

@@ -16,12 +16,16 @@ export default function IssuerInfoScreen({
   navigation,
   route
 }: IssuerInfoScreenProps): React.ReactElement | null {
-  const { rawCredentialRecord } = route.params;
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const verifyCredential = useVerifyCredential(rawCredentialRecord);
-  const credential = rawCredentialRecord.credential;
-  const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries, verifyCredential?.result);
+  const { rawCredentialRecord } = route.params
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const verifyCredential = useVerifyCredential(rawCredentialRecord)
+  const credential = rawCredentialRecord.credential
+  const registries = useContext(DidRegistryContext)
+  const urlsDisabled = shouldDisableUrls(
+    credential,
+    registries,
+    verifyCredential?.result
+  )
 
   const getImageUri = (img?: string | { id?: string }): string | undefined => {
     if (!img) return undefined

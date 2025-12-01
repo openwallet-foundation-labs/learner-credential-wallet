@@ -11,7 +11,10 @@ import { delay } from './time'
 import { CredentialRecordRaw } from '../types/credential'
 
 // Selects credentials to exchange with issuer or verifier
-export async function selectCredentials (credentialRecords: CredentialRecordRaw[], profileId?: string): Promise<CredentialRecordRaw[]> {
+export async function selectCredentials(
+  credentialRecords: CredentialRecordRaw[],
+  profileId?: string
+): Promise<CredentialRecordRaw[]> {
   // ensure that the selected credentials have been cleared
   // before subscribing to redux store updates below
   store.dispatch(clearSelectedExchangeCredentials())
@@ -52,10 +55,13 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
     (r: CredentialRecordRaw) => r._id
   )
   const credentialFilter = (r: CredentialRecordRaw) => {
-    const matchesId = credentialRecordIds.some((id: ObjectId) => r._id.equals(id));
-    const matchesProfile = !profileId || r.profileRecordId.toHexString() === profileId;
-    return matchesId && matchesProfile;
-  };
+    const matchesId = credentialRecordIds.some((id: ObjectId) =>
+      r._id.equals(id)
+    )
+    const matchesProfile =
+      !profileId || r.profileRecordId.toHexString() === profileId
+    return matchesId && matchesProfile
+  }
 
   console.log('Navigating to Share Credentials')
 
@@ -69,14 +75,17 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
         title: 'Cancel Send',
         confirmButton: false,
         cancelButton: false,
-        body: getGlobalModalBody('Ending credential request. To send credentials, open another request.', true)
-      });
-      store.dispatch(clearSelectedExchangeCredentials());
+        body: getGlobalModalBody(
+          'Ending credential request. To send credentials, open another request.',
+          true
+        )
+      })
+      store.dispatch(clearSelectedExchangeCredentials())
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
         params: { screen: 'HomeScreen' }
-      });
-      setTimeout(clearGlobalModal, 10000);
+      })
+      setTimeout(clearGlobalModal, 10000)
     },
     onSelectCredentials: (s: CredentialRecordRaw[]) => {
       displayGlobalModal({
@@ -84,12 +93,12 @@ export async function selectCredentials (credentialRecords: CredentialRecordRaw[
         confirmButton: false,
         cancelButton: false,
         body: getGlobalModalBody('This will only take a moment.', true)
-      });
-      store.dispatch(selectExchangeCredentials(s));
+      })
+      store.dispatch(selectExchangeCredentials(s))
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
         params: { screen: 'HomeScreen' }
-      });
+      })
     }
   })
 
