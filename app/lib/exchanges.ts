@@ -42,13 +42,15 @@ export async function processMessageChain({
   requestOrOffer,
   selectedProfile,
   modalsEnabled = true,
-  modalConfirmZcapRequest
+  modalConfirmZcapRequest,
+  profileRecordId
 }: {
   exchangeUrl?: string
   requestOrOffer: IVpRequest | IVpOffer
   selectedProfile: ISelectedProfile
   modalsEnabled?: boolean
   modalConfirmZcapRequest: () => Promise<boolean>
+  profileRecordId?: string
 }): Promise<{
   acceptCredentials?: IVerifiableCredential[]
   redirectUrl?: string
@@ -72,7 +74,8 @@ export async function processMessageChain({
       selectedProfile,
       modalsEnabled,
       modalConfirmZcapRequest,
-      credentialRequestOrigin
+      credentialRequestOrigin,
+      profileRecordId
     })
     return { redirectUrl }
   }
@@ -93,13 +96,23 @@ export async function processMessageChain({
  * @param modalConfirmZcapRequest {function}
  * @param credentialRequestOrigin {string}
  */
-export async function processRequest (
-  { request, exchangeUrl, selectedProfile, modalsEnabled = true,
-    modalConfirmZcapRequest, credentialRequestOrigin, profileRecordId }:
-  { request: IVprDetails, exchangeUrl?: string, selectedProfile: ISelectedProfile,
-    modalsEnabled?: boolean, credentialRequestOrigin?: string,
-    modalConfirmZcapRequest: () => Promise<boolean>, profileRecordId?: string }
-): Promise<void> {
+export async function processRequest({
+  request,
+  exchangeUrl,
+  selectedProfile,
+  modalsEnabled = true,
+  modalConfirmZcapRequest,
+  credentialRequestOrigin,
+  profileRecordId
+}: {
+  request: IVprDetails
+  exchangeUrl?: string
+  selectedProfile: ISelectedProfile
+  modalsEnabled?: boolean
+  credentialRequestOrigin?: string
+  modalConfirmZcapRequest: () => Promise<boolean>
+  profileRecordId?: string
+}): Promise<void> {
   if (!exchangeUrl) {
     throw new Error('Missing exchangeUrl, cannot send response.')
   }
@@ -162,8 +175,9 @@ export async function processRequest (
   let selectedVcs: IVerifiableCredential[] = []
   if (vcMatches.length > 0 && modalsEnabled) {
     // Prompt user to confirm / select which VCs to send
-    selectedVcs = (await selectCredentials(vcMatches, profileRecordId))
-      .map((r) => r.credential);
+    selectedVcs = (await selectCredentials(vcMatches, profileRecordId)).map(
+      (r) => r.credential
+    )
   } else if (vcMatches.length > 0) {
     // Not prompting the user
     selectedVcs = vcMatches.map((r) => r.credential)

@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import { FlatList, Text, View } from 'react-native';
-import { Button, ListItem } from 'react-native-elements';
+import React, { useEffect, useMemo, useRef } from 'react'
+import { FlatList, Text, View } from 'react-native'
+import { Button, ListItem } from 'react-native-elements'
 
 import dynamicStyleSheet from './ProfileSelectionScreen.styles'
 import {
@@ -36,14 +36,14 @@ export default function ProfileSelectionScreen({
   )
 
   useEffect(() => {
-    console.log('Profile records:', rawProfileRecords);
-    
+    console.log('Profile records:', rawProfileRecords)
+
     if (associatedProfile) {
-      onSelectProfile(associatedProfile);
+      onSelectProfile(associatedProfile)
     } else if (rawProfileRecords.length === 1) {
-      onSelectProfile(rawProfileRecords[0]);
+      onSelectProfile(rawProfileRecords[0])
     }
-  }, [associatedProfile, rawProfileRecords, onSelectProfile]);
+  }, [associatedProfile, rawProfileRecords, onSelectProfile])
 
   const ListHeader = (
     <View style={styles.listHeader}>

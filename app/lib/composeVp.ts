@@ -38,7 +38,10 @@ export async function composeVp({
     // Return an unsigned VP
     // Use verify: false to skip validation (including expiration checks)
     // The VC library 10.0.2+ properly handles this flag
-    return await vc.createPresentation({ verifiableCredential: selectedVcs, verify: false });
+    return await vc.createPresentation({
+      verifiableCredential: selectedVcs,
+      verify: false
+    })
   }
 
   // Return a signed VP
@@ -48,8 +51,8 @@ export async function composeVp({
     holder: selectedProfile.did,
     verifiableCredential: selectedVcs!.length > 0 ? selectedVcs : undefined,
     verify: false
-  });
-  
+  })
+
   return await vc.signPresentation({
     presentation,
     challenge,

@@ -35,13 +35,14 @@ export default function RootNavigation(): React.ReactElement {
         component={ExchangeCredentialsNavigation}
         options={{
           presentation: 'modal'
-        }} />
-      <Stack.Screen 
-        name="ProfileSelectionScreen" 
+        }}
+      />
+      <Stack.Screen
+        name="ProfileSelectionScreen"
         component={ProfileSelectionScreen}
       />
-      <Stack.Screen 
-        name="CredentialSelectionScreen" 
+      <Stack.Screen
+        name="CredentialSelectionScreen"
         component={CredentialSelectionScreen}
       />
       <Stack.Screen name="ViewSourceScreen" component={ViewSourceScreen} />

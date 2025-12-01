@@ -20,10 +20,13 @@ export { navigationRef } from './navigationRef'
  * If screens are re-used, we need to make union types for their
  * props
  */
-import { CredentialScreenHomeProps } from './CredentialNavigation/CredentialNavigation.d';
-import { CredentialScreenShareProps } from './ShareNavigation/ShareNavigation.d';
-import { CredentialScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d';
-export type CredentialScreenProps = CredentialScreenHomeProps | CredentialScreenShareProps | CredentialScreenSettingsProps;
+import { CredentialScreenHomeProps } from './CredentialNavigation/CredentialNavigation.d'
+import { CredentialScreenShareProps } from './ShareNavigation/ShareNavigation.d'
+import { CredentialScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d'
+export type CredentialScreenProps =
+  | CredentialScreenHomeProps
+  | CredentialScreenShareProps
+  | CredentialScreenSettingsProps
 
 import { DetailsScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d'
 import { DetailsScreenSetupProps } from './SetupNavigation/SetupNavigation.d'
@@ -31,10 +34,13 @@ export type DetailsScreenProps =
   | DetailsScreenSettingsProps
   | DetailsScreenSetupProps
 
-import { PublicLinkScreenCredentialProps } from './CredentialNavigation/CredentialNavigation.d';
-import { PublicLinkScreenShareProps } from './ShareNavigation/ShareNavigation.d';
-import { PublicLinkScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d';
-export type PublicLinkScreenProps = PublicLinkScreenCredentialProps | PublicLinkScreenShareProps | PublicLinkScreenSettingsProps;
+import { PublicLinkScreenCredentialProps } from './CredentialNavigation/CredentialNavigation.d'
+import { PublicLinkScreenShareProps } from './ShareNavigation/ShareNavigation.d'
+import { PublicLinkScreenSettingsProps } from './SettingsNavigation/SettingsNavigation.d'
+export type PublicLinkScreenProps =
+  | PublicLinkScreenCredentialProps
+  | PublicLinkScreenShareProps
+  | PublicLinkScreenSettingsProps
 
 import { IssuerInfoScreenCredentialProps } from './CredentialNavigation/CredentialNavigation.d'
 import { IssuerInfoScreenAddProps } from './AcceptCredentialsNavigation/AcceptCredentialsNavigation.d'

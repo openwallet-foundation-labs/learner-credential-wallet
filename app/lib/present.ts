@@ -39,15 +39,15 @@ export async function createVerifiablePresentation({
   )
   const suite = new Ed25519Signature2020({ key: verificationKeyPair })
 
-  const holder = didRecord.didDocument.id;
-  
+  const holder = didRecord.didDocument.id
+
   // Use verify: false to skip validation (including expiration checks)
   // The VC library 10.0.2+ properly handles this flag
-  const presentation = vc.createPresentation({ 
-    verifiableCredential, 
+  const presentation = vc.createPresentation({
+    verifiableCredential,
     holder,
-    verify: false 
-  });
+    verify: false
+  })
 
   return await vc.signPresentation({
     presentation,
@@ -57,10 +57,12 @@ export async function createVerifiablePresentation({
   })
 }
 
-export function createUnsignedPresentation(verifiableCredential: IVerifiableCredential[] | IVerifiableCredential): IVerifiablePresentation {
+export function createUnsignedPresentation(
+  verifiableCredential: IVerifiableCredential[] | IVerifiableCredential
+): IVerifiablePresentation {
   // Use verify: false to skip validation (including expiration checks)
   // The VC library 10.0.2+ properly handles this flag
-  return vc.createPresentation({ verifiableCredential, verify: false });
+  return vc.createPresentation({ verifiableCredential, verify: false })
 }
 
 export async function sharePresentation(

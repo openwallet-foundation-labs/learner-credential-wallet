@@ -80,10 +80,14 @@ export async function credentialsFrom(
  * Returns a unique identifier for a credential record.
  * Uses the database record ID to ensure uniqueness across all credentials,
  * even if they have the same or missing credential.id field.
- * 
+ *
  * This addresses the issue where multiple credentials with the same or missing
  * credential.id would collide when used as cache keys for public links.
  */
-export function credentialIdFor(rawCredentialRecord: CredentialRecordRaw): string {
-  return rawCredentialRecord._id.toHexString?.() || String(rawCredentialRecord._id);
+export function credentialIdFor(
+  rawCredentialRecord: CredentialRecordRaw
+): string {
+  return (
+    rawCredentialRecord._id.toHexString?.() || String(rawCredentialRecord._id)
+  )
 }

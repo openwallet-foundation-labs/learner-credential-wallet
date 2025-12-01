@@ -8,30 +8,34 @@ import {
 } from 'react-native'
 import { Button, Text } from 'react-native-elements'
 
-import { CredentialItem, NavHeader, LoadingIndicatorDots } from '../../components';
-import dynamicStyleSheet from './PresentationPreviewScreen.styles';
-import type { PresentationPreviewScreenProps } from '../../navigation';
-import type { RenderItemProps } from './PresentationPreviewScreen.d';
-import { useDynamicStyles, useVerifyCredential } from '../../hooks';
-import { useShareCredentials } from '../../hooks/useShareCredentials';
-import { PublicLinkScreenMode } from '../PublicLinkScreen/PublicLinkScreen';
-import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal';
-import { createPublicLinkFor, getPublicViewLink } from '../../lib/publicLink';
+import {
+  CredentialItem,
+  NavHeader,
+  LoadingIndicatorDots
+} from '../../components'
+import dynamicStyleSheet from './PresentationPreviewScreen.styles'
+import type { PresentationPreviewScreenProps } from '../../navigation'
+import type { RenderItemProps } from './PresentationPreviewScreen.d'
+import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { useShareCredentials } from '../../hooks/useShareCredentials'
+import { PublicLinkScreenMode } from '../PublicLinkScreen/PublicLinkScreen'
+import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
+import { createPublicLinkFor, getPublicViewLink } from '../../lib/publicLink'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - app.config.js doesn't have type declarations
-import { LinkConfig } from '../../../app.config';
-import { verificationResultFor } from '../../lib/verifiableObject';
-import { useContext } from 'react';
-import { DidRegistryContext } from '../../init/registries';
+import { LinkConfig } from '../../../app.config'
+import { verificationResultFor } from '../../lib/verifiableObject'
+import { useContext } from 'react'
+import { DidRegistryContext } from '../../init/registries'
 
 export default function PresentationPreviewScreen({
   navigation,
   route
 }: PresentationPreviewScreenProps): React.ReactElement {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { selectedCredentials, mode = 'send' } = route.params;
-  const share = useShareCredentials();
-  const registries = useContext(DidRegistryContext);
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const { selectedCredentials, mode = 'send' } = route.params
+  const share = useShareCredentials()
+  const registries = useContext(DidRegistryContext)
 
   const isCreateLinkMode = mode === 'createLink'
   const buttonTitle = isCreateLinkMode ? 'Create Public Link' : 'Send'
@@ -141,9 +145,9 @@ export default function PresentationPreviewScreen({
     } else {
       // Send mode: share the credentials via JSON
       try {
-        share(selectedCredentials);
+        share(selectedCredentials)
       } catch (error) {
-        console.error('Error checking verification status:', error);
+        console.error('Error checking verification status:', error)
         await displayGlobalModal({
           title: 'Unable to Verify Credential(s)',
           cancelButton: false,
@@ -151,10 +155,11 @@ export default function PresentationPreviewScreen({
           cancelOnBackgroundPress: true,
           body: (
             <Text style={mixins.modalBodyText}>
-              An error occurred while checking credential verification status. Please try again.
+              An error occurred while checking credential verification status.
+              Please try again.
             </Text>
-          ),
-        });
+          )
+        })
       }
     }
   }

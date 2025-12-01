@@ -20,16 +20,29 @@ export default function CredentialSelectionScreen({
   navigation,
   route
 }: CredentialSelectionScreenProps): React.ReactElement {
-  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet);
-  const { title, instructionText, onSelectCredentials, singleSelect, credentialFilter, goBack = navigation.goBack, isVPRFlow } = route.params;
+  const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
+  const {
+    title,
+    instructionText,
+    onSelectCredentials,
+    singleSelect,
+    credentialFilter,
+    goBack = navigation.goBack,
+    isVPRFlow
+  } = route.params
 
-  const [selected, setSelected] = useState<number[]>([]);
-  const allItems = useSelector(selectRawCredentialRecords);
+  const [selected, setSelected] = useState<number[]>([])
+  const allItems = useSelector(selectRawCredentialRecords)
   const filteredItems = useMemo(() => {
-    const filtered = credentialFilter ? allItems.filter(credentialFilter) : allItems;
-    return filtered;
-  }, [allItems, credentialFilter]);
-  const selectedCredentials = useMemo(() => selected.map((i) => filteredItems[i]), [selected, filteredItems]);
+    const filtered = credentialFilter
+      ? allItems.filter(credentialFilter)
+      : allItems
+    return filtered
+  }, [allItems, credentialFilter])
+  const selectedCredentials = useMemo(
+    () => selected.map((i) => filteredItems[i]),
+    [selected, filteredItems]
+  )
 
   // Pre-verify and cache results for visible credentials to keep rows pure/static
   const [verifyMap, setVerifyMap] = useState<
@@ -95,7 +108,6 @@ export default function CredentialSelectionScreen({
         precomputedVerification={verifyMap[String(item._id)]}
         showStatusBadges
         precomputedPublic={publicMap[String(item._id)]}
-
       />
     )
   }
@@ -112,14 +124,14 @@ export default function CredentialSelectionScreen({
         buttonStyle={styles.shareButton}
         titleStyle={mixins.buttonTitle}
         onPress={() => {
-          onSelectCredentials(selectedCredentials);
+          onSelectCredentials(selectedCredentials)
         }}
       />
-    );
+    )
   }
 
   function CancelButton(): React.ReactElement | null {
-    if (!isVPRFlow) return null;
+    if (!isVPRFlow) return null
 
     return (
       <Button
@@ -128,7 +140,7 @@ export default function CredentialSelectionScreen({
         titleStyle={mixins.buttonTitleSecondary}
         onPress={goBack}
       />
-    );
+    )
   }
 
   return (

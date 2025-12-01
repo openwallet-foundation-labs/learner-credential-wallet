@@ -14,15 +14,25 @@ import { useVerifyCredential } from '../../hooks'
 import { DidRegistryContext } from '../../init/registries'
 import { shouldDisableUrls } from '../../lib/credentialSecurity'
 
-export default function ApproveCredentialScreen({ navigation, route }: ApproveCredentialScreenProps): React.ReactElement {
-  const { styles } = useDynamicStyles(dynamicStyleSheet);
-  const { pendingCredentialId, profileRecordId } = route.params;
-  const pendingCredential = usePendingCredential(pendingCredentialId);
-  const { credential } = pendingCredential;
-  const rawCredentialRecord = useMemo(() => CredentialRecord.rawFrom({ credential, profileRecordId }), [credential]);
-  const verifyPayload = useVerifyCredential(rawCredentialRecord, true);
-  const registries = useContext(DidRegistryContext);
-  const urlsDisabled = shouldDisableUrls(credential, registries, verifyPayload?.result);
+export default function ApproveCredentialScreen({
+  navigation,
+  route
+}: ApproveCredentialScreenProps): React.ReactElement {
+  const { styles } = useDynamicStyles(dynamicStyleSheet)
+  const { pendingCredentialId, profileRecordId } = route.params
+  const pendingCredential = usePendingCredential(pendingCredentialId)
+  const { credential } = pendingCredential
+  const rawCredentialRecord = useMemo(
+    () => CredentialRecord.rawFrom({ credential, profileRecordId }),
+    [credential]
+  )
+  const verifyPayload = useVerifyCredential(rawCredentialRecord, true)
+  const registries = useContext(DidRegistryContext)
+  const urlsDisabled = shouldDisableUrls(
+    credential,
+    registries,
+    verifyPayload?.result
+  )
 
   function goToIssuerInfo(issuerId: string) {
     if (navigationRef.isReady()) {

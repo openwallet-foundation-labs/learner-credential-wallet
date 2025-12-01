@@ -28,16 +28,28 @@ import {
   SettingsItemProps,
   SettingsProps,
   AboutProps,
-  SettingsNavigationParamList,
-} from './SettingsNavigation.d';
-import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen, CredentialScreen, PublicLinkScreen } from '../../screens';
-import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen';
-import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur } from '../../hooks';
-import { SettingsNavigationProps } from '../';
-import { exportWallet } from '../../lib/export';
-import { registerWallet } from '../../lib/registerWallet';
-import WASScreen from '../../screens/WAS/WasScreen';
-import WasConnect from '../../screens/WAS/WasConnect';
+  SettingsNavigationParamList
+} from './SettingsNavigation.d'
+import {
+  AddExistingProfileScreen,
+  DetailsScreen,
+  DeveloperScreen,
+  ManageProfilesScreen,
+  RestoreWalletScreen,
+  CredentialScreen,
+  PublicLinkScreen
+} from '../../screens'
+import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen'
+import {
+  useAppDispatch,
+  useDynamicStyles,
+  useResetNavigationOnBlur
+} from '../../hooks'
+import { SettingsNavigationProps } from '../'
+import { exportWallet } from '../../lib/export'
+import { registerWallet } from '../../lib/registerWallet'
+import WASScreen from '../../screens/WAS/WasScreen'
+import WasConnect from '../../screens/WAS/WasConnect'
 
 const Stack = createStackNavigator<SettingsNavigationParamList>()
 
@@ -254,9 +266,18 @@ export default function SettingsNavigation({
       initialRouteName="Settings"
     >
       <Stack.Screen name="Settings" component={Settings} />
-      <Stack.Screen name="ManageProfilesScreen" component={ManageProfilesScreen} />
-      <Stack.Screen name="AddExistingProfileScreen" component={AddExistingProfileScreen} />
-      <Stack.Screen name="ProfileCredentialScreen" component={ProfileCredentialScreen} />
+      <Stack.Screen
+        name="ManageProfilesScreen"
+        component={ManageProfilesScreen}
+      />
+      <Stack.Screen
+        name="AddExistingProfileScreen"
+        component={AddExistingProfileScreen}
+      />
+      <Stack.Screen
+        name="ProfileCredentialScreen"
+        component={ProfileCredentialScreen}
+      />
       <Stack.Screen name="CredentialScreen" component={CredentialScreen} />
       <Stack.Screen name="PublicLinkScreen" component={PublicLinkScreen} />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
