@@ -1,5 +1,25 @@
 # learner-credential-wallet Changelog
 
+## 2.2.9 - build 103
+
+### Added
+
+- Generalize public link creation to allow all credentials, including expired ones #877
+
+### Changed
+
+- [EPIC] Update app store pages #818
+- Change helpful message on LCW dashboard #898
+- Refactor dark mode / light mode #419
+
+### Fixed
+
+- VPR: Credential request does not differentiate between credentials from different profiles #901
+- Cannot go back from credential preview from managed profiles #900
+- Fix legacy peer deps #899
+- Issuing is buggy using deeplink and camera but ok from app qr scan #906
+
+
 ## 2.2.8 - build 102
 
 ### Added
