@@ -7,7 +7,7 @@ export default createDynamicStyleSheet(() => ({
   },
   helperText: {
     fontSize: 12,
-    color: Color.Gray500,
+    color: Color.Gray400,
     marginTop: 8
   }
 }))
