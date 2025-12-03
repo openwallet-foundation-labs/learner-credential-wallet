@@ -13,7 +13,6 @@ export function useSystemTheme(): ColorScheme {
       if (Platform.OS === 'android') {
         try {
           const rootBackgroundColor = await SystemUI.getBackgroundColorAsync()
-          console.log('root background color:', rootBackgroundColor)
 
           if (
             typeof rootBackgroundColor === 'string' &&
