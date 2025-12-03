@@ -22,9 +22,6 @@ export default function ThemeProvider({
   // Use custom hook instead of broken useColorScheme
   const colorScheme = useSystemTheme()
 
-  console.log('colorScheme from OS:', colorScheme)
-  console.log('themeName from storage:', themeName)
-
   // ALWAYS sync with OS theme - remove the themeName === null check
   useEffect(() => {
     if (colorScheme !== null) {
@@ -33,7 +30,6 @@ export default function ThemeProvider({
 
       // Only update if different to avoid unnecessary dispatches
       if (themeName !== osThemeName) {
-        console.log('Syncing theme to match OS:', osThemeName)
         dispatch(updateThemeName(osThemeName))
       }
     }
