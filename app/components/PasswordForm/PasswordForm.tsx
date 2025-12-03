@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { View, TextInput, StyleProp, ViewStyle } from 'react-native'
+import { View, TextInput, StyleProp, ViewStyle, Text } from 'react-native'
 import { useDynamicStyles } from '../../hooks'
 import { Color } from '../../styles'
 import ErrorDialog from '../ErrorDialog/ErrorDialog'
@@ -92,6 +92,10 @@ export default function PasswordForm({
         tvParallaxProperties={undefined}
         onTextInput={() => {}}
       />
+      <Text style={styles.helperText}>
+        You will need to store this password somewhere safe - the LCW does not
+        store personal information, collect data, or track usage.
+      </Text>
       {errorText ? (
         <>
           <View style={styles.inputSeparator} />
