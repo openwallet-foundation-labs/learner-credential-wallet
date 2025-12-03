@@ -21,7 +21,6 @@ export function useSystemTheme(): ColorScheme {
           ) {
             const isDark = isDarkColor(rootBackgroundColor)
             setColorScheme(isDark ? 'dark' : 'light')
-            console.log('detected theme:', isDark ? 'dark' : 'light')
           } else {
             const scheme = Appearance.getColorScheme() as
               | 'light'
