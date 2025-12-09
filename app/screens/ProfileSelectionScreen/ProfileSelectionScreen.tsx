@@ -47,6 +47,8 @@ export default function ProfileSelectionScreen({
   )
 
   useEffect(() => {
+    console.log('Profile records:', rawProfileRecords)
+
     if (hasAutoSelected.current) return
 
     if (associatedProfile) {
