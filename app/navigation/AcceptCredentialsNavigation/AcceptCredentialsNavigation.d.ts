@@ -8,6 +8,7 @@ export type AcceptCredentialsNavigationParamList = {
   ApproveCredentialsScreen: {
     credentialRequestParams?: CredentialRequestParams
     rawProfileRecord: ProfileRecordRaw
+    canGoBack?: boolean
   }
   ApproveCredentialScreen: {
     pendingCredentialId: string

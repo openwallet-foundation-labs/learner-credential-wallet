@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useMemo, useRef, useCallback } from 'react'
 import { FlatList, Text, View } from 'react-native'
 import { Button, ListItem } from 'react-native-elements'
 
@@ -11,6 +11,7 @@ import { NavHeader } from '../../components'
 import { useSelector } from 'react-redux'
 import { selectRawProfileRecords } from '../../store/slices/profile'
 import { useDynamicStyles, useSelectorFactory } from '../../hooks'
+import { ProfileRecordRaw } from '../../model'
 
 import { makeSelectProfileForPendingCredentials } from '../../store/selectorFactories/makeSelectProfileForPendingCredentials'
 
@@ -35,15 +36,25 @@ export default function ProfileSelectionScreen({
     [rawProfileRecords]
   )
 
+  const hasAutoSelected = useRef(false)
+
+  const handleSelectProfile = useCallback(
+    (profile: ProfileRecordRaw) => {
+      hasAutoSelected.current = true
+      onSelectProfile(profile)
+    },
+    [onSelectProfile]
+  )
+
   useEffect(() => {
-    console.log('Profile records:', rawProfileRecords)
+    if (hasAutoSelected.current) return
 
     if (associatedProfile) {
-      onSelectProfile(associatedProfile)
+      handleSelectProfile(associatedProfile)
     } else if (rawProfileRecords.length === 1) {
-      onSelectProfile(rawProfileRecords[0])
+      handleSelectProfile(rawProfileRecords[0])
     }
-  }, [associatedProfile, rawProfileRecords, onSelectProfile])
+  }, [associatedProfile, rawProfileRecords, handleSelectProfile])
 
   const ListHeader = (
     <View style={styles.listHeader}>
@@ -61,7 +72,7 @@ export default function ProfileSelectionScreen({
         renderItem={({ item }) => (
           <ProfileButton
             rawProfileRecord={item}
-            onPress={() => onSelectProfile(item)}
+            onPress={() => handleSelectProfile(item)}
           />
         )}
       />

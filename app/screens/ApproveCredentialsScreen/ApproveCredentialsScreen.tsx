@@ -1,15 +1,19 @@
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 import { useSelector } from 'react-redux'
 import { FlatList, View, Text } from 'react-native'
 import { Button } from 'react-native-elements'
+import { useFocusEffect } from '@react-navigation/native'
 
 import { navigationRef } from '../../navigation/navigationRef'
 import {
   acceptPendingCredentials,
   ApprovalStatus,
   clearFoyer,
-  selectPendingCredentials
+  selectPendingCredentials,
+  setCredentialApproval
 } from '../../store/slices/credentialFoyer'
+import { CredentialRecord } from '../../model/credential'
+import { credentialContentHash } from '../../lib/credentialHash'
 import CredentialItem from '../../components/CredentialItem/CredentialItem'
 import NavHeader from '../../components/NavHeader/NavHeader'
 import CredentialRequestHandler from '../../components/CredentialRequestHandler/CredentialRequestHandler'
@@ -30,7 +34,7 @@ export default function ApproveCredentialsScreen({
   const { mixins, styles } = useDynamicStyles(dynamicStyleSheet)
 
   const dispatch = useAppDispatch()
-  const { rawProfileRecord, credentialRequestParams } = route.params
+  const { rawProfileRecord, credentialRequestParams, canGoBack } = route.params
   const profileRecordId = rawProfileRecord._id
 
   const displayedCredentials = useSelector(selectPendingCredentials)
@@ -45,7 +49,64 @@ export default function ApproveCredentialsScreen({
   )
 
   const [modalIsOpen, setModalIsOpen] = useState(false)
-  const showAcceptAllButton = pendingCredentials.length > 1
+  const acceptableCredentials = useMemo(
+    () =>
+      pendingCredentials.filter(
+        ({ status }) => status === ApprovalStatus.Pending
+      ),
+    [pendingCredentials]
+  )
+  const showAcceptAllButton = acceptableCredentials.length > 0
+  const acceptButtonText =
+    acceptableCredentials.length === 1 ? 'Accept' : 'Accept All'
+
+  const handleGoBack = React.useCallback(async () => {
+    await dispatch(clearFoyer())
+    navigationRef.navigate('HomeNavigation', {
+      screen: 'SettingsNavigation',
+      params: { screen: 'DeveloperScreen' }
+    })
+  }, [dispatch])
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const recheckDuplicates = async () => {
+        const existingCredentialRecords =
+          await CredentialRecord.getAllCredentialRecords()
+        const existingHashesInProfile = existingCredentialRecords
+          .filter(({ profileRecordId: pid }) => pid.equals(profileRecordId))
+          .map(({ credential }) => credentialContentHash(credential))
+
+        displayedCredentials.forEach((pendingCredential) => {
+          const isDuplicate = existingHashesInProfile.includes(
+            credentialContentHash(pendingCredential.credential)
+          )
+          if (
+            isDuplicate &&
+            pendingCredential.status === ApprovalStatus.Pending
+          ) {
+            dispatch(
+              setCredentialApproval({
+                ...pendingCredential,
+                status: ApprovalStatus.PendingDuplicate
+              })
+            )
+          } else if (
+            !isDuplicate &&
+            pendingCredential.status === ApprovalStatus.PendingDuplicate
+          ) {
+            dispatch(
+              setCredentialApproval({
+                ...pendingCredential,
+                status: ApprovalStatus.Pending
+              })
+            )
+          }
+        })
+      }
+      recheckDuplicates()
+    }, [displayedCredentials, profileRecordId, dispatch])
+  )
 
   async function goToHome() {
     await dispatch(clearFoyer())
@@ -62,7 +123,10 @@ export default function ApproveCredentialsScreen({
   async function acceptAllCredentials() {
     try {
       await dispatch(
-        acceptPendingCredentials({ pendingCredentials, profileRecordId })
+        acceptPendingCredentials({
+          pendingCredentials: acceptableCredentials,
+          profileRecordId
+        })
       )
       goToHome()
     } catch (err) {
@@ -101,6 +165,7 @@ export default function ApproveCredentialsScreen({
           <ApprovalControls
             pendingCredential={pendingCredential}
             profileRecordId={profileRecordId}
+            profileName={rawProfileRecord.profileName}
           />
         }
         chevron
@@ -110,7 +175,11 @@ export default function ApproveCredentialsScreen({
 
   return (
     <>
-      <NavHeader title="Available Credentials" rightComponent={<Done />} />
+      <NavHeader
+        title="Available Credentials"
+        goBack={canGoBack ? handleGoBack : undefined}
+        rightComponent={<Done />}
+      />
       <CredentialRequestHandler
         credentialRequestParams={credentialRequestParams}
         rawProfileRecord={rawProfileRecord}
@@ -142,7 +211,7 @@ export default function ApproveCredentialsScreen({
               styles.acceptAllButton
             ]}
             titleStyle={[mixins.buttonTitle, styles.acceptAllButtonTitle]}
-            title="Accept All"
+            title={acceptButtonText}
             onPress={acceptAllCredentials}
           />
         </SafeAreaView>
