@@ -168,6 +168,21 @@ A custom display can be created for different credentials, to do so:
   component and title, so it's important that the type check is specific and
   doesn't match any other types.
 
+## UI Testing
+
+This project uses [Maestro](https://maestro.mobile.dev) for automated UI testing. See [MAESTRO.md](MAESTRO.md) for setup and usage instructions.
+
+### Quick Start
+
+# Install Maestro
+curl -Ls "https://get.maestro.mobile.dev" | bash
+
+# Run onboarding test on iOS
+npm run test:ui:ios
+
+# Run onboarding test on Android
+npm run test:ui:android
+
 ## Accessibility
 
 The Learner Credential Wallet is designed to be accessible to all users, including those with disabilities. We follow WCAG 2.1 AA guidelines and have conducted comprehensive accessibility testing.

@@ -86,3 +86,7 @@ ios_old
 ios
 *.xcarchive
 android
+
+# Maestro
+.maestro/reports/
+.maestro/.maestro/
