@@ -58,10 +58,6 @@ maestro studio
 For debugging, add `--debug` flag:
 maestro test .maestro/onboarding.yaml --debug
 
-## CI/CD Integration
-
-Tests run automatically on pull requests via GitHub Actions (`.github/workflows/maestro-tests.yml`).
-
 ## Troubleshooting
 
 **Test fails to find app:**
