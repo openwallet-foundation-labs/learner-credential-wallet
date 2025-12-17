@@ -82,6 +82,7 @@ export default function PasswordForm({
         inputRef={passwordRef as any}
         tvParallaxProperties={undefined}
         onTextInput={() => {}}
+        testID="password-input"
       />
       <PasswordInput
         style={textInputStyle}
@@ -91,6 +92,7 @@ export default function PasswordForm({
         onBlur={_onInputBlur}
         tvParallaxProperties={undefined}
         onTextInput={() => {}}
+        testID="confirm-password-input"
       />
       <Text style={styles.helperText}>
         You will need to store this password somewhere safe - the LCW does not

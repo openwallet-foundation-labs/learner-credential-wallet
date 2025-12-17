@@ -177,6 +177,7 @@ function PasswordStep({ navigation }: PasswordStepProps) {
           disabled={!password}
           disabledStyle={mixins.buttonDisabled}
           disabledTitleStyle={mixins.buttonTitle}
+          testID="next-button"
           iconRight
           icon={
             <MaterialIcons

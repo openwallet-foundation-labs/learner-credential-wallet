@@ -21,6 +21,7 @@ export type PasswordInputProps = TextInputProps & {
   onChangeText: (value: string) => void
   highlightError?: boolean
   inputRef?: RefObject<RNTextInput>
+  testID?: string
 }
 
 function PasswordInput(
@@ -30,6 +31,7 @@ function PasswordInput(
     onChangeText,
     inputRef,
     highlightError,
+    testID,
     ...textInputProps
   }: PasswordInputProps,
   ref: Ref<View>
@@ -47,6 +49,7 @@ function PasswordInput(
       style={styles.container}
       label={`${label}, Input${value && `, containing ${value.length} characters`}`}
       onPress={() => _inputRef.current?.focus()}
+      testID={testID}
     >
       <TextInput
         ref={_inputRef}
