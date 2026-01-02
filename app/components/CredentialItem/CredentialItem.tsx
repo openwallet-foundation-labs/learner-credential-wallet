@@ -210,6 +210,7 @@ function CredentialItem({
         activeOpacity={1}
         accessible={!hasBottomElement}
         importantForAccessibility={hasBottomElement ? 'no' : 'yes'}
+        testID="credential-card-item"
         {...accessibilityProps}
       >
         <View style={styles.listItemContentContainer}>
