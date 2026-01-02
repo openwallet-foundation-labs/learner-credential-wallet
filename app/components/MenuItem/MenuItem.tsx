@@ -9,7 +9,8 @@ import { useDynamicStyles } from '../../hooks'
 export default function MenuItem({
   icon,
   title,
-  onPress
+  onPress,
+  testID
 }: MenuItemProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
@@ -18,6 +19,7 @@ export default function MenuItem({
       style={styles.menuItemContainer}
       underlayColor={theme.color.backgroundSecondary}
       onPress={onPress}
+      testID={testID}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {icon && (

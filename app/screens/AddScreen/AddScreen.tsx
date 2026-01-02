@@ -197,6 +197,7 @@ export default function AddScreen(): React.ReactElement {
             titleStyle={mixins.buttonIconTitle}
             iconRight
             onPress={addFromFile}
+            testID="add-from-file-button"
             icon={
               <MaterialCommunityIcons
                 name="file-upload"
