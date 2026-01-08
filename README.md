@@ -57,13 +57,13 @@ universities to [pilot test](https://lcw.app/pilot.html) the wallet.
 
 Prerequisites:
 
-- [Java](https://www.java.com/en/download/manual.jsp)
+- [Java](https://www.java.com/en/download/manual.jsp) - **Java 17 or higher**
 - [nvm](https://collabnix.com/how-to-install-and-configure-nvm-on-mac-os/) or [asdf](https://asdf-vm.com/guide/getting-started.html#getting-started)
 - [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable) or [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-- [Node.js](https://nodejs.org/en/)
+- [Node.js](https://nodejs.org/en/) - **Version 20.x**
 - [Cocoapods](https://cocoapods.org/) (use brew, not gem, to install)
-- [XCode](https://developer.apple.com/xcode/)
-- [Android Studio](https://developer.android.com/studio)
+- [XCode](https://developer.apple.com/xcode/) - **Version 16 
+- [Android Studio](https://developer.android.com/studio) - **Ladybug 
 
 See [Installing on Linux](install-linux.md) on setting up the project on Linux.
 
@@ -170,18 +170,41 @@ A custom display can be created for different credentials, to do so:
 
 ## UI Testing
 
-This project uses [Maestro](https://maestro.mobile.dev) for automated UI testing. See [MAESTRO.md](MAESTRO.md) for setup and usage instructions.
+This project uses [Maestro](https://maestro.mobile.dev) for automated UI testing.
 
-### Quick Start
+### Installation
 
 # Install Maestro
 curl -Ls "https://get.maestro.mobile.dev" | bash
+
+# Add to PATH (add to ~/.zshrc or ~/.bash_profile)
+export PATH="$PATH:$HOME/.maestro/bin"
+
+### Running Tests
 
 # Run onboarding test on iOS
 npm run test:ui:ios
 
 # Run onboarding test on Android
 npm run test:ui:android
+
+# Run with manual platform selection
+npm run test:ui
+
+### Test Files
+
+- **onboarding.yaml** - Wallet setup and onboarding flow
+- **credential-management.yaml** - End-to-end credential management testing
+- **config.yaml** - Platform-specific app identifiers
+
+### Development
+
+Use Maestro Studio for interactive test development:
+
+maestro studio
+
+
+For more details, see [.maestro/QUICK_START.md](.maestro/QUICK_START.md).
 
 ## Accessibility
 
