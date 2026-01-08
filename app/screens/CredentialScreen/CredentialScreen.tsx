@@ -136,7 +136,12 @@ export default function CredentialScreen({
       <View style={styles.outerContainer}>
         {menuIsOpen ? (
           <View style={styles.menuContainer} accessibilityViewIsModal={true}>
-            <MenuItem icon="share" title="Share" onPress={onPressShare} />
+            <MenuItem
+              icon="share"
+              title="Share"
+              onPress={onPressShare}
+              testID="credential-share-button"
+            />
             <MenuItem
               icon="info-outline"
               title="View Source"
