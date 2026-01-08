@@ -106,6 +106,7 @@ export default function CredentialScreen({
         accessibilityRole="button"
         accessibilityState={{ expanded: menuIsOpen }}
         onPress={() => setMenuIsOpen(!menuIsOpen)}
+        testID="credential-menu-button"
       >
         <MaterialIcons name="more-vert" style={mixins.headerIcon} />
       </AccessibleView>
@@ -116,6 +117,7 @@ export default function CredentialScreen({
     <>
       <NavHeader
         title="Credential Preview"
+        testID="Credential Preview"
         goBack={() => navigation.goBack()}
         rightComponent={<HeaderRightComponent />}
       />
@@ -134,13 +136,23 @@ export default function CredentialScreen({
       <View style={styles.outerContainer}>
         {menuIsOpen ? (
           <View style={styles.menuContainer} accessibilityViewIsModal={true}>
-            <MenuItem icon="share" title="Share" onPress={onPressShare} />
+            <MenuItem
+              icon="share"
+              title="Share"
+              onPress={onPressShare}
+              testID="credential-share-button"
+            />
             <MenuItem
               icon="info-outline"
               title="View Source"
               onPress={onPressDebug}
             />
-            <MenuItem icon="delete" title="Delete" onPress={onPressDelete} />
+            <MenuItem
+              icon="delete"
+              title="Delete"
+              onPress={onPressDelete}
+              testID="credential-delete-button"
+            />
           </View>
         ) : null}
         <ScrollView

@@ -33,22 +33,39 @@ npm run test:ui:android  # Run on Android
 npm run test:ui          # Run with manual platform selection (uses config.yaml)
 
 ### Direct Maestro commands
-maestro test .maestro/onboarding.yaml --env APP_ID=edu.mit.eduwallet  # iOS
-maestro test .maestro/onboarding.yaml --env APP_ID=app.lcw            # Android
-maestro test .maestro/onboarding.yaml --config .maestro/config.yaml   # Using config
+maestro test .maestro/credential-management.yaml --env APP_ID=edu.mit.eduwallet  # iOS
+maestro test .maestro/credential-management.yaml --env APP_ID=app.lcw            # Android
+maestro test .maestro/credential-management.yaml --config .maestro/config.yaml   # Using config
 
 ## Test Files
 
 - **onboarding.yaml** - Automated test for wallet onboarding flow
+- **credential-management.yaml** - End-to-end onboarding + add credential flow
 - **config.yaml** - Platform-specific app identifiers (iOS: `edu.mit.eduwallet`, Android: `app.lcw`)
 
-## What the Test Does
+## What the Tests Do
+
+**onboarding.yaml**
 
 1. Launches LCW app
-2. Taps "Quick Setup" button
-3. Verifies "Creating Wallet" screen appears
+2. Taps \"Quick Setup\" button
+3. Verifies \"Creating Wallet\" screen appears
 4. Verifies loading message is visible
-5. Taps "Take Me To My Wallet" to complete onboarding
+5. Taps \"Take Me To My Wallet\" to complete onboarding
+
+**credential-management.yaml**
+
+1. Runs the full onboarding flow
+2. Adds multiple test credentials (verified, warning, and not verified states)
+3. Tests credential deletion functionality
+4. Tests credential sharing features:
+   - Public link creation
+   - Copy link functionality
+   - LinkedIn integration
+   - Send credential (JSON/QR code)
+   - Unshare functionality
+5. Tests navigation between different sharing methods
+6. Verifies wallet state management throughout the flow
 
 ## Test Development
 
@@ -75,5 +92,5 @@ maestro test .maestro/onboarding.yaml --debug
 
 ## More Information
 
-- Full documentation: [MAESTRO.md](../MAESTRO.md)
 - Main project README: [README.md](../README.md) (see UI Testing section)
+- Maestro documentation: [maestro.mobile.dev](https://maestro.mobile.dev)

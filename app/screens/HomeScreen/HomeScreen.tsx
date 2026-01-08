@@ -116,6 +116,8 @@ export default function HomeScreen({
         titleStyle={mixins.buttonIconTitle}
         onPress={goToCredentialAdd}
         iconRight
+        testID="Add Credential"
+        accessibilityLabel="Add Credential"
         icon={
           <MaterialIcons
             name="add-circle"
@@ -154,7 +156,7 @@ export default function HomeScreen({
 
   return (
     <>
-      <NavHeader title="Home" />
+      <NavHeader title="Home" testID="Home Screen" />
       {rawCredentialRecords.length === 0 ? (
         <View style={styles.container}>
           <Text style={styles.header}>Looks like your wallet is empty.</Text>

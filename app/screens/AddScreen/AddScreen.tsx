@@ -197,6 +197,7 @@ export default function AddScreen(): React.ReactElement {
             titleStyle={mixins.buttonIconTitle}
             iconRight
             onPress={addFromFile}
+            testID="add-from-file-button"
             icon={
               <MaterialCommunityIcons
                 name="file-upload"
@@ -227,6 +228,7 @@ export default function AddScreen(): React.ReactElement {
                 keyboardAppearance={theme.keyboardAppearance}
                 onTextInput={() => {}}
                 tvParallaxProperties={undefined}
+                testID="paste-json-input"
               />
               <Button
                 title="Add"
@@ -244,6 +246,7 @@ export default function AddScreen(): React.ReactElement {
                 disabled={!inputIsValid}
                 disabledStyle={styles.actionButtonInactive}
                 disabledTitleStyle={styles.actionButtonInactiveTitle}
+                testID="add-credential-button"
               />
             </View>
           </View>
