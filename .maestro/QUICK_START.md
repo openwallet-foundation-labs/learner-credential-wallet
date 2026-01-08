@@ -56,10 +56,16 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 **credential-management.yaml**
 
 1. Runs the full onboarding flow
-2. Navigates to the Add Credential screen
-3. Pastes a sample verifiable credential JSON into the \"Paste JSON or URL\" field
-4. Submits the credential and navigates through the approval screens
-5. Returns to the Home screen with the wallet populated
+2. Adds multiple test credentials (verified, warning, and not verified states)
+3. Tests credential deletion functionality
+4. Tests credential sharing features:
+   - Public link creation
+   - Copy link functionality
+   - LinkedIn integration
+   - Send credential (JSON/QR code)
+   - Unshare functionality
+5. Tests navigation between different sharing methods
+6. Verifies wallet state management throughout the flow
 
 ## Test Development
 
@@ -86,5 +92,5 @@ maestro test .maestro/onboarding.yaml --debug
 
 ## More Information
 
-- Full documentation: [MAESTRO.md](../MAESTRO.md)
 - Main project README: [README.md](../README.md) (see UI Testing section)
+- Maestro documentation: [maestro.mobile.dev](https://maestro.mobile.dev)
