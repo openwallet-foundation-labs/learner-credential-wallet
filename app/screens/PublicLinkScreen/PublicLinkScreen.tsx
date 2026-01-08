@@ -656,6 +656,7 @@ export default function PublicLinkScreen({
                     }}
                     titleStyle={mixins.buttonTitle}
                     onPress={copyToClipboard}
+                    testID="copy-link-button"
                   />
                 </View>
 
@@ -669,6 +670,7 @@ export default function PublicLinkScreen({
                     containerStyle={{ ...mixins.buttonContainer }}
                     titleStyle={mixins.buttonIconTitle}
                     onPress={unshareLink}
+                    testID="unshare-button"
                     icon={
                       <MaterialIcons
                         style={styles.actionIcon}
@@ -688,6 +690,7 @@ export default function PublicLinkScreen({
                     containerStyle={mixins.buttonContainer}
                     titleStyle={mixins.buttonIconTitle}
                     onPress={openLink}
+                    testID="view-link-button"
                     icon={
                       <MaterialIcons
                         style={styles.actionIcon}
@@ -710,6 +713,7 @@ export default function PublicLinkScreen({
                 titleStyle={mixins.buttonTitle}
                 iconRight
                 onPress={confirmCreatePublicLink}
+                testID="create-public-link-button"
                 icon={
                   <MaterialIcons
                     name="link"
@@ -746,6 +750,7 @@ export default function PublicLinkScreen({
                 titleStyle={mixins.buttonIconTitle}
                 iconRight
                 onPress={shareToLinkedIn}
+                testID="linkedin-button"
                 icon={
                   <Ionicons
                     name="logo-linkedin"
@@ -764,6 +769,7 @@ export default function PublicLinkScreen({
                     titleStyle={mixins.buttonIconTitle}
                     iconRight
                     onPress={onSendCredential}
+                    testID="send-credential-button"
                     icon={
                       <MaterialIcons
                         name="input"

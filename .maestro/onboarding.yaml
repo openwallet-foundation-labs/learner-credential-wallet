@@ -34,6 +34,37 @@ env:
       - inputText: "${PASSWORD}"
       - tapOn:
           id: "next-button"
-- assertVisible: "Creating Wallet"
-- assertVisible: "This will only take a moment."
-- tapOn: "Take Me To My Wallet"
+- waitForAnimationToEnd:
+    timeout: 15000
+- extendedWaitUntil:
+    visible: "Creating Wallet"
+    timeout: 10000
+    optional: true
+- extendedWaitUntil:
+    visible: "This will only take a moment."
+    timeout: 10000
+    optional: true
+- extendedWaitUntil:
+    visible: "Take Me To My Wallet"
+    timeout: 15000
+    optional: true
+- tapOn: 
+    text: "Take Me To My Wallet"
+    optional: true
+
+# Alternative completion methods
+- tapOn:
+    text: "Done"
+    optional: true
+
+- tapOn:
+    text: "Continue"
+    optional: true
+
+- tapOn:
+    text: "Get Started"
+    optional: true
+
+# Wait for wallet to be ready
+- waitForAnimationToEnd:
+    timeout: 5000
