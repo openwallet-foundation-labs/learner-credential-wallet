@@ -159,6 +159,7 @@ export default function ShareHomeScreen({
           containerStyle={mixins.buttonIconContainer}
           titleStyle={mixins.buttonIconTitle}
           onPress={goToLinkSelect}
+          testID="share-create-link-button"
           iconRight
           icon={
             <MaterialIcons
@@ -177,6 +178,7 @@ export default function ShareHomeScreen({
           containerStyle={[mixins.buttonIconContainer, styles.sendButton]}
           titleStyle={mixins.buttonIconTitle}
           onPress={goToSendSelect}
+          testID="share-send-credential-button"
           iconRight
           icon={
             <MaterialIcons
