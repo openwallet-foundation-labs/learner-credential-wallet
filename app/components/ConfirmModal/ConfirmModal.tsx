@@ -26,6 +26,7 @@ export default function ConfirmModal({
   onConfirm = () => {},
   onCancel = () => {},
   title,
+  testID,
   confirmButtonDisabled,
   confirmButton = true,
   cancelButton = true,
@@ -112,6 +113,7 @@ export default function ConfirmModal({
                 containerStyle={mixins.buttonContainer}
                 titleStyle={mixins.buttonTitle}
                 title={confirmText}
+                testID={testID}
                 disabled={confirmButtonDisabled}
                 disabledStyle={mixins.buttonDisabled}
                 disabledTitleStyle={mixins.buttonTitle}

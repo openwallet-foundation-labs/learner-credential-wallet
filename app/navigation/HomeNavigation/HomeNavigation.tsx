@@ -63,7 +63,8 @@ export default function HomeNavigation(): React.ReactElement {
         options={{
           title: 'Settings',
           tabBarIcon: SettingsTabIcon,
-          tabBarAccessibilityLabel: `Settings, (4 of 4)${labelSuffix}`
+          tabBarAccessibilityLabel: `Settings, (4 of 4)${labelSuffix}`,
+          tabBarTestID: 'settings-tab'
         }}
       />
     </Tab.Navigator>
@@ -87,5 +88,12 @@ const AddTabIcon = ({ color }: TabIconProps) => {
 
 const SettingsTabIcon = ({ color }: TabIconProps) => {
   const { theme } = useDynamicStyles()
-  return <MaterialIcons name="settings" color={color} size={theme.iconSize} />
+  return (
+    <MaterialIcons
+      name="settings"
+      color={color}
+      size={theme.iconSize}
+      testID="settings-tab-icon"
+    />
+  )
 }

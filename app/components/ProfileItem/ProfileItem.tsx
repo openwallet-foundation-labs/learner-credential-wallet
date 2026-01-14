@@ -82,15 +82,18 @@ export default function ProfileItem({
           <MenuItem
             title="Rename"
             onPress={() => setActiveModal(ActiveModal.Rename)}
+            testID="profile-rename-button"
           />
           <MenuItem
             title="Backup"
             onPress={() => setActiveModal(ActiveModal.Backup)}
+            testID="profile-backup-button"
           />
           <MenuItem title="View Source" onPress={goToSource} />
           <MenuItem
             title="Delete"
             onPress={() => setActiveModal(ActiveModal.Delete)}
+            testID="profile-delete-button"
           />
         </MoreMenuButton>
       </View>
@@ -135,6 +138,7 @@ function RenameModal({
           setNewName(text)
           setErrorMessage('')
         }}
+        testID="paste-profile-rename-input"
         style={styles.input}
         outlineColor={theme.color.textPrimary}
         selectionColor={theme.color.textPrimary}
@@ -236,6 +240,7 @@ function DeleteModal({
       title="Delete Profile"
       cancelText="Cancel"
       confirmText="Delete Profile"
+      testID="confirm-delete-button"
     >
       <Text style={mixins.modalBodyText}>
         Are you sure you want to delete {rawProfileRecord.profileName} and its{' '}

@@ -99,6 +99,7 @@ export default function MoreMenuButton({
           accessibilityState={{ expanded: menuIsOpen }}
           onPress={onPressButton}
           activeOpacity={0.7}
+          testID="more-menu-button"
         >
           <MaterialIcons name="more-vert" style={mixins.headerIcon} />
         </TouchableOpacity>
@@ -110,11 +111,15 @@ export default function MoreMenuButton({
           transparent={true}
           animationType="none"
           onRequestClose={closeMenu}
+          accessibilityViewIsModal={false}
+          presentationStyle="overFullScreen"
         >
           <TouchableOpacity
             style={styles.modalBackdrop}
             activeOpacity={1}
             onPress={closeMenu}
+            accessible={false}
+            importantForAccessibility="no"
           >
             <View
               style={[
