@@ -20,9 +20,9 @@
     "fix-deps": "npx expo install --check",
     "prebuild:ios": "EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p ios",
     "prebuild:android": "EXPO_NO_TELEMETRY=1 EXPO_NO_GIT_STATUS=1 npx expo prebuild --clean -p android",
-    "test:ui:ios":"maestro test .maestro/credential-management.yaml --env APP_ID=edu.mit.eduwallet",
-    "test:ui:android": "maestro test .maestro/credential-management.yaml --env APP_ID=app.lcw",
-    "test:ui": "maestro test .maestro/credential-management.yaml --config .maestro/config.yaml"
+    "test:ui:ios":"maestro test .maestro/profile-management.yaml --env APP_ID=edu.mit.eduwallet",
+    "test:ui:android": "maestro test .maestro/profile-management.yaml --env APP_ID=app.lcw",
+    "test:ui": "maestro test .maestro/profile-management.yaml --config .maestro/config.yaml"
   },
   "expo": {
     "autolinking": {
