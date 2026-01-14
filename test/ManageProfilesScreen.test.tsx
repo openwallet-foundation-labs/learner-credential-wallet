@@ -207,7 +207,7 @@ describe('ManageProfilesScreen', () => {
     const { getByTestId } = render(
       <ManageProfilesScreen navigation={mockNavigation} route={mockRoute} />
     )
-    const addExistingButton = getByTestId('Add Existing Profile')
+    const addExistingButton = getByTestId('add-existing-profile-button')
     fireEvent.press(addExistingButton)
     expect(mockNavigation.navigate).toHaveBeenCalledWith(
       'AddExistingProfileScreen'
@@ -220,13 +220,13 @@ describe('ManageProfilesScreen', () => {
     )
 
     // Open modal
-    const createButton = getByTestId('Create New Profile')
+    const createButton = getByTestId('create-new-profile-button')
     await act(async () => {
       fireEvent.press(createButton)
     })
 
     // Enter profile name
-    const input = getByTestId('Profile Name')
+    const input = getByTestId('paste-profile-name-input')
     fireEvent.changeText(input, 'New Test Profile')
 
     // Confirm (wrap in act for state updates)
@@ -247,7 +247,7 @@ describe('ManageProfilesScreen', () => {
     )
 
     // Open modal
-    const createButton = getByTestId('Create New Profile')
+    const createButton = getByTestId('create-new-profile-button')
     await act(async () => {
       fireEvent.press(createButton)
     })
@@ -266,7 +266,7 @@ describe('ManageProfilesScreen', () => {
       <ManageProfilesScreen navigation={mockNavigation} route={mockRoute} />
     )
 
-    const createButton = getByTestId('Create New Profile')
+    const createButton = getByTestId('create-new-profile-button')
     await act(async () => {
       fireEvent.press(createButton)
     })
@@ -289,7 +289,7 @@ describe('ManageProfilesScreen', () => {
       <ManageProfilesScreen navigation={mockNavigation} route={mockRoute} />
     )
 
-    const createButton = getByTestId('Create New Profile')
+    const createButton = getByTestId('create-new-profile-button')
     await act(async () => {
       fireEvent.press(createButton)
     })

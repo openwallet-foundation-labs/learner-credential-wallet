@@ -41,6 +41,7 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 
 - **onboarding.yaml** - Automated test for wallet onboarding flow
 - **credential-management.yaml** - End-to-end onboarding + add credential flow
+- **profile-management.yaml** - Profile creation, management, and deletion flow
 - **config.yaml** - Platform-specific app identifiers (iOS: `edu.mit.eduwallet`, Android: `app.lcw`)
 
 ## What the Tests Do
@@ -56,10 +57,27 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 **credential-management.yaml**
 
 1. Runs the full onboarding flow
-2. Navigates to the Add Credential screen
-3. Pastes a sample verifiable credential JSON into the \"Paste JSON or URL\" field
-4. Submits the credential and navigates through the approval screens
-5. Returns to the Home screen with the wallet populated
+2. Adds multiple test credentials (verified, warning, and not verified states)
+3. Tests credential deletion functionality
+4. Tests credential sharing features:
+   - Public link creation
+   - Copy link functionality
+   - LinkedIn integration
+   - Send credential (JSON/QR code)
+   - Unshare functionality
+5. Tests navigation between different sharing methods
+6. Verifies wallet state management throughout the flow
+
+**profile-management.yaml**
+
+1. Runs the full credential management flow to set up test data
+2. Navigates to Settings > Manage Profiles
+3. Tests profile creation with custom name
+4. Tests profile renaming functionality
+5. Tests profile backup feature
+6. Tests adding existing profiles
+7. Tests profile deletion with confirmation
+8. Verifies proper navigation and state management throughout
 
 ## Test Development
 
@@ -86,5 +104,5 @@ maestro test .maestro/onboarding.yaml --debug
 
 ## More Information
 
-- Full documentation: [MAESTRO.md](../MAESTRO.md)
 - Main project README: [README.md](../README.md) (see UI Testing section)
+- Maestro documentation: [maestro.mobile.dev](https://maestro.mobile.dev)

@@ -14,6 +14,7 @@ export type ConfirmModalDisplayProps = {
 export type ConfirmModalProps = React.PropsWithChildren<
   ConfirmModalDisplayProps & {
     open?: boolean
+    testID?: string
     onRequestClose?: () => void
     onConfirm?: () => void
     onCancel?: () => void
