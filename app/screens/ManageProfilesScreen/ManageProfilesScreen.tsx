@@ -56,6 +56,7 @@ export default function ManageProfilesScreen({
         titleStyle={mixins.buttonIconTitle}
         iconRight
         onPress={() => setModalIsOpen(true)}
+        testID="create-new-profile-button"
         icon={
           <MaterialIcons
             name="add-circle"
@@ -71,6 +72,7 @@ export default function ManageProfilesScreen({
         titleStyle={mixins.buttonIconTitle}
         iconRight
         onPress={onPressAddExisting}
+        testID="add-existing-profile-button"
         icon={
           <MaterialIcons
             name="add-circle"
@@ -119,6 +121,7 @@ export default function ManageProfilesScreen({
               primary: theme.color.brightAccent
             }
           }}
+          testID="paste-profile-name-input"
           label="Profile Name"
           mode="outlined"
           keyboardAppearance={theme.keyboardAppearance}

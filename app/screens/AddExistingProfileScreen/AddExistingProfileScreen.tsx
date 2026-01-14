@@ -97,6 +97,7 @@ export default function AddExistingProfileScreen({
           titleStyle={mixins.buttonIconTitle}
           iconRight
           onPress={onPressRestoreFromFile}
+          testID="restore from a file-button"
           icon={
             <MaterialCommunityIcons
               name="file-upload"

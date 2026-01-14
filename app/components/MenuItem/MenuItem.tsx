@@ -20,6 +20,9 @@ export default function MenuItem({
       underlayColor={theme.color.backgroundSecondary}
       onPress={onPress}
       testID={testID}
+      accessibilityLabel={title}
+      accessibilityRole="button"
+      accessible={true}
     >
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {icon && (
