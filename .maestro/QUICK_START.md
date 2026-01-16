@@ -42,6 +42,7 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 - **onboarding.yaml** - Automated test for wallet onboarding flow
 - **credential-management.yaml** - End-to-end onboarding + add credential flow
 - **profile-management.yaml** - Profile creation, management, and deletion flow
+ **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
 - **config.yaml** - Platform-specific app identifiers (iOS: `edu.mit.eduwallet`, Android: `app.lcw`)
 
 ## What the Tests Do
@@ -78,6 +79,15 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 6. Tests adding existing profiles
 7. Tests profile deletion with confirmation
 8. Verifies proper navigation and state management throughout
+
+**lock-unlock-wallet.yaml**
+
+1. Navigates to Settings tab
+2. Taps "Sign out" to lock the wallet
+3. Verifies login screen appears
+4. Tests incorrect password entry and error message display
+5. Clears incorrect password and enters correct password
+6. Unlocks wallet and verifies return to home screen
 
 ## Test Development
 
