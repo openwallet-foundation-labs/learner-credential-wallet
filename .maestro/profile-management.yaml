@@ -1,0 +1,142 @@
+appId: ${APP_ID}
+env:
+  PASSWORD: "TestPassword123!"
+  PROFILE_NAME: "Test Profile"
+  RENAMED_PROFILE: " Renamed Profile"
+---
+
+# Setup: Create fresh wallet with credentials
+- runFlow:
+    file: credential-management.yaml
+
+- tapOn:
+    id: "settings-tab" 
+
+- waitForAnimationToEnd
+
+# Navigate to Manage Profiles
+- tapOn:
+    id: "manage-profiles-button"
+
+- waitForAnimationToEnd:
+    timeout: 15000
+
+# Create New Profile
+- tapOn:
+    id: "create-new-profile-button"
+
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible: "New Profile"
+    timeout: 5000
+    optional: true
+
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "paste-profile-name-input"
+
+- inputText: "${PROFILE_NAME}"
+
+- tapOn:
+    text: "Create Profile"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Profile Rename
+- tapOn:
+    id: "more-menu-button"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "profile-rename-button"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- tapOn:
+    id: "paste-profile-rename-input"
+
+- inputText: "${RENAMED_PROFILE}"
+
+- tapOn:
+    text: "Save"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Test Profile Backup
+- tapOn:
+    id: "more-menu-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "Backup"
+
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible: "Backup Profile"
+    timeout: 5000
+    optional: true
+
+- tapOn:
+    text: "Backup Profile"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "Cancel"
+
+- waitForAnimationToEnd:
+    timeout: 15000
+
+# Test Add Existing Profile
+- tapOn:
+    id: "add-existing-profile-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    id: "restore from a file-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "Cancel"
+
+- waitForAnimationToEnd:
+    timeout: 15000
+
+- tapOn:
+    point: "10%,10%"
+
+- tapOn:
+    point: "10%,10%"
+
+# Test Profile Deletion
+- tapOn:
+    id: "more-menu-button"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+- extendedWaitUntil:
+    visible: "Delete"
+    timeout: 10000
+    optional: true
+
+- tapOn:
+    id: "profile-delete-button"
+
+- tapOn:
+    text: "Delete Profile"
+
+- tapOn:
+    id: "confirm-delete-button"
+

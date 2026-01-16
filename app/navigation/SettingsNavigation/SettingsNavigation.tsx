@@ -57,7 +57,8 @@ function SettingsItem({
   title,
   onPress,
   rightComponent,
-  disabled
+  disabled,
+  testID
 }: SettingsItemProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
 
@@ -83,6 +84,9 @@ function SettingsItem({
       ]}
       onPress={onPress}
       disabled={disabled}
+      testID={testID}
+      accessible={true}
+      accessibilityLabel={title}
     >
       <View style={{ flex: 1 }}>
         <Text style={styles.listItemTitle}>{title}</Text>
@@ -159,6 +163,7 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
           key="profiles"
           title="Manage profiles"
           onPress={() => navigation.navigate('ManageProfilesScreen')}
+          testID="manage-profiles-button"
         />
         <SettingsItem
           key="register"
@@ -186,7 +191,12 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
           onPress={() => navigation.navigate('About')}
         />
         {FEATURE_FLAGS.passwordProtect && (
-          <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />
+          <SettingsItem
+            key="signout"
+            title="Sign out"
+            onPress={lockWallet}
+            testID="signout-button"
+          />
         )}
       </ScrollView>
       <ConfirmModal

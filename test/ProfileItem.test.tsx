@@ -267,7 +267,7 @@ describe('ProfileItem Component', () => {
     fireEvent.press(getByTestId('menu-Rename'))
 
     // Change text and confirm
-    const input = getByTestId('Profile Name')
+    const input = getByTestId('paste-profile-rename-input')
     fireEvent.changeText(input, 'Renamed')
 
     await act(async () => {
