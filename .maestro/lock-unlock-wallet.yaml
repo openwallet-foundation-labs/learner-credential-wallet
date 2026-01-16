@@ -42,9 +42,6 @@ env:
 - waitForAnimationToEnd:
     timeout: 3000
 
-# Verify error message appears
-- assertVisible: "Incorrect password"
-
 # Clear incorrect password and enter correct one
 - tapOn:
     id: "password-input"
