@@ -1,0 +1,68 @@
+appId: ${APP_ID}
+env:
+  PASSWORD: "TestPassword123!"
+---
+
+# Setup: Run complete flow
+- runFlow:
+    file: profile-management.yaml
+
+# Navigate to Settings tab
+- tapOn:
+    id: "settings-tab"
+
+- waitForAnimationToEnd
+
+# Verify Settings screen loaded
+- extendedWaitUntil:
+    visible: "Sign out"
+    timeout: 5000
+
+# Lock the wallet
+- tapOn:
+    id: "signout-button"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify Login screen appears
+- extendedWaitUntil:
+    visible: "Unlock Wallet"
+    timeout: 5000
+
+# Test incorrect password
+- tapOn:
+    id: "password-input"
+
+- inputText: "WrongPassword123!"
+
+- tapOn:
+    text: "Unlock Wallet"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Verify error message appears
+- assertVisible: "Incorrect password"
+
+# Clear incorrect password and enter correct one
+- tapOn:
+    id: "password-input"
+
+- eraseText
+
+- inputText: "${PASSWORD}"
+
+- waitForAnimationToEnd
+
+# Unlock wallet with correct password
+- tapOn:
+    text: "Unlock Wallet"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Verify wallet unlocked and returned to home screen
+- extendedWaitUntil:
+    visible: "Home Screen"
+    timeout: 10000
