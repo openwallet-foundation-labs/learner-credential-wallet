@@ -27,8 +27,8 @@ async function getModels(): Promise<Realm.ObjectClass[]> {
 
 const PRIVILEGED_KEY_KID = 'privileged_key'
 const PRIVILEGED_KEY_STATUS_ID = 'privileged_key_status'
-const UNLOCKED = 'locked'
-const LOCKED = 'unlocked'
+const UNLOCKED = 'unlocked'
+const LOCKED = 'locked'
 
 const BIOMETRICS_STATUS = 'biometrics_status'
 const ENABLED = 'enabled'
