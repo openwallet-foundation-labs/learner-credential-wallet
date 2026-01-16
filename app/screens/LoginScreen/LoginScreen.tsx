@@ -46,7 +46,7 @@ export default function LoginScreen(): React.ReactElement {
 
   async function _unlockWallet() {
     try {
-      await dispatch(unlock(password))
+      await dispatch(unlock(password)).unwrap()
       AccessibilityInfo.announceForAccessibility('Unlocked Wallet')
     } catch (err) {
       setErrorText('Incorrect password')
@@ -55,7 +55,7 @@ export default function LoginScreen(): React.ReactElement {
 
   async function _unlockWalletWithBiometrics() {
     try {
-      await dispatch(unlockWithBiometrics())
+      await dispatch(unlockWithBiometrics()).unwrap()
       AccessibilityInfo.announceForAccessibility('Unlocked Wallet')
     } catch (err) {
       setErrorText('Unable to verify identify, please enter password')
