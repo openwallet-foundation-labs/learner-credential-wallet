@@ -170,7 +170,10 @@ export default function VerificationStatusCard({
       <Text style={styles.subTitle}>This credential:</Text>
       <StatusRow {...getStatusProps(LogId.SupportedFormat, hasKnownType)} />
       <StatusRow
-        {...getStatusProps(LogId.ValidSignature, details[LogId.ValidSignature])}
+        {...getStatusProps(
+          LogId.ValidSignature,
+          details[LogId.ValidSignature] ?? false
+        )}
       />
       <StatusRow
         {...getStatusProps(

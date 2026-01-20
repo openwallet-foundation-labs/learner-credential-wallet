@@ -26,25 +26,30 @@ export function useVerifyCredential(
   }
 
   const verify = useCallback(async () => {
-    const verificationResult = await verificationResultFor({
-      rawCredentialRecord,
-      forceFresh,
-      registries
-    })
-    setResult(verificationResult)
+    try {
+      const verificationResult = await verificationResultFor({
+        rawCredentialRecord,
+        forceFresh,
+        registries
+      })
+      setResult(verificationResult)
 
-    if (verificationResult.error) {
-      const { message } = verificationResult.error
-      const credentialErrors = Object.values(CredentialError) as string[]
-      const errorMessage = credentialErrors.includes(message)
-        ? message
-        : DEFAULT_ERROR_MESSAGE
+      if (verificationResult.error) {
+        const { message } = verificationResult.error
+        const credentialErrors = Object.values(CredentialError) as string[]
+        const errorMessage = credentialErrors.includes(message)
+          ? message
+          : DEFAULT_ERROR_MESSAGE
 
-      setError(errorMessage)
+        setError(errorMessage)
+      }
+    } catch (err) {
+      console.error('Verification error:', err)
+      setError(DEFAULT_ERROR_MESSAGE)
+    } finally {
+      setLoading(false)
     }
-
-    setLoading(false)
-  }, [])
+  }, [rawCredentialRecord, forceFresh, registries]) // require update when these values changes
 
   useFocusEffect(
     useCallback(() => {
