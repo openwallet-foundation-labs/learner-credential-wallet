@@ -7,6 +7,9 @@ env:
 - runFlow:
     file: profile-management.yaml
 
+- tapOn:
+    point: "10%,10%"
+
 # Navigate to Settings tab
 - tapOn:
     id: "settings-tab"
