@@ -195,6 +195,9 @@ npm run test:ui
 
 - **onboarding.yaml** - Wallet setup and onboarding flow
 - **credential-management.yaml** - End-to-end credential management testing
+- **verification-status.yaml** - Credential verification and validation testing
+- **profile-management.yaml** - Profile creation, management, and deletion flow
+- **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
 - **config.yaml** - Platform-specific app identifiers
 
 ### Development
