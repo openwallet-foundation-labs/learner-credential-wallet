@@ -7,7 +7,7 @@ env:
 
 # Setup: Create fresh wallet with credentials
 - runFlow:
-    file: credential-management.yaml
+    file: verification-status.yaml
 
 - tapOn:
     id: "settings-tab" 

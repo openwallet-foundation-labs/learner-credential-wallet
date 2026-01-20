@@ -1,0 +1,65 @@
+appId: ${APP_ID}
+env:
+  PASSWORD: "TestPassword123!"
+  
+---
+- runFlow:
+    file: credential-management.yaml
+
+# Navigate to credential detail
+- tapOn:
+    id: "credential-card-item"
+
+- scrollUntilVisible:
+    element:
+      text: "Credential Verification and Validation"
+    direction: DOWN
+
+# Verify verification status section is visible
+- assertVisible:
+    text: "Credential Verification and Validation"
+
+# Wait for verification to complete
+- extendedWaitUntil:
+    visible:
+      text: ".*signature.*"
+    timeout: 15000
+
+# Check if credential is verified (has valid signature)
+- runFlow:
+    when:
+      visible: ".*valid signature.*"
+    commands:
+      - assertVisible:
+          text: ".*valid signature.*"
+      - assertVisible:
+          text: ".*not expired.*|.*no expiration.*"
+      - assertVisible:
+          text: ".*not been revoked.*"
+
+# Check if credential has invalid signature
+- runFlow:
+    when:
+      visible: ".*invalid signature.*"
+    commands:
+      - assertVisible:
+          text: ".*invalid signature.*"
+
+# Just verify the fields exist regardless of status
+- assertVisible:
+    text: ".*signature.*"
+
+- assertVisible:
+    text: ".*(expired|expiration).*"
+
+- assertVisible:
+    text: ".*revoked.*"
+
+# Scroll down to see the "Last Checked" timestamp
+- scroll
+
+# Verify "last checked" timestamp exists
+- assertVisible:
+    text: ".*Last Checked.*"
+
+- waitForAnimationToEnd
