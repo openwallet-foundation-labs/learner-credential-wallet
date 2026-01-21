@@ -18,7 +18,6 @@ npm run ios
 
 # Terminal 2: Run test
 npm run test:ui:ios
-```
 
 ### Android
 # Terminal 1: Start app
@@ -43,7 +42,8 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 - **credential-management.yaml** - End-to-end onboarding + add credential flow
 - **verification-status.yaml** - Credential verification and validation testing
 - **profile-management.yaml** - Profile creation, management, and deletion flow
- **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
+- **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
+- **issuer-info.yaml** - Issuer details and credential source JSON viewing
 - **config.yaml** - Platform-specific app identifiers (iOS: `edu.mit.eduwallet`, Android: `app.lcw`)
 
 ## What the Tests Do
@@ -101,6 +101,20 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
    - For invalid credentials: checks for invalid signature
 6. Verifies all verification fields are present (signature, expiration, revocation)
 7. Verifies "Last Checked" timestamp is displayed
+
+**issuer-info.yaml**
+
+1. Runs the verification status flow to set up test data
+2. Navigates to "Issuer Details" section
+3. Verifies issuer information display (name and URL)
+4. Tests "View Source" functionality from credential menu
+5. Verifies credential JSON display
+6. Scrolls through and verifies DID document sections:
+   - Credential JSON
+   - DID Document
+   - Verification Key
+   - Key Agreement Key
+7. Tests navigation back to home screen
 
 ## Test Development
 
