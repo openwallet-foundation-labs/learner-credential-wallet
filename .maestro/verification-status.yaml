@@ -1,3 +1,8 @@
+appId: ${APP_ID}
+env:
+  PASSWORD: "TestPassword123!"
+---
+
 - runFlow:
     file: credential-management.yaml
 
