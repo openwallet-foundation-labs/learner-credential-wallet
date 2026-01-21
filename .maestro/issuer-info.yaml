@@ -1,9 +1,21 @@
+appId: ${APP_ID}
+env:
+  PASSWORD: "TestPassword123!"
+---
+
+# Setup: Create wallet with credential
 - runFlow:
     file: verification-status.yaml
 
-# Scroll to top to find Issuer Details
-- scroll:
+# Navigate to credential detail
+- scrollUntilVisible:
+    element:
+      text: "Issuer Details"
     direction: UP
+
+# Verify verification status section is visible
+- assertVisible:
+    text: "Issuer Details"
 
 # Navigate to issuer info
 - tapOn:
