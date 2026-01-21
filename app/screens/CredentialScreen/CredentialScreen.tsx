@@ -146,6 +146,7 @@ export default function CredentialScreen({
               icon="info-outline"
               title="View Source"
               onPress={onPressDebug}
+              testID="view-source-button"
             />
             <MenuItem
               icon="delete"
