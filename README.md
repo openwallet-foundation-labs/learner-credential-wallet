@@ -182,10 +182,10 @@ export PATH="$PATH:$HOME/.maestro/bin"
 
 ### Running Tests
 
-# Run onboarding test on iOS
+# Run lock-unlock-wallet test on iOS
 npm run test:ui:ios
 
-# Run onboarding test on Android
+# Run lock-unlock-wallet test on Android
 npm run test:ui:android
 
 # Run with manual platform selection
@@ -195,6 +195,10 @@ npm run test:ui
 
 - **onboarding.yaml** - Wallet setup and onboarding flow
 - **credential-management.yaml** - End-to-end credential management testing
+- **verification-status.yaml** - Credential verification and validation testing
+- **profile-management.yaml** - Profile creation, management, and deletion flow
+- **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
+- **issuer-info.yaml** - Issuer details and credential source JSON viewing
 - **config.yaml** - Platform-specific app identifiers
 
 ### Development
