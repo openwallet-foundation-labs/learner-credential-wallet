@@ -36,23 +36,23 @@ export default function DebugScreen({
 
   return (
     <>
-      <NavHeader title="Details" rightComponent={<Exit />} />
-      <ScrollView>
+      <NavHeader title="Details" rightComponent={<Exit />} testID="Details" />
+      <ScrollView testID="debug-screen-scroll">
         <View style={styles.container}>
           <Text style={styles.paragraph}>Credential:</Text>
-          <Text style={styles.codeBlock} selectable>
+          <Text style={styles.codeBlock} selectable testID="credential-json">
             {JSON.stringify(rawCredentialRecord.credential, null, 2)}
           </Text>
           <Text style={styles.paragraph}>DID Document:</Text>
-          <Text style={styles.codeBlock} selectable>
+          <Text style={styles.codeBlock} selectable testID="did-document">
             {JSON.stringify(rawDidRecord.didDocument, null, 2)}
           </Text>
           <Text style={styles.paragraph}>Verification Key:</Text>
-          <Text style={styles.codeBlock} selectable>
+          <Text style={styles.codeBlock} selectable testID="verification-key">
             {JSON.stringify(rawDidRecord.verificationKey, null, 2)}
           </Text>
           <Text style={styles.paragraph}>Key Agreement Key:</Text>
-          <Text style={styles.codeBlock} selectable>
+          <Text style={styles.codeBlock} selectable testID="key-agreement-key">
             {JSON.stringify(rawDidRecord.keyAgreementKey, null, 2)}
           </Text>
         </View>
