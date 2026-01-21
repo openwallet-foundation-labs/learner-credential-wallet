@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { NavHeader } from '../../components'
 import dynamicStyleSheet from './DeveloperScreen.styles'
 import { DeveloperScreenProps } from './DeveloperScreen.d'
-import { stageCredentials } from '../../store/slices/credentialFoyer'
+import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer'
 import { credentials } from '../../mock/credential'
 import { navigationRef } from '../../navigation/navigationRef'
 import { Cache, CacheKey } from '../../lib/cache'
@@ -48,26 +48,40 @@ export default function DeveloperScreen({
     titleStyle: mixins.buttonIconTitle
   }
 
-  async function goToApproveCredentials() {
-    if (navigationRef.isReady()) {
+  async function addMockCredentials() {
+    try {
       const rawProfileRecord = await NavigationUtil.selectProfile()
+      await dispatch(
+        stageCredentialsForProfile({
+          credentials,
+          profileRecordId: rawProfileRecord._id
+        })
+      ).unwrap()
       navigationRef.navigate('AcceptCredentialsNavigation', {
         screen: 'ApproveCredentialsScreen',
-        params: {
-          rawProfileRecord
-        }
+        params: { rawProfileRecord, canGoBack: true }
       })
+    } catch (error) {
+      console.error('Error adding mock credentials:', error)
     }
   }
 
-  async function addMockCredentials() {
-    await dispatch(stageCredentials(credentials))
-    goToApproveCredentials()
-  }
-
   async function addRevokedCredential() {
-    await dispatch(stageCredentials([revokedCredential]))
-    goToApproveCredentials()
+    try {
+      const rawProfileRecord = await NavigationUtil.selectProfile()
+      await dispatch(
+        stageCredentialsForProfile({
+          credentials: [revokedCredential],
+          profileRecordId: rawProfileRecord._id
+        })
+      ).unwrap()
+      navigationRef.navigate('AcceptCredentialsNavigation', {
+        screen: 'ApproveCredentialsScreen',
+        params: { rawProfileRecord, canGoBack: true }
+      })
+    } catch (error) {
+      console.error('Error adding revoked credential:', error)
+    }
   }
 
   function receiveCredentialThroughDeepLink() {

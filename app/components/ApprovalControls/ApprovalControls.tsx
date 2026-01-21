@@ -27,6 +27,7 @@ enum StatusIcon {
 type ApprovalControlsProps = {
   pendingCredential: PendingCredential
   profileRecordId: ObjectID
+  profileName?: string
 }
 
 type ApprovalButtonProps = {
@@ -53,14 +54,21 @@ const colorFor = (status: ApprovalStatus, theme: ThemeType): Color =>
     [ApprovalStatus.Accepted]: theme.color.success
   })[status]
 
-const defaultMessageFor = (status: ApprovalStatus): ApprovalMessage =>
-  ({
+const defaultMessageFor = (
+  status: ApprovalStatus,
+  profileName?: string
+): ApprovalMessage => {
+  if (status === ApprovalStatus.PendingDuplicate && profileName) {
+    return `This credential already exists in "${profileName}" and cannot be added again.` as ApprovalMessage
+  }
+  return {
     [ApprovalStatus.Pending]: ApprovalMessage.Pending,
     [ApprovalStatus.PendingDuplicate]: ApprovalMessage.Duplicate,
     [ApprovalStatus.Accepted]: ApprovalMessage.Accepted,
     [ApprovalStatus.Rejected]: ApprovalMessage.Rejected,
     [ApprovalStatus.Errored]: ApprovalMessage.Errored
-  })[status]
+  }[status]
+}
 
 function ApprovalButton({
   title,
@@ -84,12 +92,13 @@ function ApprovalButton({
 
 export default function ApprovalControls({
   pendingCredential,
-  profileRecordId
+  profileRecordId,
+  profileName
 }: ApprovalControlsProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
   const dispatch = useAppDispatch()
   const { status, messageOverride } = pendingCredential
-  const message = messageOverride || defaultMessageFor(status)
+  const message = messageOverride || defaultMessageFor(status, profileName)
   const [statusRef, focusStatus] = useAccessibilityFocus<View>()
 
   function setApprovalStatus(status: ApprovalStatus) {
@@ -143,10 +152,10 @@ export default function ApprovalControls({
     case ApprovalStatus.PendingDuplicate:
       return (
         <>
+          <Text style={styles.statusTextOutside}>{message}</Text>
           <View style={styles.approvalContainer}>
             <ApprovalButton title="Close" onPress={rejectAndExit} primary />
           </View>
-          <Text style={styles.statusTextOutside}>{message}</Text>
         </>
       )
     default:
