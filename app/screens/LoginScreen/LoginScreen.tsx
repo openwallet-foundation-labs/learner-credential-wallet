@@ -94,6 +94,7 @@ export default function LoginScreen(): React.ReactElement {
         highlightError={isError}
         tvParallaxProperties={{}} // Provide default or appropriate properties
         onTextInput={() => {}} // Provide a no-op or appropriate handler
+        testID="password-input"
       />
       <ErrorDialog message={errorText} />
       <Button
