@@ -150,7 +150,7 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
 
   return (
     <>
-      <NavHeader title="Settings" />
+      <NavHeader title="Settings" testID="Settings" />
       <ScrollView contentContainerStyle={styles.settingsContainer}>
         <SettingsItem
           key="biometrics"
@@ -228,7 +228,11 @@ function About({ navigation }: AboutProps): React.ReactElement {
 
   return (
     <>
-      <NavHeader goBack={() => navigation.navigate('Settings')} title="About" />
+      <NavHeader
+        goBack={() => navigation.navigate('Settings')}
+        title="About"
+        testID="About"
+      />
       <ScrollView contentContainerStyle={styles.bodyContainerCenter}>
         <Image
           style={styles.image}
@@ -255,7 +259,10 @@ function About({ navigation }: AboutProps): React.ReactElement {
         <Text style={styles.paragraphCenter}>
           Copyright 2021-2025 Massachusetts Institute of Technology
         </Text>
-        <TouchableOpacity onPress={goToDeveloperScreen}>
+        <TouchableOpacity
+          onPress={goToDeveloperScreen}
+          testID="version-build-button"
+        >
           <Text style={styles.paragraphCenter}>
             v{version} - Build {buildNumber}
           </Text>
