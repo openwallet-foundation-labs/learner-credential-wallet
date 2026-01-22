@@ -44,6 +44,7 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 - **profile-management.yaml** - Profile creation, management, and deletion flow
 - **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
 - **issuer-info.yaml** - Issuer details and credential source JSON viewing
+- **about-section.yaml** - About section navigation and Developer Settings access
 - **config.yaml** - Platform-specific app identifiers (iOS: `edu.mit.eduwallet`, Android: `app.lcw`)
 
 ## What the Tests Do
@@ -115,6 +116,20 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
    - Verification Key
    - Key Agreement Key
 7. Tests navigation back to home screen
+
+**about-section.yaml**
+
+1. Navigates to Settings tab
+2. Opens About section
+3. Verifies About screen content:
+   - App name (Learner Credential Wallet)
+   - Digital Credentials Consortium information
+   - Website link (https://lcw.app)
+   - Copyright notice
+4. Tests website link functionality (opens in browser)
+5. Taps version/build number to access Developer Settings
+6. Verifies Developer Settings screen opens
+7. Tests navigation back to Settings
 
 ## Test Development
 
