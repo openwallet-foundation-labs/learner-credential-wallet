@@ -7,7 +7,7 @@ env:
 
 # Setup: Create fresh wallet with credentials
 - runFlow:
-    file: issuer-info.yaml
+    file: about-section.yaml
 
 - tapOn:
     id: "settings-tab" 

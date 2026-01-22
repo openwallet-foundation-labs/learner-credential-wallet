@@ -199,6 +199,7 @@ npm run test:ui
 - **profile-management.yaml** - Profile creation, management, and deletion flow
 - **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
 - **issuer-info.yaml** - Issuer details and credential source JSON viewing
+- **about-section.yaml** - About section navigation and content verification
 - **config.yaml** - Platform-specific app identifiers
 
 ### Development
