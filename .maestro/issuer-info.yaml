@@ -1,0 +1,88 @@
+appId: ${APP_ID}
+env:
+  PASSWORD: "TestPassword123!"
+---
+
+# Setup: Create wallet with credential
+- runFlow:
+    file: verification-status.yaml
+
+# Navigate to credential detail
+- scrollUntilVisible:
+    element:
+      text: "Issuer Details"
+    direction: UP
+
+# Verify verification status section is visible
+- assertVisible:
+    text: "Issuer Details"
+
+# Navigate to issuer info
+- tapOn:
+    text: "Issuer Details"
+
+- waitForAnimationToEnd
+
+# Verify issuer details
+- extendedWaitUntil:
+    visible: "DCC Four Registry did:key test"
+    timeout: 5000
+
+- assertVisible: "https://dcconsortium.org"
+
+# Navigate back to credential preview
+- tapOn:
+    point: "10%,10%"
+
+- waitForAnimationToEnd
+
+# View Source JSON
+- tapOn:
+    id: "credential-menu-button"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    text: "View Source"
+
+- waitForAnimationToEnd
+
+# Verify JSON display - check for credential JSON
+- extendedWaitUntil:
+    visible:
+      id: "credential-json"
+    timeout: 5000
+
+- scrollUntilVisible:
+    element:
+      id: "did-document"
+    direction: DOWN
+    speed: 20
+    visibilityPercentage: 50
+
+- scrollUntilVisible:
+    element:
+      id: "verification-key"
+    direction: DOWN
+    speed: 20
+    visibilityPercentage: 50
+    
+- scrollUntilVisible:
+    element:
+      id: "key-agreement-key"
+    direction: DOWN
+    speed: 20
+    visibilityPercentage: 50
+
+# Navigate back
+- tapOn:
+    text: "Exit"
+
+- tapOn:
+    point: "10%,10%"
+
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible: "Home Screen"
+    timeout: 10000

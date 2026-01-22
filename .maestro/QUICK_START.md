@@ -18,7 +18,6 @@ npm run ios
 
 # Terminal 2: Run test
 npm run test:ui:ios
-```
 
 ### Android
 # Terminal 1: Start app
@@ -41,7 +40,11 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 
 - **onboarding.yaml** - Automated test for wallet onboarding flow
 - **credential-management.yaml** - End-to-end onboarding + add credential flow
+- **verification-status.yaml** - Credential verification and validation testing
 - **profile-management.yaml** - Profile creation, management, and deletion flow
+- **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
+- **issuer-info.yaml** - Issuer details and credential source JSON viewing
+- **about-section.yaml** - About section navigation and Developer Settings access
 - **config.yaml** - Platform-specific app identifiers (iOS: `edu.mit.eduwallet`, Android: `app.lcw`)
 
 ## What the Tests Do
@@ -78,6 +81,55 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 6. Tests adding existing profiles
 7. Tests profile deletion with confirmation
 8. Verifies proper navigation and state management throughout
+
+**lock-unlock-wallet.yaml**
+
+1. Navigates to Settings tab
+2. Taps "Sign out" to lock the wallet
+3. Verifies login screen appears
+4. Tests incorrect password entry and error message display
+5. Clears incorrect password and enters correct password
+6. Unlocks wallet and verifies return to home screen
+
+**verification-status.yaml**
+
+1. Runs the full credential management flow to set up test data
+2. Navigates to credential detail screen
+3. Scrolls to "Credential Verification and Validation" section
+4. Waits for verification to complete
+5. Conditionally verifies credential status:
+   - For valid credentials: checks for valid signature, not expired, and not revoked
+   - For invalid credentials: checks for invalid signature
+6. Verifies all verification fields are present (signature, expiration, revocation)
+7. Verifies "Last Checked" timestamp is displayed
+
+**issuer-info.yaml**
+
+1. Runs the verification status flow to set up test data
+2. Navigates to "Issuer Details" section
+3. Verifies issuer information display (name and URL)
+4. Tests "View Source" functionality from credential menu
+5. Verifies credential JSON display
+6. Scrolls through and verifies DID document sections:
+   - Credential JSON
+   - DID Document
+   - Verification Key
+   - Key Agreement Key
+7. Tests navigation back to home screen
+
+**about-section.yaml**
+
+1. Navigates to Settings tab
+2. Opens About section
+3. Verifies About screen content:
+   - App name (Learner Credential Wallet)
+   - Digital Credentials Consortium information
+   - Website link (https://lcw.app)
+   - Copyright notice
+4. Tests website link functionality (opens in browser)
+5. Taps version/build number to access Developer Settings
+6. Verifies Developer Settings screen opens
+7. Tests navigation back to Settings
 
 ## Test Development
 

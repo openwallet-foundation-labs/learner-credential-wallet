@@ -1,0 +1,76 @@
+appId: ${APP_ID}
+---
+
+- runFlow:
+    file: issuer-info.yaml
+
+# Navigate to Settings
+- tapOn:
+    id: "settings-tab"
+
+- waitForAnimationToEnd
+
+# Verify About screen content
+- tapOn:
+    text: "About"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible:
+    id: "About"
+
+- assertVisible: "Learner Credential Wallet"
+
+- assertVisible:
+    text: ".*Digital Credentials Consortium.*"
+
+- assertVisible:
+    text: ".*https://lcw.app.*"
+
+- assertVisible:
+    text: ".*Copyright 2021-2025 Massachusetts.*"
+
+- tapOn:
+    text: ".*lcw.app.*"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Return to app
+- runFlow:
+    when:
+      platform: iOS
+    commands:
+      - swipe:
+          direction: LEFT
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+
+- waitForAnimationToEnd
+
+# Tap version to access Developer Screen
+- tapOn:
+    id: "version-build-button"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+- assertVisible: "View developer logs"
+
+- tapOn:
+    point: "10%,10%"
+
+- waitForAnimationToEnd
+
+- tapOn:
+    point: "10%,10%"
+
+- waitForAnimationToEnd
+
+- assertVisible:
+    id: "Settings"
