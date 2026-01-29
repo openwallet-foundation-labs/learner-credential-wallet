@@ -174,14 +174,17 @@ This project uses [Maestro](https://maestro.mobile.dev) for automated UI testing
 
 ### Installation
 
+```bash
 # Install Maestro
 curl -Ls "https://get.maestro.mobile.dev" | bash
 
 # Add to PATH (add to ~/.zshrc or ~/.bash_profile)
 export PATH="$PATH:$HOME/.maestro/bin"
+```
 
 ### Running Tests
 
+```bash
 # Run lock-unlock-wallet test on iOS
 npm run test:ui:ios
 
@@ -190,11 +193,13 @@ npm run test:ui:android
 
 # Run with manual platform selection
 npm run test:ui
+```
 
 ### Test Files
 
 - **onboarding.yaml** - Wallet setup and onboarding flow
-- **credential-management.yaml** - End-to-end credential management testing
+- **learn-more-link.yaml** - Tests "Learn more about LCW" link functionality
+- **credential-management.yaml** - End-to-end credential lifecycle testing
 - **verification-status.yaml** - Credential verification and validation testing
 - **profile-management.yaml** - Profile creation, management, and deletion flow
 - **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
@@ -206,8 +211,15 @@ npm run test:ui
 
 Use Maestro Studio for interactive test development:
 
+```bash
 maestro studio
+```
 
+For debugging test issues:
+
+```bash
+maestro test .maestro/credential-management.yaml --debug-output
+```
 
 For more details, see [.maestro/QUICK_START.md](.maestro/QUICK_START.md).
 
