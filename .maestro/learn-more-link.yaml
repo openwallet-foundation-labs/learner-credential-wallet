@@ -1,0 +1,33 @@
+appId: ${APP_ID}
+---
+
+# Setup: Create wallet and navigate to home
+- runFlow:
+    file: onboarding.yaml
+
+- extendedWaitUntil:
+    visible: "Home Screen"
+    timeout: 10000
+
+- waitForAnimationToEnd
+
+- tapOn: "Learn more about the LCW"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Return to app from browser
+- tapOn:
+    point: "3%,3%"
+
+- runFlow:
+    when:
+      platform: Android
+    commands:
+      - back
+
+- waitForAnimationToEnd
+
+- extendedWaitUntil:
+    visible: "Home Screen"
+    timeout: 10000
