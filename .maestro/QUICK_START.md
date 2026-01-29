@@ -39,7 +39,8 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 ## Test Files
 
 - **onboarding.yaml** - Automated test for wallet onboarding flow
-- **credential-management.yaml** - End-to-end onboarding + add credential flow
+- **learn-more-link.yaml** - Tests "Learn more about LCW" link functionality
+- **credential-management.yaml** - End-to-end credential lifecycle testing
 - **verification-status.yaml** - Credential verification and validation testing
 - **profile-management.yaml** - Profile creation, management, and deletion flow
 - **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
@@ -60,16 +61,23 @@ maestro test .maestro/credential-management.yaml --config .maestro/config.yaml  
 **credential-management.yaml**
 
 1. Runs the full onboarding flow
-2. Adds multiple test credentials (verified, warning, and not verified states)
+2. Adds multiple test credentials (verified, warning, and not verified states):
+   - Credential via JSON input (verified)
+   - Credential via URL input (verified)
+   - Credential via JSON (expired/warning)
+   - Credential via URL (expired/warning)
+   - Credential via JSON (revoked/not verified)
+   - Credential via URL (revoked/not verified)
 3. Tests credential deletion functionality
-4. Tests credential sharing features:
+4. Tests duplicate credential handling
+5. Tests credential sharing features:
    - Public link creation
    - Copy link functionality
    - LinkedIn integration
    - Send credential (JSON/QR code)
    - Unshare functionality
-5. Tests navigation between different sharing methods
-6. Verifies wallet state management throughout the flow
+6. Tests navigation between different sharing methods
+7. Verifies wallet state management throughout the flow
 
 **profile-management.yaml**
 
@@ -149,7 +157,11 @@ maestro test .maestro/onboarding.yaml --debug
 - Add Maestro to PATH: `export PATH="$PATH:$HOME/.maestro/bin"`
 - Restart terminal after installation
 
-**Test times out:**
+**Test hangs or times out:**
+- Use `--debug-output` flag to see exactly where it hangs:
+  ```bash
+  maestro test .maestro/credential-management.yaml --debug-output
+  ```
 - Ensure device/emulator is running and unlocked
 - Check app launches successfully manually first
 - Use `--debug` flag for detailed logs
