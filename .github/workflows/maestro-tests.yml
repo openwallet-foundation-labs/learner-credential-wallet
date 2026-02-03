@@ -1,0 +1,56 @@
+name: Maestro UI Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  maestro-test:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm i --legacy-peer-deps
+
+      - name: Install CocoaPods
+        run: gem install cocoapods
+
+      - name: Prebuild iOS
+        run: npm run prebuild:ios
+
+      - name: Install iOS dependencies
+        run: pod install
+        working-directory: ios
+
+      - name: Build iOS app
+        run: |
+          xcodebuild -workspace LearnerCredentialWallet.xcworkspace \
+            -scheme LearnerCredentialWallet \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build
+        working-directory: ios
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Start iOS Simulator
+        run: |
+          xcrun simctl boot "iPhone 15"
+          xcrun simctl install booted ios/build/Build/Products/Debug-iphonesimulator/LearnerCredentialWallet.app
+
+      - name: Run Maestro Tests
+        run: maestro test .maestro/lock-unlock-wallet.yaml --env APP_ID=edu.mit.eduwallet
