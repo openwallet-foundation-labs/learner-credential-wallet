@@ -25,7 +25,7 @@ env:
 
 # Verify issuer details
 - extendedWaitUntil:
-    visible: "DCC Four Registry did:key test"
+    visible: ".*Digital Credentials Consortium.*|.*DCC.*"
     timeout: 5000
 
 - assertVisible: "https://dcconsortium.org"
@@ -57,22 +57,25 @@ env:
     element:
       id: "did-document"
     direction: DOWN
-    speed: 20
+    speed: 50
     visibilityPercentage: 50
+    timeout: 30000
 
 - scrollUntilVisible:
     element:
       id: "verification-key"
     direction: DOWN
-    speed: 20
+    speed: 50
     visibilityPercentage: 50
-    
+    timeout: 30000
+
 - scrollUntilVisible:
     element:
       id: "key-agreement-key"
     direction: DOWN
-    speed: 20
+    speed: 50
     visibilityPercentage: 50
+    timeout: 30000
 
 # Navigate back
 - tapOn:

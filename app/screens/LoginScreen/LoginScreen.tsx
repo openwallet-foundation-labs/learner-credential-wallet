@@ -49,6 +49,7 @@ export default function LoginScreen(): React.ReactElement {
       await dispatch(unlock(password)).unwrap()
       AccessibilityInfo.announceForAccessibility('Unlocked Wallet')
     } catch (err) {
+      setPassword('')
       setErrorText('Incorrect password')
     }
   }

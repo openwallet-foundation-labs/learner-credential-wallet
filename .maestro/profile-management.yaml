@@ -2,7 +2,7 @@ appId: ${APP_ID}
 env:
   PASSWORD: "TestPassword123!"
   PROFILE_NAME: "Test Profile"
-  RENAMED_PROFILE: " Renamed Profile"
+  RENAMED_PROFILE: "Renamed Profile"
 ---
 
 # Setup: Create fresh wallet with credentials
@@ -61,13 +61,36 @@ env:
 - tapOn:
     id: "paste-profile-rename-input"
 
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- eraseText: 50
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
 - inputText: "${RENAMED_PROFILE}"
 
-- tapOn:
-    text: "Save"
+- waitForAnimationToEnd:
+    timeout: 2000
+
+- hideKeyboard
 
 - waitForAnimationToEnd:
     timeout: 3000
+
+- tapOn:
+    id: "confirm-rename-button"
+
+- runFlow:
+    when:
+      visible: "Rename Profile"
+    commands:
+      - tapOn:
+          text: "Save"
+
+- waitForAnimationToEnd:
+    timeout: 5000
 
 # Test Profile Backup
 - tapOn:
@@ -105,19 +128,28 @@ env:
 - tapOn:
     id: "restore from a file-button"
 
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 5000
 
+# Dismiss iOS file picker (Cancel button at top-right of system picker)
 - tapOn:
-    text: "Cancel"
+    point: "78%,11%"
 
 - waitForAnimationToEnd:
-    timeout: 15000
+    timeout: 5000
+
+# Dismiss underlying add-profile modal
+- tapOn:
+    point: "10%,10%"
+
+- waitForAnimationToEnd:
+    timeout: 3000
 
 - tapOn:
     point: "10%,10%"
 
-- tapOn:
-    point: "10%,10%"
+- waitForAnimationToEnd:
+    timeout: 3000
 
 # Test Profile Deletion
 - tapOn:

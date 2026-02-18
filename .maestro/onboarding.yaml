@@ -38,10 +38,17 @@ env:
     commands:
       - tapOn:
           id: "password-input"
+      - waitForAnimationToEnd:
+          timeout: 2000
       - inputText: "${PASSWORD}"
       - tapOn:
           id: "confirm-password-input"
+      - waitForAnimationToEnd:
+          timeout: 2000
       - inputText: "${PASSWORD}"
+      - hideKeyboard
+      - waitForAnimationToEnd:
+          timeout: 2000
       - tapOn:
           id: "next-button"
 
