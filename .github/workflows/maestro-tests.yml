@@ -14,7 +14,7 @@ concurrency:
 jobs:
   maestro-test:
     runs-on: macos-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,6 +32,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+
+      - name: Install xcbeautify
+        run: brew install xcbeautify
 
       - name: Prebuild iOS
         run: npm run prebuild:ios
@@ -61,7 +64,7 @@ jobs:
             -configuration Debug \
             -sdk iphonesimulator \
             -derivedDataPath build \
-            | xcbeautify || true
+            | xcbeautify
         working-directory: ios
 
       - name: Install Maestro CLI
@@ -71,13 +74,26 @@ jobs:
 
       - name: Start iOS Simulator
         run: |
-          DEVICE_UDID=$(xcrun simctl create "TestDevice" "iPhone 15" "$(xcrun simctl list runtimes iOS -j | jq -r '.runtimes | last | .identifier')")
+          DEVICE_UDID=$(xcrun simctl create "TestDevice" "iPhone 16 Pro" "$(xcrun simctl list runtimes iOS -j | jq -r '.runtimes | last | .identifier')")
           xcrun simctl boot "$DEVICE_UDID"
           xcrun simctl bootstatus "$DEVICE_UDID" -b
           xcrun simctl install "$DEVICE_UDID" ios/build/Build/Products/Debug-iphonesimulator/LearnerCredentialWallet.app
 
+      - name: Start Metro bundler
+        run: |
+          npx expo start --dev-client --port 8081 &
+          echo "Waiting for Metro bundler to start..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then
+              echo "Metro bundler is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
       - name: Run Maestro Tests
-        timeout-minutes: 10
+        timeout-minutes: 20
         env:
           MAESTRO_DRIVER_STARTUP_TIMEOUT: 120000
         run: |
