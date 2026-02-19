@@ -98,6 +98,22 @@ jobs:
             sleep 2
           done
 
+      - name: Pre-warm Metro bundle
+        run: |
+          DEVICE_UDID=$(xcrun simctl list devices booted -j | jq -r '.devices[][] | select(.name == "TestDevice") | .udid')
+          echo "Pre-warming Metro bundle on device $DEVICE_UDID"
+          xcrun simctl openurl "$DEVICE_UDID" "exp+learner-credential-wallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+          for i in $(seq 1 40); do
+            if curl -s -o /dev/null -w '%{http_code}' "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" | grep -q "200"; then
+              echo "Bundle compilation complete"
+              break
+            fi
+            echo "Compiling bundle... ($i/40)"
+            sleep 5
+          done
+          xcrun simctl terminate "$DEVICE_UDID" edu.mit.eduwallet || true
+          echo "Pre-warm complete, app terminated"
+
       - name: Run Maestro Tests
         timeout-minutes: 20
         env:

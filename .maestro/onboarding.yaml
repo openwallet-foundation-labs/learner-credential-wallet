@@ -4,28 +4,31 @@ env:
 ---
 - clearState
 
-- launchApp
+# Connect to Metro via deep link (bypasses dev client UI, works on local + CI)
+- openLink: "exp+learner-credential-wallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
 
+# Dismiss Expo developer menu overlay if it appears
 - extendedWaitUntil:
-    visible: "http://localhost:8081"
+    visible: "Continue"
     timeout: 30000
 
 - tapOn:
-    text: "http://localhost:8081"
+    text: "Continue"
+
+- waitForAnimationToEnd:
+    timeout: 3000
+
+# Dismiss Expo dev menu if it appears (shows after connection)
+- tapOn:
+    point: "50%,25%"
     optional: true
 
-# Handle different Expo dev client connection flows
-- extendedWaitUntil:
-    visible: "Continue"
-    timeout: 10000
-    optional: true
-
-- swipe:
-    direction: DOWN
+- waitForAnimationToEnd:
+    timeout: 3000
 
 - extendedWaitUntil:
     visible: "Quick Setup"
-    timeout: 60000
+    timeout: 120000
 
 - assertVisible: "Quick Setup"
 
