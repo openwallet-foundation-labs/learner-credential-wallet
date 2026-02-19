@@ -20,15 +20,9 @@ env:
     timeout: 10000
     optional: true
 
-- tapOn:
-    text: "Continue"
-    optional: true
+- swipe:
+    direction: DOWN
 
-- tapOn:
-    text: "Connect"
-    optional: true
-
-# Wait for JS bundle to load (first load in CI can be slow)
 - extendedWaitUntil:
     visible: "Quick Setup"
     timeout: 60000
