@@ -170,7 +170,7 @@ A custom display can be created for different credentials, to do so:
 
 ## UI Testing
 
-This project uses [Maestro](https://maestro.mobile.dev) for automated UI testing.
+This project uses [Maestro](https://maestro.mobile.dev) for automated UI testing. Tests run automatically via GitHub Actions on pushes and PRs to `main`.
 
 ### Installation
 
@@ -195,17 +195,30 @@ npm run test:ui:android
 npm run test:ui
 ```
 
+### Test Flow Chain
+
+The main entry point is `lock-unlock-wallet.yaml`, which runs the full suite via nested flows:
+
+```
+lock-unlock-wallet → profile-management → about-section → issuer-info
+→ verification-status → credential-management → onboarding
+```
+
 ### Test Files
 
+- **lock-unlock-wallet.yaml** - Main entry point: lock wallet and unlock with password
+- **profile-management.yaml** - Profile creation, rename, backup, and deletion
+- **about-section.yaml** - About section navigation and content verification
+- **issuer-info.yaml** - Issuer details and credential source JSON viewing
+- **verification-status.yaml** - Credential verification and validation testing
+- **credential-management.yaml** - End-to-end credential lifecycle testing
 - **onboarding.yaml** - Wallet setup and onboarding flow
 - **learn-more-link.yaml** - Tests "Learn more about LCW" link functionality
-- **credential-management.yaml** - End-to-end credential lifecycle testing
-- **verification-status.yaml** - Credential verification and validation testing
-- **profile-management.yaml** - Profile creation, management, and deletion flow
-- **lock-unlock-wallet.yaml** - Lock wallet and unlock with password
-- **issuer-info.yaml** - Issuer details and credential source JSON viewing
-- **about-section.yaml** - About section navigation and content verification
 - **config.yaml** - Platform-specific app identifiers
+
+### CI/CD
+
+Maestro tests run on GitHub Actions (`.github/workflows/maestro-tests.yml`). The pipeline builds the iOS app, starts Metro bundler, boots an iPhone 16 Pro simulator, and runs the full test suite. Debug artifacts (screenshots, logs) are uploaded on failure.
 
 ### Development
 
@@ -218,7 +231,7 @@ maestro studio
 For debugging test issues:
 
 ```bash
-maestro test .maestro/credential-management.yaml --debug-output
+maestro test .maestro/lock-unlock-wallet.yaml --debug-output .maestro-debug
 ```
 
 For more details, see [.maestro/QUICK_START.md](.maestro/QUICK_START.md).
