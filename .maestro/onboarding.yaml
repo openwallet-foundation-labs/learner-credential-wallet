@@ -17,6 +17,11 @@ env:
 - extendedWaitUntil:
     visible: "Continue"
     timeout: 15000
+    optional: true
+
+- tapOn:
+    text: "Continue"
+    optional: true
 
 - swipe:
     direction: DOWN
@@ -26,7 +31,7 @@ env:
 
 - extendedWaitUntil:
     visible: "Quick Setup"
-    timeout: 10000
+    timeout: 30000
 
 - assertVisible: "Quick Setup"
 

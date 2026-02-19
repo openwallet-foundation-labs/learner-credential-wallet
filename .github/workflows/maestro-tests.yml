@@ -74,7 +74,13 @@ jobs:
 
       - name: Start iOS Simulator
         run: |
-          DEVICE_UDID=$(xcrun simctl create "TestDevice" "iPhone 16 Pro" "$(xcrun simctl list runtimes iOS -j | jq -r '.runtimes | last | .identifier')")
+          RUNTIME_ID=$(xcrun simctl list runtimes iOS -j | jq -r '[.runtimes[] | select(.name | startswith("iOS 18"))] | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "iOS 18 runtime not found, falling back to latest"
+            RUNTIME_ID=$(xcrun simctl list runtimes iOS -j | jq -r '.runtimes | last | .identifier')
+          fi
+          echo "Using runtime: $RUNTIME_ID"
+          DEVICE_UDID=$(xcrun simctl create "TestDevice" "iPhone 16 Pro" "$RUNTIME_ID")
           xcrun simctl boot "$DEVICE_UDID"
           xcrun simctl bootstatus "$DEVICE_UDID" -b
           xcrun simctl install "$DEVICE_UDID" ios/build/Build/Products/Debug-iphonesimulator/LearnerCredentialWallet.app
