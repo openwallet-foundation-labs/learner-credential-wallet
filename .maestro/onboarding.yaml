@@ -8,30 +8,30 @@ env:
 
 - extendedWaitUntil:
     visible: "http://localhost:8081"
-    timeout: 15000
+    timeout: 30000
 
 - tapOn:
     text: "http://localhost:8081"
     optional: true
 
+# Handle different Expo dev client connection flows
 - extendedWaitUntil:
     visible: "Continue"
-    timeout: 15000
+    timeout: 10000
     optional: true
 
 - tapOn:
     text: "Continue"
     optional: true
 
-- swipe:
-    direction: DOWN
+- tapOn:
+    text: "Connect"
     optional: true
 
-- waitForAnimationToEnd
-
+# Wait for JS bundle to load (first load in CI can be slow)
 - extendedWaitUntil:
     visible: "Quick Setup"
-    timeout: 30000
+    timeout: 60000
 
 - assertVisible: "Quick Setup"
 
