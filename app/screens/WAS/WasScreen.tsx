@@ -10,17 +10,15 @@ import {
 import NavHeader from '../../components/NavHeader/NavHeader'
 import { navigationRef } from '../../navigation/navigationRef'
 import { Ed25519VerificationKey2020 } from '@digitalcredentials/ed25519-verification-key-2020'
-import { StorageClient } from '@wallet.storage/fetch-client'
+
 import AsyncStorage from '@react-native-async-storage/async-storage'
-// import FileReader from 'react-native-filereader';
-import { v4 as uuidv4 } from 'uuid'
+// import FileReader from 'react-native-filereader'
 import { WAS } from '../../../app.config'
 import { useThemeContext } from '../../hooks'
-import { removeWasPublicLink } from '../../lib/removeWasPublicLink'
-import { shareBinaryFile } from '../../lib/shareData'
-import { displayGlobalModal } from '../../lib/globalModal'
-import { getRootSigner } from '../../lib/getRootSigner'
-import { getStorageClient } from '../../lib/storageClient'
+import {
+  deleteWasSpace,
+  provisionWasSpace
+} from '../../lib/walletAttachedStorage'
 
 const WASScreen = () => {
   const { theme } = useThemeContext()
@@ -43,40 +41,7 @@ const WASScreen = () => {
         throw new Error('No connection details found')
       }
 
-      // Get the stored signer
-      const signer = await getRootSigner()
-      const storage = getStorageClient()
-      const space = storage.space({
-        signer,
-        id: connectionDetails.spaceId as `urn:uuid:${string}`
-      })
-
-      // Delete the space
-      const response = await space.delete({
-        signer
-      })
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete space. Status: ${response.status}`)
-      }
-
-      const mapData = await AsyncStorage.getItem('map')
-      if (mapData) {
-        const map = JSON.parse(mapData)
-        // Get all keys that start with 'publiclinks_'
-        const publicLinkKeys = Object.keys(map)
-          .filter((key) => key.startsWith('publiclinks_'))
-          .map((key) => key.replace('publiclinks_', ''))
-
-        // Process each public link
-        for (const key of publicLinkKeys) {
-          await removeWasPublicLink(key, map)
-        }
-      }
-
-      // Clear stored items
-      await AsyncStorage.removeItem(WAS.KEYS.SIGNER_KEYPAIR)
-      await AsyncStorage.removeItem(WAS.KEYS.SPACE_ID)
+      await deleteWasSpace({ spaceId: connectionDetails.spaceId })
 
       setStatus('success')
       setMessage('Space successfully deleted')
@@ -120,66 +85,9 @@ const WASScreen = () => {
   const provisionWAS = async () => {
     try {
       setStatus('loading')
-      setMessage('Generating signer...')
+      setMessage('Provisioning storage...')
 
-      const key = await Ed25519VerificationKey2020.generate()
-      const fp = key.fingerprint()
-      const controllerDid = `did:key:${fp}`
-      key.controller = controllerDid
-      key.id = `${controllerDid}#${fp}`
-      const signer = key.signer()
-
-      setMessage('Creating space...')
-
-      // Generate a UUID for the space
-      const spaceUUID = uuidv4()
-      const spaceId = `urn:uuid:${spaceUUID}`
-      console.log('Space ID:', spaceId)
-
-      // Use the singleton storage client
-      const storage = getStorageClient()
-
-      const space = storage.space({
-        signer,
-        id: spaceId as `urn:uuid:${string}`
-      })
-
-      const spaceObject = {
-        id: spaceId,
-        controller: controllerDid
-      }
-
-      console.log('Creating space with object:', spaceObject)
-      const spaceObjectBlob = new Blob([JSON.stringify(spaceObject)], {
-        type: 'application/json'
-      })
-
-      // Create the space
-      const response = await space.put(spaceObjectBlob, {
-        signer
-      })
-
-      console.log('Space PUT response:', {
-        status: response.status,
-        ok: response.ok
-      })
-
-      if (!response.ok) {
-        throw new Error(
-          `Failed to initialize space. Status: ${response.status}`
-        )
-      }
-
-      const signerJson = await key.export({ publicKey: true, privateKey: true })
-      // Store the signer for future connections
-      await AsyncStorage.setItem(
-        WAS.KEYS.SIGNER_KEYPAIR,
-        JSON.stringify(signerJson)
-      )
-
-      // Store the space UUID for future connections
-      await AsyncStorage.setItem(WAS.KEYS.SPACE_ID, spaceUUID)
-      console.log('Stored space ID in AsyncStorage:', spaceUUID)
+      const { spaceId, controllerDid } = await provisionWasSpace()
 
       setStatus('success')
       setMessage('WAS storage successfully provisioned!')

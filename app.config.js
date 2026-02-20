@@ -18,7 +18,8 @@ export const WAS = {
   BASE_URL: 'https://storage.dcc.did.coop',
   KEYS: {
     SPACE_ID: 'was_space_id',
-    SIGNER_KEYPAIR: 'was_signer_json'
+    SIGNER_KEYPAIR: 'was_signer_json',
+    SIGNER_CONTROLLER: 'was_signer_controller'
   }
 }
 export const ZCAP_EXPIRES = new Date(Date.now() + 1000 * 60 * 60 * 24 * 10) // 10 days

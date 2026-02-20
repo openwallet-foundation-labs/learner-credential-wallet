@@ -5,7 +5,7 @@ import {
   IVerifiablePresentation
 } from '@digitalcredentials/ssi'
 import {
-  delegateZcaps,
+  processZcaps,
   isDidAuthRequested,
   IVpOffer,
   IVprDetails,
@@ -18,10 +18,16 @@ import { extractCredentialsFrom } from './verifiableObject'
 import { selectCredentials } from './selectCredentials'
 import { ISelectedProfile } from './did'
 import { composeVp } from './composeVp'
+import { IController } from './getWasController'
 
 type IResponseToExchanger = {
   verifiablePresentation?: IVerifiablePresentation
   zcap?: IZcap[]
+}
+
+type IModalOptions = {
+  enabled: boolean
+  confirmZcapRequest?: () => Promise<boolean>
 }
 
 /**
@@ -32,25 +38,26 @@ type IResponseToExchanger = {
  * @param requestOrOffer - Exchange message to process.
  * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
  *   key signers used for DIDAuthentication and zCap delegation.
- * @param [modalsEnabled=true] {boolean} - Whether to present the user
+ * @param wasController {IController} - Root zcap controller and signer for
+ *   Wallet Attached Storage.
+ * @param modals {object} - Options for popup modal windows.
+ * @param modals.enabled {boolean} - Whether to present the user
  *   with an interactive modal popup to confirm sending credentials.
  *   Disabled for unit testing.
- * @param modalConfirmZcapRequest
+ * @param modals.confirmZcapRequest {function}
  */
 export async function processMessageChain({
   exchangeUrl,
   requestOrOffer,
   selectedProfile,
-  modalsEnabled = true,
-  modalConfirmZcapRequest,
-  profileRecordId
+  wasController,
+  modals
 }: {
   exchangeUrl?: string
   requestOrOffer: IVpRequest | IVpOffer
   selectedProfile: ISelectedProfile
-  modalsEnabled?: boolean
-  modalConfirmZcapRequest: () => Promise<boolean>
-  profileRecordId?: string
+  wasController: IController
+  modals: IModalOptions
 }): Promise<{
   acceptCredentials?: IVerifiableCredential[]
   redirectUrl?: string
@@ -72,10 +79,9 @@ export async function processMessageChain({
       request,
       exchangeUrl,
       selectedProfile,
-      modalsEnabled,
-      modalConfirmZcapRequest,
+      modals,
       credentialRequestOrigin,
-      profileRecordId
+      wasController
     })
     return { redirectUrl }
   }
@@ -90,28 +96,29 @@ export async function processMessageChain({
  * @param exchangeUrl {string}
  * @param selectedProfile {ISelectedProfile} - Selected DID profile, containing
  *   key signers used for DIDAuthentication and zCap delegation.
- * @param [modalsEnabled=true] {boolean} - Whether to present the user
+ * @param credentialRequestOrigin {string}
+ * @param wasController {IController} - Root zcap controller and signer for
+ *   Wallet Attached Storage.
+ * @param modals {object} - Options for popup modal windows.
+ * @param modals.enabled {boolean} - Whether to present the user
  *   with an interactive modal popup to confirm sending credentials.
  *   Disabled for unit testing.
- * @param modalConfirmZcapRequest {function}
- * @param credentialRequestOrigin {string}
+ * @param modals.confirmZcapRequest {function}
  */
 export async function processRequest({
   request,
   exchangeUrl,
   selectedProfile,
-  modalsEnabled = true,
-  modalConfirmZcapRequest,
   credentialRequestOrigin,
-  profileRecordId
+  wasController,
+  modals
 }: {
   request: IVprDetails
   exchangeUrl?: string
   selectedProfile: ISelectedProfile
-  modalsEnabled?: boolean
   credentialRequestOrigin?: string
-  modalConfirmZcapRequest: () => Promise<boolean>
-  profileRecordId?: string
+  wasController: IController
+  modals: IModalOptions
 }): Promise<void> {
   if (!exchangeUrl) {
     throw new Error('Missing exchangeUrl, cannot send response.')
@@ -143,13 +150,13 @@ export async function processRequest({
   console.log('zcapRequests:', zcapRequests)
 
   let zcapUserConsent, zcaps
-  if (zcapRequests && modalsEnabled) {
-    zcapUserConsent = await modalConfirmZcapRequest()
+  if (zcapRequests && modals.enabled) {
+    zcapUserConsent = await modals.confirmZcapRequest!()
   } else {
     zcapUserConsent = true
   }
   if (zcapRequests && zcapUserConsent) {
-    zcaps = await delegateZcaps({ zcapRequests, selectedProfile })
+    zcaps = await processZcaps({ zcapRequests, wasController })
   }
 
   if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {
@@ -173,11 +180,9 @@ export async function processRequest({
 
   // If there are any VC matches, prompt the user to confirm
   let selectedVcs: IVerifiableCredential[] = []
-  if (vcMatches.length > 0 && modalsEnabled) {
+  if (vcMatches.length > 0 && modals.enabled) {
     // Prompt user to confirm / select which VCs to send
-    selectedVcs = (await selectCredentials(vcMatches, profileRecordId)).map(
-      (r) => r.credential
-    )
+    selectedVcs = (await selectCredentials(vcMatches)).map((r) => r.credential)
   } else if (vcMatches.length > 0) {
     // Not prompting the user
     selectedVcs = vcMatches.map((r) => r.credential)
