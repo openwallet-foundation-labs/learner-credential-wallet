@@ -29,6 +29,9 @@ export default function RootNavigation(): React.ReactElement {
       <Stack.Screen
         name="AcceptCredentialsNavigation"
         component={AcceptCredentialsNavigation}
+        options={{
+          gestureEnabled: false
+        }}
       />
       <Stack.Screen
         name="ExchangeCredentialsNavigation"

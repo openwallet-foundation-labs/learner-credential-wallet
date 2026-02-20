@@ -261,12 +261,7 @@ export const rawVcRecords: CredentialRecordRaw[] = [
   }
 ]
 
-const credentials = [
-  mockCredential,
-  mockCredential2
-  // studentCard,
-  // anotherCred,
-]
+const credentials = [mockCredential, mockCredential2]
 
 export default mockCredential
 export { credentials }

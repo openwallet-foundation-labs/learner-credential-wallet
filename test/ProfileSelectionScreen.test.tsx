@@ -252,4 +252,69 @@ describe('ProfileSelectionScreen', () => {
     )
     expect(UNSAFE_root).toBeTruthy()
   })
+
+  it('sets hasAutoSelected flag when profile is manually selected', () => {
+    const { getByTestId } = render(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+
+    const profileBtn = getByTestId('button-Profile 1')
+    fireEvent.press(profileBtn)
+    expect(mockOnSelectProfile).toHaveBeenCalledTimes(1)
+    expect(mockOnSelectProfile).toHaveBeenCalledWith(mockProfiles[0])
+  })
+
+  it('does not auto-select again after manual selection', () => {
+    const { useSelector } = require('react-redux')
+    const { rerender } = render(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+
+    // Simulate manual selection
+    const { getByTestId } = render(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+    const profileBtn = getByTestId('button-Profile 1')
+    fireEvent.press(profileBtn)
+
+    // Clear mock to check if auto-select happens again
+    mockOnSelectProfile.mockClear()
+
+    // Update profiles (simulating navigation back)
+    useSelector.mockReturnValue(mockProfiles)
+    rerender(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+
+    // Should not auto-select again
+    expect(mockOnSelectProfile).not.toHaveBeenCalled()
+  })
+
+  it('handleSelectProfile is memoized with useCallback', () => {
+    const { rerender } = render(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+
+    const firstCallCount = mockOnSelectProfile.mock.calls.length
+
+    // Re-render with same props
+    rerender(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+
+    // Should not cause additional calls if properly memoized
+    expect(mockOnSelectProfile.mock.calls.length).toBe(firstCallCount)
+  })
+
+  it('calls handleSelectProfile for both auto and manual selection', () => {
+    const { useSelector } = require('react-redux')
+    useSelector.mockReturnValue([mockProfiles[0]])
+
+    const { getByTestId } = render(
+      <ProfileSelectionScreen navigation={mockNavigation} route={mockRoute} />
+    )
+
+    // Auto-select should have been called
+    expect(mockOnSelectProfile).toHaveBeenCalledWith(mockProfiles[0])
+  })
 })

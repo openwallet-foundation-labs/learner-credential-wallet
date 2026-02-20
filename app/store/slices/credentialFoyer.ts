@@ -5,7 +5,7 @@ import { canonicalize as jcsCanonicalize } from 'json-canonicalize'
 import { CredentialRecord } from '../../model/credential'
 
 import { RootState } from '..'
-import { addCredential } from './credential'
+import { addCredential, deleteCredential } from './credential'
 import { ObjectID } from 'bson'
 import { IVerifiableCredential } from '@digitalcredentials/ssi'
 import { credentialContentHash } from '../../lib/credentialHash'
@@ -238,6 +238,10 @@ const credentialFoyer = createSlice({
 
     builder.addCase(acceptPendingCredentials.rejected, (_, action) => {
       throw action.error
+    })
+
+    builder.addCase(deleteCredential.fulfilled, (state) => {
+      return state
     })
   }
 })
