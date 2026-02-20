@@ -4,10 +4,13 @@ env:
 ---
 - clearState
 
-# Connect to Metro via deep link (bypasses dev client UI, works on local + CI)
-- openLink: "exp+learner-credential-wallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+# Launch app first to handle the Expo dev client intro screen
+- launchApp
 
-# Dismiss Expo dev client intro if it appears (local shows it, CI may skip it)
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Dismiss Expo dev client intro if it appears
 - runFlow:
     when:
       visible: "Continue"
@@ -17,7 +20,13 @@ env:
       - waitForAnimationToEnd:
           timeout: 3000
 
-# Dismiss Expo dev menu overlay if it appears (swipe down to close bottom sheet)
+# Now connect to Metro via deep link (app is already running, intro is dismissed)
+- openLink: "exp+learner-credential-wallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
+
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# Dismiss Expo dev menu overlay if it appears
 - runFlow:
     when:
       visible: "Go home"

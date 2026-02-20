@@ -99,20 +99,11 @@ jobs:
           done
 
       - name: Pre-warm Metro bundle
+        timeout-minutes: 10
         run: |
-          DEVICE_UDID=$(xcrun simctl list devices booted -j | jq -r '.devices[][] | select(.name == "TestDevice") | .udid')
-          echo "Pre-warming Metro bundle on device $DEVICE_UDID"
-          xcrun simctl openurl "$DEVICE_UDID" "exp+learner-credential-wallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
-          for i in $(seq 1 40); do
-            if curl -s -o /dev/null -w '%{http_code}' "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" | grep -q "200"; then
-              echo "Bundle compilation complete"
-              break
-            fi
-            echo "Compiling bundle... ($i/40)"
-            sleep 5
-          done
-          xcrun simctl terminate "$DEVICE_UDID" edu.mit.eduwallet || true
-          echo "Pre-warm complete, app terminated"
+          echo "Compiling Metro bundle (this may take a few minutes)..."
+          curl --max-time 300 -s "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" > /dev/null 2>&1 || true
+          echo "Bundle compilation complete and cached"
 
       - name: Run Maestro Tests
         timeout-minutes: 20
@@ -124,14 +115,19 @@ jobs:
             --env APP_ID=edu.mit.eduwallet \
             --debug-output .maestro-debug
 
+      - name: Capture simulator screenshot on failure
+        if: failure()
+        run: |
+          mkdir -p .maestro-debug
+          DEVICE_UDID=$(xcrun simctl list devices booted -j | jq -r '.devices[][] | select(.name == "TestDevice") | .udid')
+          xcrun simctl io "$DEVICE_UDID" screenshot .maestro-debug/failure-screenshot.png || true
+
       - name: Upload Maestro artifacts
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: maestro-artifacts
           path: |
-            ~/.maestro/tests/**
-            .maestro-debug/**
-            ~/Library/Logs/CoreSimulator/**/*
-            ios/build/Logs/**/*
+            ${{ runner.temp }}/../.maestro/tests/
+            .maestro-debug/
           if-no-files-found: warn
