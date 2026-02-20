@@ -1,0 +1,133 @@
+name: Maestro UI Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: maestro-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  maestro-test:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '16'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Install xcbeautify
+        run: brew install xcbeautify
+
+      - name: Prebuild iOS
+        run: npm run prebuild:ios
+
+      - name: Cache CocoaPods
+        uses: actions/cache@v4
+        with:
+          path: ios/Pods
+          key: pods-${{ hashFiles('ios/Podfile.lock') }}
+          restore-keys: pods-
+
+      - name: Cache iOS DerivedData
+        uses: actions/cache@v4
+        with:
+          path: ios/build
+          key: ios-derived-${{ runner.os }}-${{ hashFiles('ios/Podfile.lock', 'package-lock.json') }}
+          restore-keys: ios-derived-
+
+      - name: Install iOS dependencies
+        run: pod install
+        working-directory: ios
+
+      - name: Build iOS app
+        run: |
+          xcodebuild -workspace LearnerCredentialWallet.xcworkspace \
+            -scheme LearnerCredentialWallet \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            | xcbeautify
+        working-directory: ios
+
+      - name: Install Maestro CLI
+        run: |
+          curl -Ls "https://get.maestro.mobile.dev" | bash
+          echo "$HOME/.maestro/bin" >> $GITHUB_PATH
+
+      - name: Start iOS Simulator
+        run: |
+          RUNTIME_ID=$(xcrun simctl list runtimes iOS -j | jq -r '[.runtimes[] | select(.name | startswith("iOS 18"))] | last | .identifier')
+          if [ -z "$RUNTIME_ID" ] || [ "$RUNTIME_ID" = "null" ]; then
+            echo "iOS 18 runtime not found, falling back to latest"
+            RUNTIME_ID=$(xcrun simctl list runtimes iOS -j | jq -r '.runtimes | last | .identifier')
+          fi
+          echo "Using runtime: $RUNTIME_ID"
+          DEVICE_UDID=$(xcrun simctl create "TestDevice" "iPhone 16 Pro" "$RUNTIME_ID")
+          xcrun simctl boot "$DEVICE_UDID"
+          xcrun simctl bootstatus "$DEVICE_UDID" -b
+          xcrun simctl install "$DEVICE_UDID" ios/build/Build/Products/Debug-iphonesimulator/LearnerCredentialWallet.app
+
+      - name: Start Metro bundler
+        run: |
+          npx expo start --dev-client --port 8081 &
+          echo "Waiting for Metro bundler to start..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:8081/status | grep -q "packager-status:running"; then
+              echo "Metro bundler is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+
+      - name: Pre-warm Metro bundle
+        timeout-minutes: 10
+        run: |
+          echo "Compiling Metro bundle (this may take a few minutes)..."
+          curl --max-time 300 -s "http://localhost:8081/index.bundle?platform=ios&dev=true&minify=false" > /dev/null 2>&1 || true
+          echo "Bundle compilation complete and cached"
+
+      - name: Run Maestro Tests
+        timeout-minutes: 20
+        env:
+          MAESTRO_DRIVER_STARTUP_TIMEOUT: 120000
+        run: |
+          mkdir -p .maestro-debug
+          maestro test .maestro/lock-unlock-wallet.yaml \
+            --env APP_ID=edu.mit.eduwallet \
+            --debug-output .maestro-debug
+
+      - name: Capture simulator screenshot on failure
+        if: failure()
+        run: |
+          mkdir -p .maestro-debug
+          DEVICE_UDID=$(xcrun simctl list devices booted -j | jq -r '.devices[][] | select(.name == "TestDevice") | .udid')
+          xcrun simctl io "$DEVICE_UDID" screenshot .maestro-debug/failure-screenshot.png || true
+
+      - name: Upload Maestro artifacts
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: maestro-artifacts
+          path: |
+            ${{ runner.temp }}/../.maestro/tests/
+            .maestro-debug/
+          if-no-files-found: warn

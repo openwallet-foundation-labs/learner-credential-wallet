@@ -45,19 +45,33 @@ env:
 - waitForAnimationToEnd:
     timeout: 3000
 
-# Clear incorrect password and enter correct one
+# Enter correct password (field auto-cleared after failed attempt)
 - tapOn:
     id: "password-input"
 
-- eraseText
+- waitForAnimationToEnd:
+    timeout: 2000
 
 - inputText: "${PASSWORD}"
 
-- waitForAnimationToEnd
+- waitForAnimationToEnd:
+    timeout: 2000
 
-# Unlock wallet with correct password
+- hideKeyboard
+
+- waitForAnimationToEnd:
+    timeout: 2000
+
+# Unlock wallet with correct password (try both id and text)
 - tapOn:
     text: "Unlock Wallet"
+
+- runFlow:
+    when:
+      visible: "Unlock Wallet"
+    commands:
+      - tapOn:
+          text: "Unlock Wallet"
 
 - waitForAnimationToEnd:
     timeout: 5000

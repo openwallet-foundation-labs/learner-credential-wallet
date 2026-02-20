@@ -4,29 +4,42 @@ env:
 ---
 - clearState
 
+# Launch app first to handle the Expo dev client intro screen
 - launchApp
 
-- extendedWaitUntil:
-    visible: "http://localhost:8081"
-    timeout: 15000
+- waitForAnimationToEnd:
+    timeout: 5000
 
-- tapOn:
-    text: "http://localhost:8081"
-    optional: true
+# Dismiss Expo dev client intro if it appears
+- runFlow:
+    when:
+      visible: "Continue"
+    commands:
+      - tapOn:
+          text: "Continue"
+      - waitForAnimationToEnd:
+          timeout: 3000
 
-- extendedWaitUntil:
-    visible: "Continue"
-    timeout: 15000
+# Now connect to Metro via deep link (app is already running, intro is dismissed)
+- openLink: "exp+learner-credential-wallet://expo-development-client/?url=http%3A%2F%2Flocalhost%3A8081"
 
-- swipe:
-    direction: DOWN
-    optional: true
+- waitForAnimationToEnd:
+    timeout: 5000
 
-- waitForAnimationToEnd
+# Dismiss Expo dev menu overlay if it appears
+- runFlow:
+    when:
+      visible: "Go home"
+    commands:
+      - swipe:
+          direction: DOWN
+          duration: 400
+      - waitForAnimationToEnd:
+          timeout: 3000
 
 - extendedWaitUntil:
     visible: "Quick Setup"
-    timeout: 10000
+    timeout: 120000
 
 - assertVisible: "Quick Setup"
 
@@ -38,10 +51,17 @@ env:
     commands:
       - tapOn:
           id: "password-input"
+      - waitForAnimationToEnd:
+          timeout: 2000
       - inputText: "${PASSWORD}"
       - tapOn:
           id: "confirm-password-input"
+      - waitForAnimationToEnd:
+          timeout: 2000
       - inputText: "${PASSWORD}"
+      - hideKeyboard
+      - waitForAnimationToEnd:
+          timeout: 2000
       - tapOn:
           id: "next-button"
 

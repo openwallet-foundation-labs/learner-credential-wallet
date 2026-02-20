@@ -131,6 +131,7 @@ function RenameModal({
       title="Rename Profile"
       cancelText="Cancel"
       confirmText="Save"
+      testID="confirm-rename-button"
     >
       <TextInput
         value={newName}
