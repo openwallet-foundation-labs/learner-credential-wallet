@@ -68,7 +68,7 @@ export async function processMessageChain({
   if ('verifiablePresentationRequest' in requestOrOffer) {
     console.log('Processing request...')
     const request = requestOrOffer.verifiablePresentationRequest as IVprDetails
-    await processRequest({
+    const exchangeResponse = await processRequest({
       request,
       exchangeUrl,
       selectedProfile,
@@ -77,6 +77,16 @@ export async function processMessageChain({
       credentialRequestOrigin,
       profileRecordId
     })
+
+    if (exchangeResponse?.verifiablePresentation) {
+      const acceptCredentials = extractCredentialsFrom(
+        exchangeResponse.verifiablePresentation
+      )
+      if (acceptCredentials && acceptCredentials.length > 0) {
+        return { acceptCredentials, redirectUrl }
+      }
+    }
+
     return { redirectUrl }
   }
 
@@ -112,7 +122,7 @@ export async function processRequest({
   credentialRequestOrigin?: string
   modalConfirmZcapRequest: () => Promise<boolean>
   profileRecordId?: string
-}): Promise<void> {
+}): Promise<any> {
   if (!exchangeUrl) {
     throw new Error('Missing exchangeUrl, cannot send response.')
   }
@@ -201,7 +211,7 @@ export async function processRequest({
     payload: walletResponse
   })
   console.log('Response from Exchanger: ', responseFromExchanger)
-  // End the exchange
+  return responseFromExchanger
 }
 
 /**
