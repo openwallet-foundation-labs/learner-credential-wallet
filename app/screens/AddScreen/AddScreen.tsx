@@ -21,13 +21,18 @@ import { pickAndReadFile } from '../../lib/import'
 import { displayGlobalModal } from '../../lib/globalModal'
 import { useAppDispatch, useDynamicStyles } from '../../hooks'
 import { ScrollView } from 'react-native-gesture-handler'
-import { NavigationUtil, redirectRequestRoute } from '../../lib/navigationUtil'
+import {
+  NavigationUtil,
+  redirectRequestRoute,
+  redirectInteractionUrl
+} from '../../lib/navigationUtil'
 import { CANCEL_PICKER_MESSAGES } from '../../../app.config'
 import {
   isDeepLink,
   isWalletApiMessage,
   parseWalletApiMessage
 } from '../../lib/walletRequestApi'
+import { isInteractionUrl } from '../../lib/interactionUrl'
 
 export async function goToCredentialFoyer(
   credentialRequestParams?: CredentialRequestParams
@@ -94,6 +99,10 @@ export default function AddScreen(): React.ReactElement {
     if (isLegacyCredentialRequest(text)) {
       const params = legacyRequestParamsFromUrl(text)
       return goToCredentialFoyer(params)
+    }
+
+    if (isInteractionUrl(text)) {
+      return redirectInteractionUrl(text)
     }
 
     if (isDeepLink(text)) {

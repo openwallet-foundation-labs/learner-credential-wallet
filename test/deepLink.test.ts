@@ -8,4 +8,22 @@ describe('isDeepLink', () => {
     const result = isDeepLink(text)
     expect(result).toBe(true)
   })
+
+  it('returns true for interaction: scheme URL', () => {
+    expect(
+      isDeepLink('interaction:https://example.com/interactions/abc?iuv=1')
+    ).toBe(true)
+  })
+
+  it('returns true for interaction: scheme with URL-encoded URL', () => {
+    expect(
+      isDeepLink(
+        'interaction:https%3A%2F%2Fexample.com%2Finteractions%2Fabc%3Fiuv%3D1'
+      )
+    ).toBe(true)
+  })
+
+  it('returns false for plain HTTPS URL with iuv (not a registered deep link prefix)', () => {
+    expect(isDeepLink('https://example.com/interactions/abc?iuv=1')).toBe(false)
+  })
 })

@@ -5,9 +5,10 @@ import { navigationRef } from '../navigation/navigationRef'
 import { encodeQueryParams } from './encode'
 
 import { LinkConfig } from '../../app.config'
-import { redirectRequestRoute } from './navigationUtil'
+import { redirectRequestRoute, redirectInteractionUrl } from './navigationUtil'
 import { isLegacyCredentialRequest, legacyRequestParamsFromUrl } from './decode'
 import { goToCredentialFoyer } from '../screens/AddScreen/AddScreen'
+import { isInteractionUrl } from './interactionUrl'
 
 const DEEP_LINK_SCHEMES = LinkConfig.schemes.customProtocol.concat(
   LinkConfig.schemes.universalAppLink
@@ -54,6 +55,10 @@ export const deepLinkConfig = {
       if (isLegacyCredentialRequest(url)) {
         const params = legacyRequestParamsFromUrl(url)
         return goToCredentialFoyer(params)
+      }
+      if (isInteractionUrl(url)) {
+        redirectInteractionUrl(url)
+        return
       }
       if (url.includes('request=')) {
         redirectRequestRoute(url)
