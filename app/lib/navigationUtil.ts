@@ -56,6 +56,11 @@ export class NavigationUtil {
 }
 
 /**
+ *  Processes incoming deep link from:
+ *  1) Linking 'subscribe' event (from a deep link opened by mobile OS)
+ *  2) Pasting a deep link into the Add Credential textbox
+ *  3) Scanning a deep link with QR Code reader on Add Credential screen
+ *
  * Fetches a VCALM interaction URL, resolves the vcapi protocol, and
  * navigates to ExchangeCredentials with the resulting invitation.
  */
