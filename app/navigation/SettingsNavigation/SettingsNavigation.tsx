@@ -28,17 +28,29 @@ import {
   SettingsItemProps,
   SettingsProps,
   AboutProps,
-  SettingsNavigationParamList,
-} from './SettingsNavigation.d';
-import { AddExistingProfileScreen, DetailsScreen, DeveloperScreen, ManageProfilesScreen, RestoreWalletScreen, CredentialScreen,
-  PublicLinkScreen, HelpScreen } from '../../screens';
-import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen';
-import { useAppDispatch, useDynamicStyles, useResetNavigationOnBlur } from '../../hooks';
-import { SettingsNavigationProps } from '../';
-import { exportWallet } from '../../lib/export';
-import { registerWallet } from '../../lib/registerWallet';
-import WASScreen from '../../screens/WAS/WasScreen';
-import WasConnect from '../../screens/WAS/WasConnect';
+  SettingsNavigationParamList
+} from './SettingsNavigation.d'
+import {
+  AddExistingProfileScreen,
+  DetailsScreen,
+  DeveloperScreen,
+  ManageProfilesScreen,
+  RestoreWalletScreen,
+  HelpScreen,
+  CredentialScreen,
+  PublicLinkScreen
+} from '../../screens'
+import ProfileCredentialScreen from '../../screens/ProfileCredentialScreen'
+import {
+  useAppDispatch,
+  useDynamicStyles,
+  useResetNavigationOnBlur
+} from '../../hooks'
+import { SettingsNavigationProps } from '../'
+import { exportWallet } from '../../lib/export'
+import { registerWallet } from '../../lib/registerWallet'
+import WASScreen from '../../screens/WAS/WasScreen'
+import WasConnect from '../../screens/WAS/WasConnect'
 
 const Stack = createStackNavigator<SettingsNavigationParamList>()
 
@@ -50,7 +62,6 @@ function SettingsItem({
   testID
 }: SettingsItemProps): React.ReactElement {
   const { styles, theme } = useDynamicStyles(dynamicStyleSheet)
-
   const _rightComponent = rightComponent || (
     <ListItem.Chevron
       hasTVPreferredFocus={undefined}
@@ -141,15 +152,57 @@ function Settings({ navigation }: SettingsProps): React.ReactElement {
     <>
       <NavHeader title="Settings" testID="Settings" />
       <ScrollView contentContainerStyle={styles.settingsContainer}>
-        <SettingsItem key="biometrics" title="Use biometrics to unlock" onPress={onToggleBiometrics} rightComponent={biometricSwitch} disabled={!isBiometricsSupported} />
-        <SettingsItem key="profiles" title="Manage profiles" onPress={() => navigation.navigate('ManageProfilesScreen')} />
-        <SettingsItem key="register" title="Register wallet" onPress={registerWallet} />
-        <SettingsItem key="restore" title="Restore wallet" onPress={() => navigation.navigate('RestoreWalletScreen')} />
-        <SettingsItem key="backup" title="Backup wallet" onPress={() => setBackupModalOpen(true)} />
-        <SettingsItem key="reset" title="Reset wallet" onPress={() => setResetModalOpen(true)} />
-        <SettingsItem key="help" title="Help" onPress={() => navigation.navigate('Help')} />
-        <SettingsItem key="about" title="About" onPress={() => navigation.navigate('About')} />
-        {FEATURE_FLAGS.passwordProtect && <SettingsItem key="signout" title="Sign out" onPress={lockWallet} />}
+        <SettingsItem
+          key="biometrics"
+          title="Use biometrics to unlock"
+          onPress={onToggleBiometrics}
+          rightComponent={biometricSwitch}
+          disabled={!isBiometricsSupported}
+        />
+        <SettingsItem
+          key="profiles"
+          title="Manage profiles"
+          onPress={() => navigation.navigate('ManageProfilesScreen')}
+          testID="manage-profiles-button"
+        />
+        <SettingsItem
+          key="register"
+          title="Register wallet"
+          onPress={registerWallet}
+        />
+        <SettingsItem
+          key="restore"
+          title="Restore wallet"
+          onPress={() => navigation.navigate('RestoreWalletScreen')}
+        />
+        <SettingsItem
+          key="backup"
+          title="Backup wallet"
+          onPress={() => setBackupModalOpen(true)}
+        />
+        <SettingsItem
+          key="reset"
+          title="Reset wallet"
+          onPress={() => setResetModalOpen(true)}
+        />
+        <SettingsItem
+          key="help"
+          title="Help"
+          onPress={() => navigation.navigate('Help')}
+        />
+        <SettingsItem
+          key="about"
+          title="About"
+          onPress={() => navigation.navigate('About')}
+        />
+        {FEATURE_FLAGS.passwordProtect && (
+          <SettingsItem
+            key="signout"
+            title="Sign out"
+            onPress={lockWallet}
+            testID="signout-button"
+          />
+        )}
       </ScrollView>
       <ConfirmModal
         open={resetModalOpen}
@@ -250,7 +303,10 @@ export default function SettingsNavigation({
       <Stack.Screen name="CredentialScreen" component={CredentialScreen} />
       <Stack.Screen name="PublicLinkScreen" component={PublicLinkScreen} />
       <Stack.Screen name="DetailsScreen" component={DetailsScreen} />
-      <Stack.Screen name="RestoreWalletScreen" component={RestoreWalletScreen} />
+      <Stack.Screen
+        name="RestoreWalletScreen"
+        component={RestoreWalletScreen}
+      />
       <Stack.Screen name="Help" component={HelpScreen} />
       <Stack.Screen name="About" component={About} />
       <Stack.Screen name="DeveloperScreen" component={DeveloperScreen} />
