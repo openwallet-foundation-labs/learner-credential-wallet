@@ -268,7 +268,8 @@ export async function sendToExchanger({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    return exchangeResponseRaw.json()
+    const text = await exchangeResponseRaw.text()
+    return text ? JSON.parse(text) : null
   } catch (err) {
     console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`)
     throw err

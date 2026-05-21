@@ -8,8 +8,9 @@ import { selectWithFactory } from '../../store/selectorFactories'
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile'
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer'
 import { processMessageChain, sendToExchanger } from '../../lib/exchanges'
+import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
-import GlobalModalBody, { getGlobalModalBody } from '../../lib/globalModalBody'
+import { getGlobalModalBody } from '../../lib/globalModalBody'
 import { NavigationUtil } from '../../lib/navigationUtil'
 import { delay } from '../../lib/time'
 import { ExchangeCredentialsProps } from './ExchangeCredentials.d'
@@ -25,6 +26,7 @@ export default function ExchangeCredentials({
 }: ExchangeCredentialsProps): React.ReactElement {
   const { params } = route
   const { message } = params
+  const isDIDAuthOnly = isDIDAuthOnlyRequest(message)
 
   const { theme } = useThemeContext()
   const dispatch = useAppDispatch()
@@ -47,16 +49,6 @@ export default function ExchangeCredentials({
       subscription.remove()
     }
   }, [])
-
-  const dataLoadingSuccessModalState = {
-    title: 'Success',
-    confirmButton: true,
-    confirmText: 'OK',
-    cancelButton: false,
-    body: (
-      <GlobalModalBody message="You have successfully delivered credentials to the organization." />
-    )
-  }
 
   const confirmZcapRequest = async () => {
     const confirmed = await displayGlobalModal({
@@ -91,7 +83,15 @@ export default function ExchangeCredentials({
     if ('issueRequest' in message) {
       throw new HumanReadableError('Issue/signing requests not supported yet.')
     }
+    try {
+      await runExchange()
+    } catch (err) {
+      clearGlobalModal()
+      throw err
+    }
+  }
 
+  const runExchange = async () => {
     console.log(
       '[acceptExchange] Processing message:',
       JSON.stringify(message, null, 2)
@@ -180,8 +180,12 @@ export default function ExchangeCredentials({
       modals
     })
 
-    // We've been issued some credentials - present to user for accepting
-    if (acceptCredentials && navigationRef.isReady()) {
+    clearGlobalModal()
+
+    // In a VPR (presentation request) flow the verifier may echo back a VP,
+    // but we never want to store it — just confirm to the user.
+    if (!isVPRFlow && acceptCredentials && navigationRef.isReady()) {
+      // We've been issued credentials to store - present to user for accepting
       const { credentialRequestOrigin } = requestOrOffer
       console.log('credentialRequestOrigin:', credentialRequestOrigin)
       console.log('[acceptExchange] Accepting credentials:', acceptCredentials)
@@ -200,13 +204,25 @@ export default function ExchangeCredentials({
       })
     } else {
       console.log('[acceptExchange] Exchanges completed.')
-      displayGlobalModal(dataLoadingSuccessModalState)
       navigationRef.navigate('HomeNavigation', {
         screen: 'CredentialNavigation',
         params: {
           screen: 'HomeScreen'
         }
       })
+      if (isVPRFlow) {
+        displayGlobalModal({
+          title: 'Success',
+          confirmButton: true,
+          confirmText: 'OK',
+          cancelButton: false,
+          body: getGlobalModalBody(
+            isDIDAuthOnly
+              ? 'DID Authentication complete.'
+              : 'You have shared the selected credentials.'
+          )
+        })
+      }
     }
   }
 
@@ -237,7 +253,9 @@ export default function ExchangeCredentials({
       cancelText="No"
     >
       <Text style={mixins.modalBodyText}>
-        An organization would like to exchange credentials with you.
+        {isDIDAuthOnly
+          ? 'An organization is requesting DID Authentication.'
+          : 'An organization would like to exchange credentials with you.'}
       </Text>
       <Text style={mixins.modalBodyText}>Would you like to continue?</Text>
     </ConfirmModal>

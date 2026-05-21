@@ -16,14 +16,12 @@
  * - JSON objects fetched or pasted into the Add screen
  */
 import {
-  ISigner,
   IVerifiableCredential,
   IVerifiablePresentation
 } from '@digitalcredentials/ssi'
 import qs from 'query-string'
 import { LinkConfig } from '../../app.config'
 import { HumanReadableError } from './error'
-import { ISelectedProfile } from './did'
 import { IController } from './getWasController'
 
 export function isDeepLink(text: string): boolean {
@@ -121,6 +119,19 @@ export function isDidAuthRequested({
     return true
   }
   return false
+}
+
+/**
+ * Returns true if the message is a VPR whose only query type is DIDAuthentication
+ * (i.e. no credential sharing is involved).
+ */
+export function isDIDAuthOnlyRequest(message: WalletApiMessage): boolean {
+  if (!('verifiablePresentationRequest' in message)) return false
+  const { query } = message.verifiablePresentationRequest
+  const queries = Array.isArray(query) ? query : [query]
+  return (
+    queries.length > 0 && queries.every((q) => q.type === 'DIDAuthentication')
+  )
 }
 
 /**
