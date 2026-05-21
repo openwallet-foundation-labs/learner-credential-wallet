@@ -16,7 +16,6 @@ import Share from 'react-native-share'
 
 import { PublicLinkScreenParams } from './PublicLinkScreen.d'
 import dynamicStyleSheet from './PublicLinkScreen.styles'
-import LoadingIndicatorDots from '../../components/LoadingIndicatorDots/LoadingIndicatorDots'
 import NavHeader from '../../components/NavHeader/NavHeader'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import {
@@ -111,17 +110,6 @@ export default function PublicLinkScreen({
     await tearDownModalIOS() // ensure no modal is mid-transition
     return displayGlobalModal(config)
   }
-
-  // Swap current modal content → loading (no dismiss/re-present → no flash)
-  const swapModalToLoading = () => {
-    displayGlobalModal({
-      title: 'Creating Public Link',
-      confirmButton: false,
-      cancelButton: false,
-      body: <LoadingIndicatorDots />
-    })
-  }
-  // --------------------------------------------------------------------
 
   // Render-method availability
   useEffect(() => {
@@ -221,17 +209,6 @@ export default function PublicLinkScreen({
       [PublicLinkScreenMode.ShareCredential]: 'Share Credential'
     }[screenMode as PublicLinkScreenMode] ?? 'Public Link'
 
-  // ---------- Global modal variants (UI unchanged) ----------
-  const displayLoadingModal = () => {
-    // non-interactive; do not await
-    void presentModalSafely({
-      title: 'Creating Public Link',
-      confirmButton: false,
-      cancelButton: false,
-      body: <LoadingIndicatorDots />
-    })
-  }
-
   async function presentErrorModal(
     title: string,
     message: string,
@@ -313,23 +290,11 @@ export default function PublicLinkScreen({
   // Used by auto-create and “create if needed” flows (PDF/LinkedIn)
   async function createPublicLink() {
     try {
-      await tearDownModalIOS() // ensure previous confirm is gone
-      displayLoadingModal() // show spinner (no await)
-
       const createdLink = await createPublicLinkFor(rawCredentialRecord)
-
-      clearGlobalModal()
-      await tearDownModalIOS()
 
       setPublicLink(createdLink)
       setJustCreated(true)
-
-      // Belt-and-suspenders: ensure any lingering modal is cleared after UI settles
-      setTimeout(() => clearGlobalModal(), 0)
-      setTimeout(() => clearGlobalModal(), 300)
     } catch (err) {
-      clearGlobalModal()
-      await tearDownModalIOS()
       await presentErrorModal(
         'Unable to Create Public Link',
         'An error occurred while creating the Public Link for this credential.',
@@ -371,25 +336,14 @@ export default function PublicLinkScreen({
       return
     }
 
-    // 🔑 Swap existing confirm modal → loading (no close/open → no flash)
     clearGlobalModal()
     await tearDownModalIOS()
-    swapModalToLoading()
 
     try {
       const createdLink = await createPublicLinkFor(rawCredentialRecord)
       setPublicLink(createdLink)
       setJustCreated(true)
-
-      clearGlobalModal() // close after success
-      await tearDownModalIOS()
-
-      // Extra safety to avoid stuck spinner in edge cases
-      setTimeout(() => clearGlobalModal(), 0)
-      setTimeout(() => clearGlobalModal(), 300)
     } catch (err) {
-      clearGlobalModal() // close loading first
-      await tearDownModalIOS()
       await presentErrorModal(
         'Unable to Create Public Link',
         'An error occurred while creating the Public Link for this credential.',
