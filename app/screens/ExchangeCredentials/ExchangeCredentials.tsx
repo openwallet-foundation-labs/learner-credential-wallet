@@ -123,6 +123,25 @@ export default function ExchangeCredentials({
         JSON.stringify(initialResponse, null, 2)
       )
       requestOrOffer = initialResponse
+      // Now that we know the exchange type, show a type-specific confirmation
+      if (isDIDAuthOnlyRequest(requestOrOffer)) {
+        const confirmed = await displayGlobalModal({
+          title: 'DID Authentication Request',
+          confirmText: 'Continue',
+          cancelText: 'Cancel',
+          cancelOnBackgroundPress: true,
+          body: getGlobalModalBody(
+            'An organization is requesting DID Authentication.'
+          )
+        })
+        if (!confirmed) {
+          navigationRef.navigate('HomeNavigation', {
+            screen: 'CredentialNavigation',
+            params: { screen: 'HomeScreen' }
+          })
+          return
+        }
+      }
     } else {
       exchangeUrl = message.redirectUrl
       requestOrOffer = message
@@ -130,6 +149,7 @@ export default function ExchangeCredentials({
 
     // Regardless if request is an offer or a request, select profile
     const isVPRFlow = 'verifiablePresentationRequest' in requestOrOffer
+    const isDIDAuthOnly = isDIDAuthOnlyRequest(requestOrOffer)
     const rawProfileRecord = await NavigationUtil.selectProfile(
       isVPRFlow
         ? {
