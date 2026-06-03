@@ -66,8 +66,6 @@
     "@digitalcredentials/security-document-loader": "^8.0.0",
     "@digitalcredentials/ssi": "^5.4.2",
     "@digitalcredentials/vc": "^10.0.2",
-    "@digitalcredentials/vc-bitstring-status-list": "^1.0.0",
-    "@digitalcredentials/vc-status-list": "^9.0.0",
     "@digitalcredentials/verifier-core": "^1.0.0-beta.6",
     "@digitalcredentials/vpqr": "^2.2.1",
     "@digitalcredentials/x25519-key-agreement-key-2020": "^3.0.0",
