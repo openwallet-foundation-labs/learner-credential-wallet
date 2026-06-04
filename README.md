@@ -28,6 +28,27 @@ or to apply for jobs with employers—in an interoperable manner.
 - Create and share a presentation that collates any number of credentials in their wallet
 - Backup and restore their wallet
 
+## Gallery
+### Here are projects that have forked and customized the LCW:
+
+<img width="165" height="156" alt="ASUPocket" src="https://github.com/user-attachments/assets/3314d7e8-4d02-4fd4-b1f6-8a60cfd7d74e" />
+</br>
+
+#### [ASU Pocket](https://pocket.asu.edu/)
+ASU Pocket is a digital wallet for storing and managing achievements in work and learning. Currently serving Arizona State University, ASU Pocket allows students, staff, and faculty to access badges and digital records of their achievements from across the university, including records for employment, education, training, memberships, and other activities. ASU Pocket uses novel Self-Sovereign Identity (SSI) technology to create and store a portable, decentralized identity for learners. ASU Pocket platform issues and stores digitized achievement records known as Verifiable Credentials as encrypted records in a secure private wallet on your device.
+
+</br>
+
+<img width="170" height="170" alt="MySkillsPocket" src="https://github.com/user-attachments/assets/86755955-6888-45c6-a3ce-e14dfcca6e94" />
+
+#### [My Skills Pocket](https://myskillspocket.com/)
+My Skills Pocket allows you to carry verifiable digital credentials from employers, universities, and more.
+
+</br>
+
+## News - June 2026
+Our last release as the Digital Credentials Consortium at MIT is 2.2.10. It includes support for the VC-API Interaction URL standard, allowing a single QR code or link to work with multiple digital wallets instead of being tied to LCW-specific deep links, improving interoperability.  It does not support 16KB memory page alignment screens on Android. We are aware of the issue and are currently transitioning away from RealmJS in order to resolve it. Additionally, the latest release provides scaffolding for Maestro UI testing support. Please note that Maestro implementation is a work in progress and successful test runs will depend on the device you use. 
+
 ## Contributing
 
 Developers are welcome to open issues and PR's on this repository. Please refer to [CONTRIBUTING.md](https://github.com/openwallet-foundation-labs/learner-credential-wallet/blob/main/CONTRIBUTING.md) for information on how to contribute to this project.
