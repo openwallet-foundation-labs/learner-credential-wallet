@@ -4,8 +4,8 @@
  */
 const env = process.env
 
-const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 103
-const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.2.9'
+const BUILD_NUMBER = parseInt(env.APP_BUILD_NUMBER) || 107
+const VERSION_NUMBER = env.APP_VERSION_NUMBER || '2.2.10'
 
 // Used by the 'Create Public Link' functionality
 // If you have forked the LCW and are creating your own wallet app version,
