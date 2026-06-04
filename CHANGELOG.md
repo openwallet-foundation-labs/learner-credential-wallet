@@ -1,5 +1,46 @@
 # learner-credential-wallet Changelog
 
+## 2.2.10 - build 107
+
+### Added
+
+- New Help section on LCW for getting started #437
+- Support VC-API Interaction URL format in QR Code scanning
+#764
+- Add gallery to LCW website and repo
+#771
+- Look into using maestro for automated UI testing
+#918
+- Maestro UI Testing – “Learn more about the LCW” Link Flow
+#942
+- Maestro UI Testing – Issuer Information Flow
+#937
+- Maestro UI Testing – Credential Management Flow
+#928
+- Maestro UI Testing – Credential Verification Status Flow
+#941
+- Maestro UI Testing – About Screen Flow
+#940
+- Maestro UI Testing – Sign Out Flow
+#936
+- Maestro UI Testing – Profile Management Flow
+#932
+- Maestro UI Testing – Shared Credentials Flow
+#929
+- Create link on onboarding screen during password creation
+#806
+
+### Changed
+- LCW: Change linter library, update rules
+#615
+
+### Fixed
+- Links disabled for issuers that are in registry
+#914
+- Remove excess logs related to light/dark theme
+#913
+
+
 ## 2.2.9 - build 103
 
 ### Added
