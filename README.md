@@ -371,7 +371,7 @@ Credentials Consortium.
 
 ## License
 
-[MIT License](https://github.com/digitalcredentials/learner-credential-wallet/blob/main/LICENSE) Copyright (c) 2024 Massachusetts Institute of Technology
+[MIT License](./LICENSE) Copyright (c) 2021-2026 Digital Credentials Consortium
 
 All files located in external directories are externally maintained libraries
 used by this software which have their own licenses; we recommend you read them,
