@@ -36,9 +36,11 @@ export function extractCredentialsFrom(
   return null
 }
 
-/* Verification expiration = 30 days */
-const VERIFICATION_EXPIRATION = 1000 * 30
-const lruCache = new LruCache({ maxAge: VERIFICATION_EXPIRATION })
+/* Cache verification results briefly to avoid duplicate UI verification work. */
+const VERIFICATION_CACHE_TTL_MINUTES = 15
+const lruCache = new LruCache({
+  maxAge: VERIFICATION_CACHE_TTL_MINUTES * 60 * 1000
+})
 export type VerificationResult = {
   timestamp: number | null
   log: ResultLog[]
