@@ -19,10 +19,6 @@ import {
   selectRawCredentialRecords
 } from '../../store/slices/credential'
 import { getCredentialName } from '../../lib/credentialName'
-import { verificationResultFor } from '../../lib/verifiableObject'
-import { displayGlobalModal } from '../../lib/globalModal'
-import { useContext } from 'react'
-import { DidRegistryContext } from '../../init/registries'
 
 export default function HomeScreen({
   navigation
@@ -35,7 +31,6 @@ export default function HomeScreen({
   )
   const dispatch = useAppDispatch()
   const share = useShareCredentials()
-  const registries = useContext(DidRegistryContext)
 
   const itemToDeleteName = itemToDelete
     ? getCredentialName(itemToDelete.credential)

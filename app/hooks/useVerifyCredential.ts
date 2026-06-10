@@ -1,8 +1,7 @@
-import { useCallback, useContext, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { CredentialError } from '../types/credential'
 import { CredentialRecordRaw } from '../model'
 import { useFocusEffect } from '@react-navigation/native'
-import { DidRegistryContext } from '../init/registries'
 import { VerifyPayload, verificationResultFor } from '../lib/verifiableObject'
 
 const DEFAULT_ERROR_MESSAGE =
@@ -19,8 +18,6 @@ export function useVerifyCredential(
   const [result, setResult] = useState<VerifyPayload['result']>(initialResult)
   const [error, setError] = useState<VerifyPayload['error']>(null)
 
-  const registries = useContext(DidRegistryContext)
-
   if (rawCredentialRecord === undefined) {
     return null
   }
@@ -29,8 +26,7 @@ export function useVerifyCredential(
     try {
       const verificationResult = await verificationResultFor({
         rawCredentialRecord,
-        forceFresh,
-        registries
+        forceFresh
       })
       setResult(verificationResult)
 
@@ -49,7 +45,7 @@ export function useVerifyCredential(
     } finally {
       setLoading(false)
     }
-  }, [rawCredentialRecord, forceFresh, registries]) // require update when these values changes
+  }, [rawCredentialRecord, forceFresh])
 
   useFocusEffect(
     useCallback(() => {
