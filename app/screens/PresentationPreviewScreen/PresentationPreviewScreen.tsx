@@ -16,7 +16,7 @@ import {
 import dynamicStyleSheet from './PresentationPreviewScreen.styles'
 import type { PresentationPreviewScreenProps } from '../../navigation'
 import type { RenderItemProps } from './PresentationPreviewScreen.d'
-import { useDynamicStyles, useVerifyCredential } from '../../hooks'
+import { useDynamicStyles } from '../../hooks'
 import { useShareCredentials } from '../../hooks/useShareCredentials'
 import { PublicLinkScreenMode } from '../PublicLinkScreen/PublicLinkScreen'
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
@@ -24,9 +24,6 @@ import { createPublicLinkFor, getPublicViewLink } from '../../lib/publicLink'
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore - app.config.js doesn't have type declarations
 import { LinkConfig } from '../../../app.config'
-import { verificationResultFor } from '../../lib/verifiableObject'
-import { useContext } from 'react'
-import { DidRegistryContext } from '../../init/registries'
 
 export default function PresentationPreviewScreen({
   navigation,
@@ -35,7 +32,6 @@ export default function PresentationPreviewScreen({
   const { styles, mixins } = useDynamicStyles(dynamicStyleSheet)
   const { selectedCredentials, mode = 'send' } = route.params
   const share = useShareCredentials()
-  const registries = useContext(DidRegistryContext)
 
   const isCreateLinkMode = mode === 'createLink'
   const buttonTitle = isCreateLinkMode ? 'Create Public Link' : 'Send'
