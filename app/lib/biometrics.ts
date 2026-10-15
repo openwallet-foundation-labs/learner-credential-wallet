@@ -1,12 +1,17 @@
 import * as Keychain from 'react-native-keychain'
 
-export async function storeInBiometricKeychain(key: string): Promise<void> {
+/**
+ * Returns whether the key was stored. Most failures are logged rather than
+ * thrown, so callers that depend on the key being there must check the result.
+ */
+export async function storeInBiometricKeychain(key: string): Promise<boolean> {
   try {
-    await Keychain.setGenericPassword('key', key, {
+    const result = await Keychain.setGenericPassword('key', key, {
       storage: Keychain.STORAGE_TYPE.RSA,
       accessControl: Keychain.ACCESS_CONTROL.BIOMETRY_ANY,
       authenticationType: Keychain.AUTHENTICATION_TYPE.BIOMETRICS
     })
+    return result !== false
   } catch (err) {
     const { message } = err as Error
 
@@ -15,6 +20,9 @@ export async function storeInBiometricKeychain(key: string): Promise<void> {
         'Biometric auth currently fails on iOS 15 simulators. See issue: https://github.com/oblador/react-native-keychain/issues/509'
       )
     }
+
+    console.error('Could not store the key in the biometric keychain:', err)
+    return false
   }
 }
 

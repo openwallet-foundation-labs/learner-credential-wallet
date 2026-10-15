@@ -33,9 +33,7 @@ describe('biometrics', () => {
     it('should store key successfully', async () => {
       ;(Keychain.setGenericPassword as jest.Mock).mockResolvedValue(true)
 
-      await expect(
-        storeInBiometricKeychain('test-key')
-      ).resolves.toBeUndefined()
+      await expect(storeInBiometricKeychain('test-key')).resolves.toBe(true)
       expect(Keychain.setGenericPassword).toHaveBeenCalledWith(
         'key',
         'test-key',
@@ -58,13 +56,21 @@ describe('biometrics', () => {
       )
     })
 
-    it('should handle other errors silently', async () => {
+    it('should report other errors as not stored', async () => {
       const error = new Error('Other error')
       ;(Keychain.setGenericPassword as jest.Mock).mockRejectedValue(error)
+      const consoleError = jest
+        .spyOn(console, 'error')
+        .mockImplementation(() => undefined)
 
-      await expect(
-        storeInBiometricKeychain('test-key')
-      ).resolves.toBeUndefined()
+      await expect(storeInBiometricKeychain('test-key')).resolves.toBe(false)
+      consoleError.mockRestore()
+    })
+
+    it('should report a false result as not stored', async () => {
+      ;(Keychain.setGenericPassword as jest.Mock).mockResolvedValue(false)
+
+      await expect(storeInBiometricKeychain('test-key')).resolves.toBe(false)
     })
   })
 
