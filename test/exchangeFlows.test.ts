@@ -10,6 +10,7 @@ import {
   credentialsToOffer,
   exchangeCompletionMessage
 } from '../app/lib/exchangeResult'
+import { processZcaps } from '../app/lib/walletRequestApi'
 import { mockCredential } from '../app/mock/credential'
 
 // ESM-only and unused on this path
@@ -89,20 +90,31 @@ async function run({
   answered,
   walletCredentials = [],
   reply = {},
+  replyText,
   status = 200,
+  networkError = false,
+  checkStatus = true,
   interactive
 }: {
   answered: any
   walletCredentials?: any[]
   reply?: unknown
+  // Raw body, overriding reply
+  replyText?: string
   status?: number
+  networkError?: boolean
+  // true for a VC-API exchange endpoint, false for a deep link's redirectUrl
+  checkStatus?: boolean
   interactive?: { grantZcaps: boolean }
 }) {
-  const fetchMock = jest.fn(async () => ({
-    ok: status >= 200 && status < 300,
-    status,
-    text: async () => JSON.stringify(reply)
-  }))
+  const fetchMock = jest.fn(async () => {
+    if (networkError) throw new TypeError('Network request failed')
+    return {
+      ok: status >= 200 && status < 300,
+      status,
+      text: async () => replyText ?? JSON.stringify(reply)
+    }
+  })
   global.fetch = fetchMock as any
 
   const result = await processMessageChain({
@@ -118,7 +130,8 @@ async function run({
           enabled: true,
           confirmZcapRequest: async () => interactive.grantZcaps
         }
-      : { enabled: false }
+      : { enabled: false },
+    checkStatus
   })
 
   const calls = fetchMock.mock.calls as any[]
@@ -265,17 +278,115 @@ describe('exchange flows (issue #957)', () => {
     )
   })
 
-  it('throws a rejection, not a success, when the exchanger returns an error status', async () => {
-    await expect(
-      run({
-        answered: vpr([didAuth]),
-        status: 400,
-        reply: { name: 'DataError', message: 'Invalid presentation.' }
+  it('treats a null VP alongside a further request as another step', async () => {
+    const result = await run({
+      answered: vpr([didAuth]),
+      reply: { verifiablePresentation: null, ...vpr([qbe]) }
+    })
+    expect(result.toOffer).toEqual([])
+    expect(result.message).toBe(
+      "This request needs another step that this wallet doesn't support yet."
+    )
+  })
+
+  it('posts nothing when zcaps were requested but none could be made', async () => {
+    ;(processZcaps as jest.Mock).mockResolvedValueOnce([])
+    const result = await run({ answered: vpr([zcapQuery]) })
+    expect(result.payload).toBeUndefined()
+    expect(result.sent?.posted).toBe(false)
+    expect(result.message).toBe('Nothing was shared.')
+  })
+
+  it('sends a VP without zcaps when DIDAuth was requested but no zcaps were made', async () => {
+    ;(processZcaps as jest.Mock).mockResolvedValueOnce([])
+    const result = await run({ answered: vpr([didAuth, zcapQuery]) })
+    expect(result.payload.zcap).toBeUndefined()
+    expect(result.sent?.zcaps).toBe(false)
+    expect(result.message).toBe('DID Authentication complete.')
+  })
+
+  describe('a failed reply to a VC-API exchange endpoint', () => {
+    it.each([
+      [400, 'The request was rejected. DataError: Invalid presentation.'],
+      [403, 'The request was rejected. DataError: Invalid presentation.'],
+      [404, 'This request has expired or no longer exists.'],
+      [410, 'This request has expired or no longer exists.'],
+      [500, "The service couldn't be reached. Try again later."],
+      [503, "The service couldn't be reached. Try again later."]
+    ])('HTTP %i reports the failure, never success', async (status, base) => {
+      await expect(
+        run({
+          answered: vpr([didAuth]),
+          status,
+          reply: { name: 'DataError', message: 'Invalid presentation.' }
+        })
+      ).rejects.toMatchObject({
+        isExchangeFailure: true,
+        message: `${base} Your DID Authentication response was sent before the error.`
       })
-    ).rejects.toMatchObject({
-      isExchangeRejection: true,
-      status: 400,
-      message: 'The request was rejected. DataError: Invalid presentation.'
+    })
+
+    it('mentions the credentials that were sent before the error', async () => {
+      await expect(
+        run({
+          answered: vpr([qbe, zcapQuery]),
+          walletCredentials: [credentialA],
+          status: 400,
+          replyText: ''
+        })
+      ).rejects.toMatchObject({
+        message:
+          'The request was rejected. Your selected credentials were sent and storage access was granted before the error.'
+      })
+    })
+
+    it('says "may have" when the network failed', async () => {
+      await expect(
+        run({
+          answered: vpr([qbe]),
+          walletCredentials: [credentialA],
+          networkError: true
+        })
+      ).rejects.toMatchObject({
+        kind: 'unreachable',
+        message:
+          "The service couldn't be reached. Try again later. Your selected credentials may have been sent before the error."
+      })
+    })
+  })
+
+  describe("a deep-link request's redirectUrl (unchecked, as on main)", () => {
+    it('does not treat a 404 with a JSON body as an error', async () => {
+      const result = await run({
+        answered: vpr([didAuth]),
+        checkStatus: false,
+        status: 404,
+        reply: { name: 'NotFoundError', message: 'Not found.' }
+      })
+      expect(result.toOffer).toEqual([])
+      expect(result.message).toBe('DID Authentication complete.')
+    })
+
+    it('does not treat a 404 with an empty body as an error', async () => {
+      const result = await run({
+        answered: vpr([qbe]),
+        walletCredentials: [credentialA],
+        checkStatus: false,
+        status: 404,
+        replyText: ''
+      })
+      expect(result.toOffer).toEqual([])
+      expect(result.message).toBe('You have shared the selected credentials.')
+    })
+
+    it('rethrows a network error unchanged', async () => {
+      await expect(
+        run({
+          answered: vpr([didAuth]),
+          checkStatus: false,
+          networkError: true
+        })
+      ).rejects.toThrow(TypeError)
     })
   })
 })

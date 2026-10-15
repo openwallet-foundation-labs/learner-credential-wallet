@@ -17,8 +17,10 @@ import {
 } from './walletRequestApi'
 import { extractCredentialsFrom } from './verifiableObject'
 import {
-  ExchangeRejectedError,
+  ExchangeFailedError,
   exchangerErrorDetail,
+  failureKindForStatus,
+  isExchangeFailedError,
   isFollowUpStep,
   ISentSummary
 } from './exchangeResult'
@@ -52,24 +54,30 @@ type IModalOptions = {
  *   with an interactive modal popup to confirm sending credentials.
  *   Disabled for unit testing.
  * @param modals.confirmZcapRequest {function}
+ * @param checkStatus {boolean} - exchangeUrl is a VC-API exchange endpoint,
+ *   so a failed reply to it is reported as an ExchangeFailedError. Off for a
+ *   deep-link request's redirectUrl, whose reply is not checked.
  * @returns receivedCredentials - credentials in the offer, or in the
  *   exchanger's reply to a request; sent - what the wallet posted in reply to
  *   a request (undefined for an offer); nextStep - the exchanger's reply asked
  *   for a further step, which is not processed.
- * @throws ExchangeRejectedError if the exchanger rejects the wallet's reply.
+ * @throws ExchangeFailedError if checkStatus is set and the exchanger
+ *   rejects the wallet's reply or cannot be reached.
  */
 export async function processMessageChain({
   exchangeUrl,
   requestOrOffer,
   selectedProfile,
   wasController,
-  modals
+  modals,
+  checkStatus = false
 }: {
   exchangeUrl?: string
   requestOrOffer: IVpRequest | IVpOffer
   selectedProfile: ISelectedProfile
   wasController: IController
   modals: IModalOptions
+  checkStatus?: boolean
 }): Promise<{
   receivedCredentials?: IVerifiableCredential[]
   sent?: ISentSummary
@@ -98,7 +106,8 @@ export async function processMessageChain({
       selectedProfile,
       modals,
       credentialRequestOrigin,
-      wasController
+      wasController,
+      checkStatus
     })
 
     const receivedCredentials = response?.verifiablePresentation
@@ -129,6 +138,7 @@ export async function processMessageChain({
  *   with an interactive modal popup to confirm sending credentials.
  *   Disabled for unit testing.
  * @param modals.confirmZcapRequest {function}
+ * @param checkStatus {boolean} - See processMessageChain.
  */
 export async function processRequest({
   request,
@@ -136,7 +146,8 @@ export async function processRequest({
   selectedProfile,
   credentialRequestOrigin,
   wasController,
-  modals
+  modals,
+  checkStatus = false
 }: {
   request: IVprDetails
   exchangeUrl?: string
@@ -144,6 +155,7 @@ export async function processRequest({
   credentialRequestOrigin?: string
   wasController: IController
   modals: IModalOptions
+  checkStatus?: boolean
 }): Promise<{
   // The exchanger's reply, if the wallet posted anything
   response?: any
@@ -188,7 +200,8 @@ export async function processRequest({
     zcaps = await processZcaps({ zcapRequests, wasController })
   }
 
-  if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {
+  const zcapsGranted = !!zcaps && zcaps.length > 0
+  if (vcMatches.length === 0 && !zcapsGranted && !didAuthRequested) {
     // No matches were found, nothing to send to requester
     console.log(
       '[processMessageChain] No zcaps or VCs matched request query, ending exchange.'
@@ -203,7 +216,7 @@ export async function processRequest({
   const walletResponse: IResponseToExchanger = {}
 
   // If any zcaps were requested and granted, add them to response
-  if (zcaps && zcaps.length > 0) {
+  if (zcapsGranted) {
     walletResponse.zcap = zcaps
   }
 
@@ -234,20 +247,26 @@ export async function processRequest({
     sentDidAuth = didAuthRequested
   }
 
-  const responseFromExchanger = await sendToExchanger({
-    exchangeUrl,
-    payload: walletResponse
-  })
-  console.log('Response from Exchanger: ', responseFromExchanger)
-  return {
-    response: responseFromExchanger,
-    sent: {
-      posted: true,
-      credentials: selectedVcs,
-      didAuth: sentDidAuth,
-      zcaps: !!walletResponse.zcap
-    }
+  const sent: ISentSummary = {
+    posted: true,
+    credentials: selectedVcs,
+    didAuth: sentDidAuth,
+    zcaps: !!walletResponse.zcap
   }
+  let responseFromExchanger
+  try {
+    responseFromExchanger = await sendToExchanger({
+      exchangeUrl,
+      payload: walletResponse,
+      checkStatus
+    })
+  } catch (err) {
+    // Tell the user what had already left the device
+    if (isExchangeFailedError(err)) throw err.withSentBefore(sent)
+    throw err
+  }
+  console.log('Response from Exchanger: ', responseFromExchanger)
+  return { response: responseFromExchanger, sent }
 }
 
 /**
@@ -282,39 +301,48 @@ export async function vcMatchesFor({
  *
  * @param exchangeUrl
  * @param payload {{ verifiablePresentation, zcap }}
- * @throws ExchangeRejectedError if the exchanger answers with a non-OK
- *   status, so an error reply is never mistaken for a successful step.
+ * @param checkStatus {boolean} - Set for VC-API exchange endpoints: a non-OK
+ *   status or a network failure throws ExchangeFailedError, so an error reply
+ *   is never mistaken for a successful step. When unset (a deep-link
+ *   request's redirectUrl), the reply is parsed whatever its status.
  */
 export async function sendToExchanger({
   exchangeUrl,
-  payload
+  payload,
+  checkStatus = false
 }: {
   exchangeUrl: string
   payload: {
     verifiablePresentation?: IVerifiablePresentation
     zcap?: IZcap[]
   }
+  checkStatus?: boolean
 }): Promise<any> {
+  let status: number
+  let ok: boolean
+  let text: string
   try {
     const exchangeResponseRaw = await fetch(exchangeUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    const text = await exchangeResponseRaw.text()
-    if (!exchangeResponseRaw.ok) {
-      console.log(
-        `Exchanger "${exchangeUrl}" rejected the request with HTTP ${exchangeResponseRaw.status}:`,
-        text
-      )
-      throw new ExchangeRejectedError(
-        exchangeResponseRaw.status,
-        exchangerErrorDetail(text)
-      )
-    }
-    return text ? JSON.parse(text) : null
+    status = exchangeResponseRaw.status
+    ok = exchangeResponseRaw.ok
+    text = await exchangeResponseRaw.text()
   } catch (err) {
-    console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`)
+    console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`, err)
+    if (checkStatus) {
+      throw new ExchangeFailedError('unreachable', { networkError: true })
+    }
     throw err
   }
+  if (checkStatus && !ok) {
+    console.log(`Exchanger "${exchangeUrl}" replied HTTP ${status}:`, text)
+    throw new ExchangeFailedError(failureKindForStatus(status), {
+      status,
+      detail: exchangerErrorDetail(text)
+    })
+  }
+  return text ? JSON.parse(text) : null
 }

@@ -12,13 +12,16 @@ import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
 import {
   credentialsToOffer,
   exchangeCompletionMessage,
+  exchangeFailureMessage,
   IMessage,
-  isExchangeRejectedError
+  isActionableExchangeMessage,
+  isExchangeFailedError,
+  NOTHING_TO_ACT_ON
 } from '../../lib/exchangeResult'
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
 import { getGlobalModalBody } from '../../lib/globalModalBody'
 import { NavigationUtil } from '../../lib/navigationUtil'
-import { delay, waitFor } from '../../lib/time'
+import { delay } from '../../lib/time'
 import { ExchangeCredentialsProps } from './ExchangeCredentials.d'
 import { HumanReadableError } from '../../lib/error'
 import { useThemeContext } from '../../hooks/useThemeContext'
@@ -110,10 +113,10 @@ export default function ExchangeCredentials({
       await runExchange()
     } catch (err) {
       clearGlobalModal()
-      if (isExchangeRejectedError(err)) {
-        // The exchanger answered with an error status: say so, never success
-        if (navigationRef.isReady()) goHome()
-        showMessage({ title: 'Request Rejected', body: err.message })
+      if (isExchangeFailedError(err)) {
+        // The exchange endpoint failed: say so, never success
+        goHome()
+        showMessage(exchangeFailureMessage(err.kind, err.details))
         return
       }
       throw err
@@ -133,6 +136,9 @@ export default function ExchangeCredentials({
     )
 
     let requestOrOffer, exchangeUrl
+    // Only a VC-API exchange endpoint's replies are status-checked; a
+    // deep-link request's redirectUrl behaves as it always has
+    let checkStatus = false
     // If this is an Exchange Invitation, send the initial POST {}
     //   to get back either a request or an offer
     if ('protocols' in message) {
@@ -143,14 +149,21 @@ export default function ExchangeCredentials({
         )
       }
       // Start the exchange - initial POST {}
-      const initialResponse = await await sendToExchanger({
+      checkStatus = true
+      const initialResponse = await sendToExchanger({
         exchangeUrl,
-        payload: {}
+        payload: {},
+        checkStatus
       })
       console.log(
         `Initial exchange response from "${exchangeUrl}":`,
         JSON.stringify(initialResponse, null, 2)
       )
+      if (!isActionableExchangeMessage(initialResponse)) {
+        goHome()
+        showMessage(NOTHING_TO_ACT_ON)
+        return
+      }
       requestOrOffer = initialResponse
       // Now that we know the exchange type, show a type-specific confirmation
       if (isDIDAuthOnlyRequest(requestOrOffer)) {
@@ -164,10 +177,7 @@ export default function ExchangeCredentials({
           )
         })
         if (!confirmed) {
-          navigationRef.navigate('HomeNavigation', {
-            screen: 'CredentialNavigation',
-            params: { screen: 'HomeScreen' }
-          })
+          goHome()
           return
         }
       }
@@ -178,26 +188,23 @@ export default function ExchangeCredentials({
 
     // Regardless if request is an offer or a request, select profile
     const isVPRFlow = 'verifiablePresentationRequest' in requestOrOffer
-    const isDIDAuthOnly = isDIDAuthOnlyRequest(requestOrOffer)
+    const answeredDIDAuthOnly = isDIDAuthOnlyRequest(requestOrOffer)
     const rawProfileRecord = await NavigationUtil.selectProfile(
       isVPRFlow
         ? {
             goBack: () => {
               displayGlobalModal({
-                title: isDIDAuthOnly ? 'Cancel Request' : 'Cancel Send',
+                title: answeredDIDAuthOnly ? 'Cancel Request' : 'Cancel Send',
                 confirmButton: false,
                 cancelButton: false,
                 body: getGlobalModalBody(
-                  isDIDAuthOnly
+                  answeredDIDAuthOnly
                     ? 'Request cancelled.'
                     : 'Ending credential request. To send credentials, open another request.',
                   true
                 )
               })
-              navigationRef.navigate('HomeNavigation', {
-                screen: 'CredentialNavigation',
-                params: { screen: 'HomeScreen' }
-              })
+              goHome()
               setTimeout(clearGlobalModal, 10000)
             }
           }
@@ -228,7 +235,8 @@ export default function ExchangeCredentials({
       requestOrOffer,
       selectedProfile,
       wasController,
-      modals
+      modals,
+      checkStatus
     })
 
     clearGlobalModal()
@@ -246,11 +254,12 @@ export default function ExchangeCredentials({
 
     if (toOffer.length > 0) {
       // We've been issued credentials to store - present to user for accepting
-      const navigationReady = await waitFor(() => navigationRef.isReady())
-      if (!navigationReady) {
+      // This screen is mounted inside the navigator, so this should always
+      // hold; if it ever doesn't, the one-time exchange can't be retried
+      if (!navigationRef.isReady()) {
         showMessage({
           title: 'Something Went Wrong',
-          body: "Couldn't open the approval screen. Please try again."
+          body: "These credentials couldn't be shown and weren't saved. Ask the issuer to send them again."
         })
         return
       }
@@ -288,12 +297,7 @@ export default function ExchangeCredentials({
     if (navigationRef.isReady() && navigationRef.canGoBack()) {
       navigationRef.goBack()
     } else {
-      navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
-        params: {
-          screen: 'HomeScreen'
-        }
-      })
+      goHome()
     }
   }
 

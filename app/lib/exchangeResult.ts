@@ -31,8 +31,30 @@ export type IMessage = { title: string; body: string }
  */
 export function isFollowUpStep(reply: unknown): boolean {
   if (!reply || typeof reply !== 'object') return false
-  if ('verifiablePresentation' in reply) return false
-  return 'verifiablePresentationRequest' in reply || 'protocols' in reply
+  const fields = reply as Record<string, unknown>
+  if (fields.verifiablePresentation != null) return false
+  return (
+    fields.verifiablePresentationRequest != null || fields.protocols != null
+  )
+}
+
+/**
+ * Returns true when an exchanger's answer to the initial POST {} is something
+ * the wallet can act on: an offer (VP) or a presentation request. A null,
+ * non-object or empty answer is not.
+ */
+export function isActionableExchangeMessage(message: unknown): boolean {
+  if (!message || typeof message !== 'object') return false
+  const fields = message as Record<string, unknown>
+  return (
+    fields.verifiablePresentation != null ||
+    fields.verifiablePresentationRequest != null
+  )
+}
+
+export const NOTHING_TO_ACT_ON: IMessage = {
+  title: 'Nothing to Do',
+  body: "This request didn't contain anything this wallet can act on."
 }
 
 /**
@@ -133,31 +155,114 @@ export function exchangeCompletionMessage({
   return { title: 'Nothing Shared', body: 'Nothing was shared.' }
 }
 
-const REJECTED = 'The request was rejected.'
 const MAX_DETAIL_LENGTH = 200
 
 /**
- * Thrown when the exchanger answers with a non-OK HTTP status. The message is
- * safe to show to the user.
+ * Why a VC-API exchange endpoint call failed:
+ * - rejected: a 4xx other than 404/410.
+ * - gone: 404 or 410, the exchange has expired or never existed.
+ * - unreachable: a 5xx, or no response at all.
  */
-export class ExchangeRejectedError extends HumanReadableError {
-  readonly isExchangeRejection = true
-  readonly status: number
+export type ExchangeFailureKind = 'rejected' | 'gone' | 'unreachable'
 
-  constructor(status: number, detail?: string) {
-    super(detail ? `${REJECTED} ${detail}` : REJECTED)
-    this.status = status
+export function failureKindForStatus(status: number): ExchangeFailureKind {
+  if (status === 404 || status === 410) return 'gone'
+  if (status >= 500) return 'unreachable'
+  return 'rejected'
+}
+
+type ExchangeFailureDetails = {
+  status?: number
+  // The exchanger's own error name/message, if it gave one
+  detail?: string
+  // No HTTP response arrived, so whether the request got there is unknown
+  networkError?: boolean
+  // What the wallet had posted, when the failing call was its reply
+  sentBefore?: ISentSummary
+}
+
+/**
+ * Thrown for a failed call to a VC-API exchange endpoint. Its message is safe
+ * to show to the user and says what had already been sent.
+ */
+export class ExchangeFailedError extends HumanReadableError {
+  readonly isExchangeFailure = true
+  readonly kind: ExchangeFailureKind
+  readonly details: ExchangeFailureDetails
+
+  constructor(kind: ExchangeFailureKind, details: ExchangeFailureDetails = {}) {
+    super(exchangeFailureMessage(kind, details).body)
+    this.kind = kind
+    this.details = details
+  }
+
+  /** The same failure, noting what the wallet had already posted. */
+  withSentBefore(sentBefore: ISentSummary): ExchangeFailedError {
+    return new ExchangeFailedError(this.kind, { ...this.details, sentBefore })
+  }
+
+  get title(): string {
+    return exchangeFailureMessage(this.kind, this.details).title
   }
 }
 
-export function isExchangeRejectedError(
+export function isExchangeFailedError(
   err: unknown
-): err is ExchangeRejectedError {
+): err is ExchangeFailedError {
   return (
     !!err &&
     typeof err === 'object' &&
-    (err as ExchangeRejectedError).isExchangeRejection === true
+    (err as ExchangeFailedError).isExchangeFailure === true
   )
+}
+
+/**
+ * The message for a failed exchange call: what went wrong, then what had
+ * already left the device. When no HTTP response arrived, whether the reply
+ * reached the exchanger is unknown, so it says "may have".
+ */
+export function exchangeFailureMessage(
+  kind: ExchangeFailureKind,
+  { detail, networkError, sentBefore }: ExchangeFailureDetails = {}
+): IMessage {
+  let title: string
+  let body: string
+  if (kind === 'gone') {
+    title = 'Request Expired'
+    body = 'This request has expired or no longer exists.'
+  } else if (kind === 'unreachable') {
+    title = 'Service Unavailable'
+    body = "The service couldn't be reached. Try again later."
+  } else {
+    title = 'Request Rejected'
+    body = detail
+      ? `The request was rejected. ${detail}`
+      : 'The request was rejected.'
+  }
+  const alreadySent = sentBeforeError(sentBefore, !!networkError)
+  return { title, body: alreadySent ? `${body} ${alreadySent}` : body }
+}
+
+function sentBeforeError(
+  sent: ISentSummary | undefined,
+  uncertain: boolean
+): string | undefined {
+  if (!sent?.posted) return undefined
+  const wasSent = uncertain ? 'may have been sent' : 'were sent'
+  const singularSent = uncertain ? 'may have been sent' : 'was sent'
+  const granted = uncertain ? 'may have been granted' : 'was granted'
+
+  const parts: string[] = []
+  if (sent.credentials.length > 0) {
+    parts.push(`your selected credentials ${wasSent}`)
+  } else if (sent.didAuth) {
+    parts.push(`your DID Authentication response ${singularSent}`)
+  }
+  if (sent.zcaps) parts.push(`storage access ${granted}`)
+  if (parts.length === 0) return undefined
+
+  const sentence = `${parts.join(' and ')} before the error.`
+  return sentence.charAt(0).toUpperCase() + sentence.slice(1)
 }
 
 /**

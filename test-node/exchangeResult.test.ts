@@ -4,8 +4,11 @@ import {
   credentialsToOffer,
   exchangeCompletionMessage,
   exchangerErrorDetail,
-  ExchangeRejectedError,
-  isExchangeRejectedError,
+  exchangeFailureMessage,
+  ExchangeFailedError,
+  failureKindForStatus,
+  isActionableExchangeMessage,
+  isExchangeFailedError,
   isFollowUpStep,
   ISentSummary
 } from '../app/lib/exchangeResult'
@@ -273,6 +276,17 @@ describe('isFollowUpStep', () => {
     )
   })
 
+  it('treats a null or undefined VP as absent', () => {
+    assert.strictEqual(
+      isFollowUpStep({ verifiablePresentation: null, ...vpr([didAuth]) }),
+      true
+    )
+    assert.strictEqual(
+      isFollowUpStep({ verifiablePresentation: undefined, ...vpr([didAuth]) }),
+      true
+    )
+  })
+
   it('does not treat a VP, an empty reply or no reply as another step', () => {
     assert.strictEqual(isFollowUpStep({ verifiablePresentation: {} }), false)
     assert.strictEqual(
@@ -281,6 +295,10 @@ describe('isFollowUpStep', () => {
     )
     assert.strictEqual(isFollowUpStep({}), false)
     assert.strictEqual(
+      isFollowUpStep({ verifiablePresentationRequest: null }),
+      false
+    )
+    assert.strictEqual(
       isFollowUpStep({ redirectUrl: 'https://x.example' }),
       false
     )
@@ -288,7 +306,102 @@ describe('isFollowUpStep', () => {
   })
 })
 
-describe('exchange rejection', () => {
+describe('isActionableExchangeMessage', () => {
+  it('accepts an offer or a presentation request', () => {
+    assert.strictEqual(
+      isActionableExchangeMessage({ verifiablePresentation: {} }),
+      true
+    )
+    assert.strictEqual(isActionableExchangeMessage(vpr([didAuth])), true)
+  })
+
+  it('rejects null, non-object and empty answers', () => {
+    for (const body of [null, undefined, 'text', 42, true, {}, []]) {
+      assert.strictEqual(isActionableExchangeMessage(body), false)
+    }
+    assert.strictEqual(
+      isActionableExchangeMessage({ verifiablePresentation: null }),
+      false
+    )
+    assert.strictEqual(
+      isActionableExchangeMessage({ redirectUrl: 'https://x.example' }),
+      false
+    )
+  })
+})
+
+describe('exchange failures', () => {
+  it('classifies HTTP statuses', () => {
+    assert.strictEqual(failureKindForStatus(400), 'rejected')
+    assert.strictEqual(failureKindForStatus(401), 'rejected')
+    assert.strictEqual(failureKindForStatus(403), 'rejected')
+    assert.strictEqual(failureKindForStatus(422), 'rejected')
+    assert.strictEqual(failureKindForStatus(404), 'gone')
+    assert.strictEqual(failureKindForStatus(410), 'gone')
+    assert.strictEqual(failureKindForStatus(500), 'unreachable')
+    assert.strictEqual(failureKindForStatus(503), 'unreachable')
+  })
+
+  it('gives each kind its message', () => {
+    assert.deepStrictEqual(exchangeFailureMessage('rejected'), {
+      title: 'Request Rejected',
+      body: 'The request was rejected.'
+    })
+    assert.deepStrictEqual(
+      exchangeFailureMessage('rejected', { detail: 'DataError: Bad VP.' }),
+      {
+        title: 'Request Rejected',
+        body: 'The request was rejected. DataError: Bad VP.'
+      }
+    )
+    assert.deepStrictEqual(exchangeFailureMessage('gone'), {
+      title: 'Request Expired',
+      body: 'This request has expired or no longer exists.'
+    })
+    assert.deepStrictEqual(exchangeFailureMessage('unreachable'), {
+      title: 'Service Unavailable',
+      body: "The service couldn't be reached. Try again later."
+    })
+  })
+
+  it('says what had already been sent when the reply failed', () => {
+    const body = (kind: any, details: any) =>
+      exchangeFailureMessage(kind, details).body
+    assert.strictEqual(
+      body('rejected', { sentBefore: shared(credentialA) }),
+      'The request was rejected. Your selected credentials were sent before the error.'
+    )
+    assert.strictEqual(
+      body('gone', { sentBefore: sentDidAuth }),
+      'This request has expired or no longer exists. Your DID Authentication response was sent before the error.'
+    )
+    assert.strictEqual(
+      body('rejected', { sentBefore: sentZcaps }),
+      'The request was rejected. Storage access was granted before the error.'
+    )
+    assert.strictEqual(
+      body('unreachable', {
+        sentBefore: { ...shared(credentialA), zcaps: true }
+      }),
+      "The service couldn't be reached. Try again later. Your selected credentials were sent and storage access was granted before the error."
+    )
+    // Nothing posted, nothing to add
+    assert.strictEqual(
+      body('rejected', { sentBefore: nothingPosted }),
+      'The request was rejected.'
+    )
+  })
+
+  it('says "may have" when no response arrived', () => {
+    assert.strictEqual(
+      exchangeFailureMessage('unreachable', {
+        networkError: true,
+        sentBefore: sentDidAuthAndZcaps
+      }).body,
+      "The service couldn't be reached. Try again later. Your DID Authentication response may have been sent and storage access may have been granted before the error."
+    )
+  })
+
   it('reads name and message from an error body', () => {
     assert.strictEqual(
       exchangerErrorDetail(
@@ -332,24 +445,29 @@ describe('exchange rejection', () => {
     assert.strictEqual(detail!.length, 200)
   })
 
-  it('builds a user-facing message and is recognisable', () => {
-    const withDetail = new ExchangeRejectedError(404, 'NotFoundError: Gone.')
+  it('carries a user-facing message and is recognisable', () => {
+    const error = new ExchangeFailedError('rejected', {
+      status: 400,
+      detail: 'DataError: Bad VP.'
+    })
     assert.strictEqual(
-      withDetail.message,
-      'The request was rejected. NotFoundError: Gone.'
+      error.message,
+      'The request was rejected. DataError: Bad VP.'
     )
-    assert.strictEqual(withDetail.status, 404)
-    assert.strictEqual(isExchangeRejectedError(withDetail), true)
+    assert.strictEqual(error.title, 'Request Rejected')
+    assert.strictEqual(isExchangeFailedError(error), true)
+    assert.strictEqual(errorMessageFrom(error), error.message)
+
+    const afterReply = error.withSentBefore(shared(credentialA))
+    assert.strictEqual(isExchangeFailedError(afterReply), true)
+    assert.strictEqual(afterReply.details.status, 400)
     assert.strictEqual(
-      errorMessageFrom(withDetail),
-      'The request was rejected. NotFoundError: Gone.'
+      afterReply.message,
+      'The request was rejected. DataError: Bad VP. Your selected credentials were sent before the error.'
     )
-    assert.strictEqual(
-      new ExchangeRejectedError(500).message,
-      'The request was rejected.'
-    )
-    assert.strictEqual(isExchangeRejectedError(new Error('x')), false)
-    assert.strictEqual(isExchangeRejectedError(undefined), false)
+
+    assert.strictEqual(isExchangeFailedError(new Error('x')), false)
+    assert.strictEqual(isExchangeFailedError(undefined), false)
   })
 })
 

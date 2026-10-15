@@ -6,8 +6,9 @@
 import React from 'react'
 import { render } from '@testing-library/react-native'
 import ExchangeCredentials from '../app/screens/ExchangeCredentials/ExchangeCredentials'
-import { processMessageChain } from '../app/lib/exchanges'
-import { ExchangeRejectedError } from '../app/lib/exchangeResult'
+import { processMessageChain, sendToExchanger } from '../app/lib/exchanges'
+import { ExchangeFailedError } from '../app/lib/exchangeResult'
+import { NavigationUtil } from '../app/lib/navigationUtil'
 import { displayGlobalModal } from '../app/lib/globalModal'
 import { navigationRef } from '../app/navigation/navigationRef'
 import { stageCredentialsForProfile } from '../app/store/slices/credentialFoyer'
@@ -72,13 +73,8 @@ jest.mock('../app/lib/navigationUtil', () => ({
   }
 }))
 
-// Resolve waits immediately; waitFor polls a few times like the real one
 jest.mock('../app/lib/time', () => ({
-  delay: jest.fn(async () => undefined),
-  waitFor: jest.fn(async (condition: () => boolean) => {
-    for (let i = 0; i < 3; i++) if (condition()) return true
-    return false
-  })
+  delay: jest.fn(async () => undefined)
 }))
 
 jest.mock('../app/lib/profile', () => ({
@@ -107,6 +103,12 @@ const didAuthRequest = {
     challenge: 'c',
     domain: 'issuer.example'
   }
+}
+const exchangeUrl = 'https://issuer.example/exchanges/1'
+const invitation = { protocols: { vcapi: exchangeUrl } }
+const deepLinkRequest = {
+  ...didAuthRequest,
+  redirectUrl: 'https://verifier.example/callback'
 }
 
 const isReady = navigationRef.isReady as jest.Mock
@@ -149,23 +151,7 @@ describe('ExchangeCredentials', () => {
     expect(shownBodies()).not.toContain('DID Authentication complete.')
   })
 
-  it('waits for navigation to become ready before opening the approval screen', async () => {
-    isReady
-      .mockReturnValueOnce(false)
-      .mockReturnValueOnce(false)
-      .mockReturnValue(true)
-    ;(processMessageChain as jest.Mock).mockResolvedValue({
-      receivedCredentials: [issued]
-    })
-    await acceptExchange(offer)
-
-    expect(navigate).toHaveBeenCalledWith(
-      'AcceptCredentialsNavigation',
-      expect.anything()
-    )
-  })
-
-  it('reports a failure, not an empty offer, when navigation never becomes ready', async () => {
+  it('says the credentials were not saved if navigation is not ready', async () => {
     isReady.mockReturnValue(false)
     ;(processMessageChain as jest.Mock).mockResolvedValue({
       receivedCredentials: [issued]
@@ -173,29 +159,92 @@ describe('ExchangeCredentials', () => {
     await acceptExchange(offer)
 
     expect(shownBodies()).toEqual([
-      "Couldn't open the approval screen. Please try again."
+      "These credentials couldn't be shown and weren't saved. Ask the issuer to send them again."
     ])
-    expect(shownBodies()).not.toContain(
-      "This offer didn't include any credentials."
-    )
     expect(stageCredentialsForProfile).not.toHaveBeenCalled()
-    expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('shows the rejection, never success, when the exchanger rejects the reply', async () => {
+  it('shows the failure, never success, when the exchange endpoint fails', async () => {
+    ;(sendToExchanger as jest.Mock).mockResolvedValue(didAuthRequest)
     ;(processMessageChain as jest.Mock).mockRejectedValue(
-      new ExchangeRejectedError(400, 'DataError: Invalid presentation.')
+      new ExchangeFailedError('rejected', {
+        status: 400,
+        detail: 'DataError: Invalid presentation.'
+      }).withSentBefore({
+        posted: true,
+        credentials: [],
+        didAuth: true,
+        zcaps: false
+      })
     )
-    await acceptExchange(didAuthRequest)
+    await acceptExchange(invitation)
 
     expect(showModal).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Request Rejected',
-        body: 'The request was rejected. DataError: Invalid presentation.'
+        body: 'The request was rejected. DataError: Invalid presentation. Your DID Authentication response was sent before the error.'
       })
     )
     expect(shownBodies()).not.toContain('DID Authentication complete.')
+    expect(navigate).toHaveBeenCalledWith('HomeNavigation', expect.anything())
     expect(stageCredentialsForProfile).not.toHaveBeenCalled()
+  })
+
+  it('reports an expired invitation from the initial POST', async () => {
+    ;(sendToExchanger as jest.Mock).mockRejectedValue(
+      new ExchangeFailedError('gone', { status: 404 })
+    )
+    await acceptExchange(invitation)
+
+    expect(shownBodies()).toEqual([
+      'This request has expired or no longer exists.'
+    ])
+    expect(NavigationUtil.selectProfile).not.toHaveBeenCalled()
+  })
+
+  it.each([null, 'ok', {}])(
+    'says there is nothing to act on when the initial POST returns %p',
+    async (body) => {
+      ;(sendToExchanger as jest.Mock).mockResolvedValue(body)
+      await acceptExchange(invitation)
+
+      expect(showModal).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: "This request didn't contain anything this wallet can act on."
+        })
+      )
+      expect(navigate).toHaveBeenCalledWith('HomeNavigation', expect.anything())
+      expect(NavigationUtil.selectProfile).not.toHaveBeenCalled()
+      expect(processMessageChain).not.toHaveBeenCalled()
+    }
+  )
+
+  it('checks status for an exchange invitation', async () => {
+    ;(sendToExchanger as jest.Mock).mockResolvedValue(didAuthRequest)
+    ;(processMessageChain as jest.Mock).mockResolvedValue({})
+    await acceptExchange(invitation)
+
+    expect(sendToExchanger).toHaveBeenCalledWith({
+      exchangeUrl,
+      payload: {},
+      checkStatus: true
+    })
+    expect(processMessageChain).toHaveBeenCalledWith(
+      expect.objectContaining({ exchangeUrl, checkStatus: true })
+    )
+  })
+
+  it("does not check status for a deep-link request's redirectUrl", async () => {
+    ;(processMessageChain as jest.Mock).mockResolvedValue({})
+    await acceptExchange(deepLinkRequest)
+
+    expect(sendToExchanger).not.toHaveBeenCalled()
+    expect(processMessageChain).toHaveBeenCalledWith(
+      expect.objectContaining({
+        exchangeUrl: 'https://verifier.example/callback',
+        checkStatus: false
+      })
+    )
   })
 
   it('confirms DID Authentication when nothing came back', async () => {
