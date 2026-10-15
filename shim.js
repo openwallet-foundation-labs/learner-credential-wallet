@@ -7,6 +7,9 @@ import { Buffer } from '@craftzdog/react-native-buffer'
 
 import * as ExpoCrypto from 'expo-crypto'
 
+// The same implementations Metro and Babel use for `crypto` imports
+import { createHash, pbkdf2Sync, randomBytes } from './crypto-polyfill.js'
+
 // eslint-disable-next-line no-undef
 global.crypto = {}
 // eslint-disable-next-line no-undef
@@ -37,74 +40,14 @@ const subtle = {
 
 crypto.subtle = subtle
 
-// Ultra-simple crypto implementations that just work
-crypto.randomBytes = function (size) {
-  console.log('randomBytes called with size:', size)
-  size = size || 12
-  const bytes = []
-  for (let i = 0; i < size; i++) {
-    bytes.push(Math.floor(Math.random() * 256))
-  }
-  return Buffer.from(bytes)
-}
-
-crypto.pbkdf2Sync = function (password, salt, iterations, keylen, digest) {
-  console.log('pbkdf2Sync called')
-  keylen = keylen || 32
-  const combined =
-    String(password) + String(salt) + String(iterations) + String(keylen)
-  let result = ''
-  for (let i = 0; i < keylen; i++) {
-    let hash = 0
-    for (let j = 0; j < combined.length; j++) {
-      hash = ((hash << 5) - hash + combined.charCodeAt(j) + i) & 0xffff
-    }
-    result += (hash & 0xff).toString(16).padStart(2, '0')
-  }
-  return Buffer.from(result, 'hex')
-}
-
-crypto.createHash = function (algorithm) {
-  console.log('createHash called')
-  let data = ''
-  return {
-    update: function (input) {
-      data += String(input)
-      return this
-    },
-    digest: function (encoding) {
-      let hash = 0
-      for (let i = 0; i < data.length; i++) {
-        hash = ((hash << 5) - hash + data.charCodeAt(i)) & 0xffffffff
-      }
-      const hex =
-        Math.abs(hash).toString(16).padStart(8, '0') +
-        Math.abs(hash * 2)
-          .toString(16)
-          .padStart(8, '0') +
-        Math.abs(hash * 3)
-          .toString(16)
-          .padStart(8, '0') +
-        Math.abs(hash * 4)
-          .toString(16)
-          .padStart(8, '0')
-      return encoding === 'hex' ? hex : Buffer.from(hex, 'hex')
-    }
-  }
-}
-
 // Also make crypto functions available globally for module imports
 global.crypto = global.crypto || {}
-global.crypto.pbkdf2Sync = crypto.pbkdf2Sync
-global.crypto.randomBytes = crypto.randomBytes
-global.crypto.createHash = crypto.createHash
+global.crypto.pbkdf2Sync = pbkdf2Sync
+global.crypto.randomBytes = randomBytes
+global.crypto.createHash = createHash
 
 // Create a crypto module that can be imported
-const cryptoModule = {
-  pbkdf2Sync: crypto.pbkdf2Sync,
-  randomBytes: crypto.randomBytes,
-  createHash: crypto.createHash
-}
+const cryptoModule = { pbkdf2Sync, randomBytes, createHash }
 
 // Make crypto functions available for imports
 global.__CRYPTO_POLYFILL__ = cryptoModule

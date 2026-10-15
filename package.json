@@ -73,6 +73,7 @@
     "@expo-google-fonts/rubik": "^0.2.0",
     "@expo/vector-icons": "^14.1.0",
     "@interop/did-web-resolver": "^5.0.0",
+    "@noble/hashes": "^1.8.0",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-clipboard/clipboard": "^1.10.0",
     "@react-native-community/cli": "^20.0.0",
