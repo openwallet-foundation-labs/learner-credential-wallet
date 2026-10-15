@@ -25,6 +25,13 @@ export type ISentSummary = {
 export type IMessage = { title: string; body: string }
 
 /**
+ * How the wallet is talking to the requester:
+ * - vcapi: a VC-API exchange (an exchange invitation or interaction URL).
+ * - redirect: a deep-link request whose reply goes to its redirectUrl.
+ */
+export type ExchangeChannel = 'vcapi' | 'redirect'
+
+/**
  * Returns true when the exchanger's reply asks for another step (a further
  * presentation request, or an invitation to another exchange) instead of
  * delivering credentials or ending the exchange.
@@ -70,8 +77,12 @@ export const NOTHING_TO_ACT_ON: IMessage = {
  *   back may be an echo or another credential the verifier chose to return,
  *   and the wallet cannot tell them apart reliably.
  * - A reply asking for another step: nothing.
+ * - Request on a deep link's redirectUrl: nothing, as before VC-API issuance
+ *   after DIDAuth was supported; only VC-API exchanges issue this way.
  *
  * @param answered - The offer or request the wallet answered.
+ * @param channel - Whether the request came over a VC-API exchange or a
+ *   deep link's redirectUrl.
  * @param sent - What the wallet posted in reply to a request.
  * @param nextStep - The exchanger's reply asked for another step.
  * @param receivedCredentials - Credentials from the offer, or from the
@@ -79,11 +90,13 @@ export const NOTHING_TO_ACT_ON: IMessage = {
  */
 export function credentialsToOffer({
   answered,
+  channel,
   sent,
   nextStep,
   receivedCredentials
 }: {
   answered: WalletApiMessage
+  channel: ExchangeChannel
   sent?: ISentSummary
   nextStep?: boolean
   receivedCredentials?: IVerifiableCredential[] | null
@@ -91,6 +104,7 @@ export function credentialsToOffer({
   if (!receivedCredentials || !answered || nextStep) return []
   if ('verifiablePresentation' in answered) return receivedCredentials
   if (!('verifiablePresentationRequest' in answered)) return []
+  if (channel !== 'vcapi') return []
   if (!sent?.posted || sent.credentials.length > 0) return []
   return receivedCredentials
 }
@@ -157,7 +171,8 @@ export function exchangeCompletionMessage({
 
 /**
  * Why a VC-API exchange endpoint call failed:
- * - rejected: a 4xx other than 404/410.
+ * - rejected: a 4xx other than 404/410 and 408/429.
+ * - busy: 408 or 429, a transient condition on the service's side.
  * - gone: 404 or 410, the exchange has expired or never existed.
  * - server-error: a 5xx, the service answered but failed.
  * - unreachable: no HTTP response at all.
@@ -166,6 +181,7 @@ export function exchangeCompletionMessage({
  */
 export type ExchangeFailureKind =
   | 'rejected'
+  | 'busy'
   | 'gone'
   | 'server-error'
   | 'unreachable'
@@ -173,6 +189,7 @@ export type ExchangeFailureKind =
 
 export function failureKindForStatus(status: number): ExchangeFailureKind {
   if (status === 404 || status === 410) return 'gone'
+  if (status === 408 || status === 429) return 'busy'
   if (status >= 500) return 'server-error'
   return 'rejected'
 }
@@ -240,6 +257,11 @@ export function exchangeFailureMessage(
   if (kind === 'gone') {
     title = 'Request Expired'
     body = 'This request has expired or no longer exists.'
+  } else if (kind === 'busy') {
+    title = 'Service Busy'
+    body = sentAnything
+      ? 'The service is busy.'
+      : 'The service is busy. Try again later.'
   } else if (kind === 'server-error') {
     title = 'Service Error'
     body = 'The service had a problem with this request.'

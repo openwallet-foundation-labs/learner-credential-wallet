@@ -144,7 +144,12 @@ async function run({
   return {
     sent: result.sent,
     payload: calls.length > 0 ? JSON.parse(calls[0][1].body) : undefined,
-    toOffer: credentialsToOffer({ answered, ...result }),
+    // As ExchangeCredentials does: status checks go with the VC-API channel
+    toOffer: credentialsToOffer({
+      answered,
+      channel: checkStatus ? 'vcapi' : 'redirect',
+      ...result
+    }),
     message: exchangeCompletionMessage({ answered, ...result })?.body
   }
 }
@@ -320,6 +325,8 @@ describe('exchange flows (issue #957)', () => {
     it.each([
       [400, 'The request was rejected.'],
       [403, 'The request was rejected.'],
+      [408, 'The service is busy.'],
+      [429, 'The service is busy.'],
       [404, 'This request has expired or no longer exists.'],
       [410, 'This request has expired or no longer exists.'],
       [500, 'The service had a problem with this request.'],
@@ -472,6 +479,24 @@ describe('exchange flows (issue #957)', () => {
       })
     })
 
+    it.each([408, 429])(
+      'says the service is busy for HTTP %i and suggests trying again',
+      async (status) => {
+        global.fetch = jest.fn(async () => ({
+          ok: false,
+          status,
+          text: async () => ''
+        })) as any
+        await expect(
+          sendToExchanger({ exchangeUrl, payload: {}, checkStatus: true })
+        ).rejects.toMatchObject({
+          kind: 'busy',
+          title: 'Service Busy',
+          message: 'The service is busy. Try again later.'
+        })
+      }
+    )
+
     it('resolves to null for an empty reply', async () => {
       global.fetch = jest.fn(async () => ({
         ok: true,
@@ -506,6 +531,16 @@ describe('exchange flows (issue #957)', () => {
       })
       expect(result.toOffer).toEqual([])
       expect(result.message).toBe('You have shared the selected credentials.')
+    })
+
+    it('offers nothing back after DIDAuth-only, even if the reply holds a VP, as on main', async () => {
+      const result = await run({
+        answered: vpr([didAuth]),
+        checkStatus: false,
+        reply: { verifiablePresentation: vpWith(issued) }
+      })
+      expect(result.toOffer).toEqual([])
+      expect(result.message).toBe('DID Authentication complete.')
     })
 
     it('rethrows a network error unchanged', async () => {

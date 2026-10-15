@@ -133,12 +133,13 @@ beforeEach(() => {
 })
 
 describe('ExchangeCredentials', () => {
-  it('opens the approval screen for a credential issued after DIDAuth', async () => {
+  it('opens the approval screen for a credential issued after DIDAuth over VC-API', async () => {
+    ;(sendToExchanger as jest.Mock).mockResolvedValue(didAuthRequest)
     ;(processMessageChain as jest.Mock).mockResolvedValue({
       receivedCredentials: [issued],
       sent: { posted: true, credentials: [], didAuth: true, zcaps: false }
     })
-    await acceptExchange(didAuthRequest)
+    await acceptExchange(invitation)
 
     expect(stageCredentialsForProfile).toHaveBeenCalledWith({
       credentials: [issued],
@@ -149,6 +150,18 @@ describe('ExchangeCredentials', () => {
       expect.anything()
     )
     expect(shownBodies()).not.toContain('DID Authentication complete.')
+  })
+
+  it("offers nothing back after a deep link's DIDAuth-only request, as on main", async () => {
+    ;(processMessageChain as jest.Mock).mockResolvedValue({
+      receivedCredentials: [issued],
+      sent: { posted: true, credentials: [], didAuth: true, zcaps: false }
+    })
+    await acceptExchange(deepLinkRequest)
+
+    expect(stageCredentialsForProfile).not.toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledWith('HomeNavigation', expect.anything())
+    expect(shownBodies()).toEqual(['DID Authentication complete.'])
   })
 
   it('says the credentials were not saved if navigation is not ready', async () => {
@@ -162,6 +175,18 @@ describe('ExchangeCredentials', () => {
       "These credentials couldn't be shown and weren't saved. Ask the issuer to send them again."
     ])
     expect(stageCredentialsForProfile).not.toHaveBeenCalled()
+    expect(navigate).not.toHaveBeenCalled()
+  })
+
+  it('goes home after that message if navigation has become ready', async () => {
+    isReady.mockReturnValueOnce(false).mockReturnValue(true)
+    ;(processMessageChain as jest.Mock).mockResolvedValue({
+      receivedCredentials: [issued]
+    })
+    await acceptExchange(offer)
+
+    expect(stageCredentialsForProfile).not.toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledWith('HomeNavigation', expect.anything())
   })
 
   it('shows the failure, never success, when the exchange endpoint fails', async () => {

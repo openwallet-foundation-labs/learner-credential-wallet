@@ -12,6 +12,7 @@ import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
 import {
   credentialsToOffer,
   exchangeCompletionMessage,
+  ExchangeChannel,
   IMessage,
   isActionableExchangeMessage,
   isExchangeFailedError,
@@ -65,7 +66,7 @@ export default function ExchangeCredentials({
     })
   }
 
-  const showMessage = ({ title, body }: IMessage) => {
+  const showMessage = ({ title, body }: IMessage) =>
     displayGlobalModal({
       title,
       confirmButton: true,
@@ -73,7 +74,6 @@ export default function ExchangeCredentials({
       cancelButton: false,
       body: getGlobalModalBody(body)
     })
-  }
 
   const confirmZcapRequest = async () => {
     const confirmed = await displayGlobalModal({
@@ -135,9 +135,9 @@ export default function ExchangeCredentials({
     )
 
     let requestOrOffer, exchangeUrl
-    // Only a VC-API exchange endpoint's replies are status-checked; a
+    // A VC-API exchange is status-checked and may issue after DIDAuth; a
     // deep-link request's redirectUrl behaves as it always has
-    let checkStatus = false
+    let channel: ExchangeChannel = 'redirect'
     // If this is an Exchange Invitation, send the initial POST {}
     //   to get back either a request or an offer
     if ('protocols' in message) {
@@ -148,11 +148,11 @@ export default function ExchangeCredentials({
         )
       }
       // Start the exchange - initial POST {}
-      checkStatus = true
+      channel = 'vcapi'
       const initialResponse = await sendToExchanger({
         exchangeUrl,
         payload: {},
-        checkStatus
+        checkStatus: true
       })
       console.log(
         `Initial exchange response from "${exchangeUrl}":`,
@@ -235,17 +235,18 @@ export default function ExchangeCredentials({
       selectedProfile,
       wasController,
       modals,
-      checkStatus
+      checkStatus: channel === 'vcapi'
     })
 
     clearGlobalModal()
 
-    // Offers store their credentials. After a request, credentials are
-    // offered only if the wallet replied without sharing any (e.g. DIDAuth
-    // to an issuer binding to the holder DID); after a share, never, so a
-    // verifier's reply is not stored.
+    // Offers store their credentials. After a VC-API request, credentials
+    // are offered only if the wallet replied without sharing any (e.g.
+    // DIDAuth to an issuer binding to the holder DID); after a share, or on
+    // a deep link's redirectUrl, never, so a verifier's reply is not stored.
     const toOffer = credentialsToOffer({
       answered: requestOrOffer,
+      channel,
       sent,
       nextStep,
       receivedCredentials
@@ -256,10 +257,12 @@ export default function ExchangeCredentials({
       // This screen is mounted inside the navigator, so this should always
       // hold; if it ever doesn't, the one-time exchange can't be retried
       if (!navigationRef.isReady()) {
-        showMessage({
+        await showMessage({
           title: 'Something Went Wrong',
           body: "These credentials couldn't be shown and weren't saved. Ask the issuer to send them again."
         })
+        // Don't leave the user on this blank screen if navigation is back
+        if (navigationRef.isReady()) goHome()
         return
       }
       const { credentialRequestOrigin } = requestOrOffer

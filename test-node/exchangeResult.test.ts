@@ -60,7 +60,11 @@ describe('credentialsToOffer', () => {
   it('offers everything in an offer', () => {
     const answered = { verifiablePresentation: {} } as any
     assert.deepStrictEqual(
-      credentialsToOffer({ answered, receivedCredentials: [issued] }),
+      credentialsToOffer({
+        channel: 'vcapi',
+        answered,
+        receivedCredentials: [issued]
+      }),
       [issued]
     )
   })
@@ -68,6 +72,7 @@ describe('credentialsToOffer', () => {
   it('offers what comes back after DIDAuth-only', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([didAuth]),
         sent: sentDidAuth,
         receivedCredentials: [issued]
@@ -79,6 +84,7 @@ describe('credentialsToOffer', () => {
   it('offers what comes back after DIDAuth + ZcapQuery', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([didAuth, zcapQuery]),
         sent: sentDidAuthAndZcaps,
         receivedCredentials: [issued]
@@ -90,6 +96,7 @@ describe('credentialsToOffer', () => {
   it('offers what comes back after DIDAuth + a QBE with no match', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([didAuth, qbe]),
         sent: sentDidAuth,
         receivedCredentials: [issued]
@@ -101,6 +108,7 @@ describe('credentialsToOffer', () => {
   it('offers nothing after sharing A, even when B comes back', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([qbe]),
         sent: shared(credentialA),
         receivedCredentials: [credentialB]
@@ -112,6 +120,7 @@ describe('credentialsToOffer', () => {
   it('offers nothing after sharing, when the shared VP is echoed', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([didAuth, qbe]),
         sent: shared(credentialA),
         receivedCredentials: [credentialA]
@@ -123,6 +132,7 @@ describe('credentialsToOffer', () => {
   it('offers nothing when the wallet posted no reply', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([qbe]),
         sent: nothingPosted,
         receivedCredentials: [issued]
@@ -131,6 +141,7 @@ describe('credentialsToOffer', () => {
     )
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([didAuth]),
         receivedCredentials: [issued]
       }),
@@ -141,6 +152,7 @@ describe('credentialsToOffer', () => {
   it('offers nothing when the exchanger asked for another step', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: vpr([didAuth]),
         sent: sentDidAuth,
         nextStep: true,
@@ -154,6 +166,7 @@ describe('credentialsToOffer', () => {
     for (const receivedCredentials of [[], undefined, null]) {
       assert.deepStrictEqual(
         credentialsToOffer({
+          channel: 'vcapi',
           answered: vpr([didAuth]),
           sent: sentDidAuth,
           receivedCredentials
@@ -166,11 +179,41 @@ describe('credentialsToOffer', () => {
   it('offers nothing for a message that is neither an offer nor a request', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
+        channel: 'vcapi',
         answered: {} as any,
         sent: sentDidAuth,
         receivedCredentials: [issued]
       }),
       []
+    )
+  })
+
+  it("offers nothing back after a request on a deep link's redirectUrl", () => {
+    for (const sent of [
+      sentDidAuth,
+      sentDidAuthAndZcaps,
+      shared(credentialA)
+    ]) {
+      assert.deepStrictEqual(
+        credentialsToOffer({
+          channel: 'redirect',
+          answered: vpr([didAuth]),
+          sent,
+          receivedCredentials: [issued]
+        }),
+        []
+      )
+    }
+  })
+
+  it('still offers an offer that arrived by deep link', () => {
+    assert.deepStrictEqual(
+      credentialsToOffer({
+        channel: 'redirect',
+        answered: { verifiablePresentation: {} } as any,
+        receivedCredentials: [issued]
+      }),
+      [issued]
     )
   })
 })
@@ -335,6 +378,8 @@ describe('exchange failures', () => {
     assert.strictEqual(failureKindForStatus(401), 'rejected')
     assert.strictEqual(failureKindForStatus(403), 'rejected')
     assert.strictEqual(failureKindForStatus(422), 'rejected')
+    assert.strictEqual(failureKindForStatus(408), 'busy')
+    assert.strictEqual(failureKindForStatus(429), 'busy')
     assert.strictEqual(failureKindForStatus(404), 'gone')
     assert.strictEqual(failureKindForStatus(410), 'gone')
     assert.strictEqual(failureKindForStatus(500), 'server-error')
@@ -358,6 +403,10 @@ describe('exchange failures', () => {
       title: 'Service Unavailable',
       body: "The service couldn't be reached. Try again later."
     })
+    assert.deepStrictEqual(exchangeFailureMessage('busy'), {
+      title: 'Service Busy',
+      body: 'The service is busy. Try again later.'
+    })
     assert.deepStrictEqual(exchangeFailureMessage('unreadable'), {
       title: 'Request Incomplete',
       body: "The service's reply couldn't be read. Try again later."
@@ -367,6 +416,7 @@ describe('exchange failures', () => {
   it('only suggests trying again before anything was sent', () => {
     for (const kind of [
       'rejected',
+      'busy',
       'gone',
       'server-error',
       'unreachable',
@@ -377,6 +427,10 @@ describe('exchange failures', () => {
         /try again/i
       )
     }
+    assert.strictEqual(
+      exchangeFailureMessage('busy', { sentBefore: sentDidAuth }).body,
+      'The service is busy. Your DID Authentication response was sent before the error.'
+    )
     assert.strictEqual(
       exchangeFailureMessage('unreadable', { sentBefore: sentDidAuth }).body,
       "The service's reply couldn't be read. Your DID Authentication response was sent before the error."
