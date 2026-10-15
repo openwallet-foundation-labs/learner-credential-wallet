@@ -1,12 +1,6 @@
 import Realm from 'realm'
-import { randomBytes } from 'crypto'
+import { randomObjectIdHex } from '../lib/objectId'
 const ObjectId = Realm.BSON.ObjectId
-
-// Generate a 12-byte ObjectId hex without relying on crypto.getRandomValues
-let __OBJECT_ID_COUNTER = Math.floor(Math.random() * 0xffffff)
-function generateObjectIdHex(): string {
-  return randomBytes(12).toString('hex')
-}
 
 import { db } from './DatabaseAccess'
 import {
@@ -74,14 +68,12 @@ export class DidRecord extends Realm.Object implements DidRecordRaw {
     }
   }
 
-  // removed duplicate generator block; using generateObjectIdHex above
-
   static async addDidRecord({
     didDocument,
     verificationKey,
     keyAgreementKey
   }: AddDidRecordParams): Promise<DidRecordRaw> {
-    const _id = new ObjectId(generateObjectIdHex())
+    const _id = new ObjectId(randomObjectIdHex())
     const createdAt = new Date()
     const updatedAt = new Date()
     const rawDidDocument = JSON.stringify(didDocument)

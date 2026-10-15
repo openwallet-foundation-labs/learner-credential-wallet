@@ -1,5 +1,5 @@
 import Realm from 'realm'
-import { randomBytes } from 'crypto'
+import { randomObjectIdHex } from '../lib/objectId'
 
 import { CredentialRecordEntry, CredentialRecordRaw } from '../types/credential'
 import { db } from './DatabaseAccess'
@@ -7,11 +7,6 @@ import { IVerifiableCredential } from '@digitalcredentials/ssi'
 
 const ObjectId = Realm.BSON.ObjectId
 type ObjectId = Realm.BSON.ObjectId
-
-// Use native RNG for ObjectId to avoid crypto.getRandomValues path
-function generateCredentialObjectIdHex(): string {
-  return randomBytes(12).toString('hex')
-}
 export class CredentialRecord
   extends Realm.Object
   implements CredentialRecordRaw
@@ -64,7 +59,7 @@ export class CredentialRecord
     profileRecordId
   }: AddCredentialRecordParams): CredentialRecordRaw {
     return {
-      _id: new ObjectId(generateCredentialObjectIdHex()),
+      _id: new ObjectId(randomObjectIdHex()),
       createdAt: new Date(),
       updatedAt: new Date(),
       rawCredential: JSON.stringify(credential),
