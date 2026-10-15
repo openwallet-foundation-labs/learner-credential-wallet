@@ -152,34 +152,50 @@ async function existingWalletPaths(): Promise<string[]> {
   const entries = await RNFS.readDir(walletFiles.dir())
   const defaultName = walletFiles.nameOf(Realm.defaultPath)
   const hasDefault = entries.some((entry) => entry.name === defaultName)
+  // A crash during writeCopyTo can leave an empty re-keyed file, which
+  // Realm would open as a new, empty wallet under any key: never a wallet.
   const rekeyed = entries
-    .filter((entry) => isRekeyed(entry.name))
+    .filter((entry) => isRekeyed(entry.name) && Number(entry.size) > 0)
     .map((entry) => entry.path)
     .sort((a, b) => age(b) - age(a))
   return hasDefault ? [...rekeyed, Realm.defaultPath] : rekeyed
 }
 
+/** Modification time in milliseconds and size in bytes. */
+async function statOf(path: string): Promise<{ mtime: number; size: number }> {
+  const stat = await RNFS.stat(path)
+  // RNFS returns a Date here, although its typings say number.
+  const mtime = stat.mtime as unknown
+  return {
+    mtime: mtime instanceof Date ? mtime.getTime() : Number(mtime),
+    size: Number(stat.size)
+  }
+}
+
 /** When the file was last written to, in milliseconds. */
 async function modifiedAt(path: string): Promise<number> {
-  // RNFS returns a Date here, although its typings say number.
-  const mtime = (await RNFS.stat(path)).mtime as unknown
-  return mtime instanceof Date ? mtime.getTime() : Number(mtime)
+  return (await statOf(path)).mtime
+}
+
+/** An existing, non-empty file. */
+async function hasContent(path: string): Promise<boolean> {
+  if (!(await RNFS.exists(path))) return false
+  return (await statOf(path)).size > 0
 }
 
 /**
  * Newest first by modification time: the file last written to is the live
- * one. Ties go to the newer name, and default.realm comes last.
+ * one. Ties go to the newer name, and default.realm comes last. Empty
+ * re-keyed files are dropped (see existingWalletPaths).
  */
 async function byModifiedTime(paths: string[]): Promise<string[]> {
-  const times = new Map(
-    await Promise.all(
-      paths.map(async (p) => [p, await modifiedAt(p)] as [string, number])
-    )
+  const stats = new Map(
+    await Promise.all(paths.map(async (p) => [p, await statOf(p)] as const))
   )
-  return [...paths].sort(
-    (a, b) =>
-      (times.get(b) as number) - (times.get(a) as number) || age(b) - age(a)
-  )
+  const time = (p: string) => stats.get(p)?.mtime ?? 0
+  return paths
+    .filter((p) => !isRekeyed(p) || (stats.get(p)?.size ?? 0) > 0)
+    .sort((a, b) => time(b) - time(a) || age(b) - age(a))
 }
 
 type Candidates = {
@@ -218,7 +234,11 @@ async function walletCandidates(): Promise<Candidates> {
 
   if (name !== null) {
     const pointed = walletFiles.pathFor(name)
-    if (await RNFS.exists(pointed)) {
+    if (
+      isRekeyed(pointed)
+        ? await hasContent(pointed)
+        : await RNFS.exists(pointed)
+    ) {
       return {
         pointed,
         fallbacks: [],
@@ -226,7 +246,7 @@ async function walletCandidates(): Promise<Candidates> {
         pointerReadable: true
       }
     }
-    console.error(`Wallet file ${pointed} is missing.`)
+    console.error(`Wallet file ${pointed} is missing or empty.`)
   }
   const fallbacks = await byModifiedTime(await existingWalletPaths())
   return { pointed: null, fallbacks, pointerAbsent, pointerReadable }
@@ -608,6 +628,9 @@ class DatabaseAccess {
     realm: Realm,
     pointed: string | null
   ): Promise<void> {
+    if (!(await hasContent(realm.path))) {
+      throw new Error(`Wallet file ${realm.path} is empty.`)
+    }
     if (realm.path !== pointed) {
       await DatabaseAccess.writePointer(realm.path)
       DatabaseAccess.madeCurrentThisProcess.add(realm.path)

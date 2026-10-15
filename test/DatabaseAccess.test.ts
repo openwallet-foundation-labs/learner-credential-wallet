@@ -87,6 +87,9 @@ const mockFail: {
   readDir?: boolean
 } = {}
 const mockNever = () => new Promise<never>(() => undefined)
+/** A Realm file has content; a text file is as long as its text. */
+const mockSize = (file: MockFile) =>
+  file.kind === 'realm' ? 4096 : file.text.length
 
 jest.mock('react-native-fs', () => {
   const short = (p: string) => p.replace('/mock/docs/', '')
@@ -95,7 +98,10 @@ jest.mock('react-native-fs', () => {
     exists: jest.fn(async (p: string) => mockFiles.has(p)),
     stat: jest.fn(async (p: string) => {
       if (!mockFiles.has(p)) throw new Error(`ENOENT ${p}`)
-      return { mtime: new Date(mockMtimes.get(p) ?? 0) }
+      return {
+        mtime: new Date(mockMtimes.get(p) ?? 0),
+        size: mockSize(mockFiles.get(p) as MockFile)
+      }
     }),
     readDir: jest.fn(async (dir: string) => {
       if (mockFail.readDir) throw new Error('readDir failed')
@@ -104,7 +110,11 @@ jest.mock('react-native-fs', () => {
           (p) =>
             p.startsWith(`${dir}/`) && !p.slice(dir.length + 1).includes('/')
         )
-        .map((p) => ({ name: p.slice(dir.length + 1), path: p }))
+        .map((p) => ({
+          name: p.slice(dir.length + 1),
+          path: p,
+          size: mockSize(mockFiles.get(p) as MockFile)
+        }))
     }),
     readFile: jest.fn(async (p: string) => {
       const file = mockFiles.get(p)
@@ -1758,5 +1768,45 @@ describe('Realm lifetime and candidate order', () => {
     ])
     expect(secure.get('wallet_file')).toBe('wallet-500.realm')
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
+  })
+})
+
+describe('empty re-keyed files', () => {
+  it('are never candidates, and never cost default.realm its place', async () => {
+    // A crash during writeCopyTo left an empty, newer re-keyed file.
+    walletEncryptedWith(REAL_KEY)
+    mockFiles.set(`${DIR}/wallet-900.realm`, { kind: 'text', text: '' })
+
+    await db.unlock(PASSPHRASE)
+
+    expect(mockRealmOpen.mock.calls.map(([c]) => c.path)).toEqual([WALLET])
+    expect(secure.get('wallet_file')).toBe('default.realm')
+
+    // A later process: default.realm is still the wallet.
+    await db.lock()
+    restart()
+    await db.unlock(PASSPHRASE)
+    expect(mockRealmOpen.mock.calls.map(([c]) => c.path)).toEqual([WALLET])
+    expect(mockFiles.has(WALLET)).toBe(true)
+  })
+
+  it('are skipped by a stored key and when the pointer names one', async () => {
+    walletEncryptedWith(REAL_KEY)
+    mockFiles.set(`${DIR}/wallet-900.realm`, { kind: 'text', text: '' })
+    secure.set('wallet_file', 'wallet-900.realm')
+    enableBiometricsWith(REAL_KEY)
+
+    await db.unlockWithBiometrics()
+
+    expect(mockRealmOpen.mock.calls.map(([c]) => c.path)).not.toContain(
+      `${DIR}/wallet-900.realm`
+    )
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+  })
+
+  it('alone do not make the wallet look set up', async () => {
+    mockFiles.set(`${DIR}/wallet-900.realm`, { kind: 'text', text: '' })
+
+    expect(await db.isInitialized()).toBe(false)
   })
 })
