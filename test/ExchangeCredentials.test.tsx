@@ -167,10 +167,7 @@ describe('ExchangeCredentials', () => {
   it('shows the failure, never success, when the exchange endpoint fails', async () => {
     ;(sendToExchanger as jest.Mock).mockResolvedValue(didAuthRequest)
     ;(processMessageChain as jest.Mock).mockRejectedValue(
-      new ExchangeFailedError('rejected', {
-        status: 400,
-        detail: 'DataError: Invalid presentation.'
-      }).withSentBefore({
+      new ExchangeFailedError('rejected', { status: 400 }).withSentBefore({
         posted: true,
         credentials: [],
         didAuth: true,
@@ -182,7 +179,7 @@ describe('ExchangeCredentials', () => {
     expect(showModal).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Request Rejected',
-        body: 'The request was rejected. DataError: Invalid presentation. Your DID Authentication response was sent before the error.'
+        body: 'The request was rejected. Your DID Authentication response was sent before the error.'
       })
     )
     expect(shownBodies()).not.toContain('DID Authentication complete.')

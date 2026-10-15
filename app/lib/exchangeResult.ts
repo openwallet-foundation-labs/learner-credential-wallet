@@ -155,54 +155,57 @@ export function exchangeCompletionMessage({
   return { title: 'Nothing Shared', body: 'Nothing was shared.' }
 }
 
-const MAX_DETAIL_LENGTH = 200
-
 /**
  * Why a VC-API exchange endpoint call failed:
  * - rejected: a 4xx other than 404/410.
  * - gone: 404 or 410, the exchange has expired or never existed.
- * - unreachable: a 5xx, or no response at all.
+ * - server-error: a 5xx, the service answered but failed.
+ * - unreachable: no HTTP response at all.
  */
-export type ExchangeFailureKind = 'rejected' | 'gone' | 'unreachable'
+export type ExchangeFailureKind =
+  | 'rejected'
+  | 'gone'
+  | 'server-error'
+  | 'unreachable'
 
 export function failureKindForStatus(status: number): ExchangeFailureKind {
   if (status === 404 || status === 410) return 'gone'
-  if (status >= 500) return 'unreachable'
+  if (status >= 500) return 'server-error'
   return 'rejected'
 }
 
 type ExchangeFailureDetails = {
   status?: number
-  // The exchanger's own error name/message, if it gave one
-  detail?: string
-  // No HTTP response arrived, so whether the request got there is unknown
-  networkError?: boolean
   // What the wallet had posted, when the failing call was its reply
   sentBefore?: ISentSummary
+  // The underlying error (e.g. a network failure), for diagnosis
+  cause?: unknown
 }
 
 /**
- * Thrown for a failed call to a VC-API exchange endpoint. Its message is safe
- * to show to the user and says what had already been sent.
+ * Thrown for a failed call to a VC-API exchange endpoint. Its title and
+ * message are safe to show to the user: they are written by the wallet,
+ * never taken from the exchanger, and say what had already been sent.
  */
 export class ExchangeFailedError extends HumanReadableError {
   readonly isExchangeFailure = true
   readonly kind: ExchangeFailureKind
   readonly details: ExchangeFailureDetails
+  readonly title: string
+  readonly cause?: unknown
 
   constructor(kind: ExchangeFailureKind, details: ExchangeFailureDetails = {}) {
-    super(exchangeFailureMessage(kind, details).body)
+    const { title, body } = exchangeFailureMessage(kind, details)
+    super(body)
     this.kind = kind
     this.details = details
+    this.title = title
+    this.cause = details.cause
   }
 
   /** The same failure, noting what the wallet had already posted. */
   withSentBefore(sentBefore: ISentSummary): ExchangeFailedError {
     return new ExchangeFailedError(this.kind, { ...this.details, sentBefore })
-  }
-
-  get title(): string {
-    return exchangeFailureMessage(this.kind, this.details).title
   }
 }
 
@@ -218,28 +221,35 @@ export function isExchangeFailedError(
 
 /**
  * The message for a failed exchange call: what went wrong, then what had
- * already left the device. When no HTTP response arrived, whether the reply
- * reached the exchanger is unknown, so it says "may have".
+ * already left the device. It never includes text from the exchanger. When
+ * no HTTP response arrived, whether the reply reached the exchanger is
+ * unknown, so it says "may have". Only a failure before the wallet sent
+ * anything (the initial POST {}) suggests trying again; after that the
+ * one-time exchange may already be used up.
  */
 export function exchangeFailureMessage(
   kind: ExchangeFailureKind,
-  { detail, networkError, sentBefore }: ExchangeFailureDetails = {}
+  { sentBefore }: ExchangeFailureDetails = {}
 ): IMessage {
+  const sentAnything = !!sentBefore?.posted
   let title: string
   let body: string
   if (kind === 'gone') {
     title = 'Request Expired'
     body = 'This request has expired or no longer exists.'
+  } else if (kind === 'server-error') {
+    title = 'Service Error'
+    body = 'The service had a problem with this request.'
   } else if (kind === 'unreachable') {
     title = 'Service Unavailable'
-    body = "The service couldn't be reached. Try again later."
+    body = sentAnything
+      ? "The service couldn't be reached."
+      : "The service couldn't be reached. Try again later."
   } else {
     title = 'Request Rejected'
-    body = detail
-      ? `The request was rejected. ${detail}`
-      : 'The request was rejected.'
+    body = 'The request was rejected.'
   }
-  const alreadySent = sentBeforeError(sentBefore, !!networkError)
+  const alreadySent = sentBeforeError(sentBefore, kind === 'unreachable')
   return { title, body: alreadySent ? `${body} ${alreadySent}` : body }
 }
 
@@ -263,42 +273,4 @@ function sentBeforeError(
 
   const sentence = `${parts.join(' and ')} before the error.`
   return sentence.charAt(0).toUpperCase() + sentence.slice(1)
-}
-
-/**
- * Extracts a short, human-readable error name and/or message from an
- * exchanger's error body, if it is JSON with one. Understands
- * { name, message }, { error: string | { name, message } } and
- * problem+json { title, detail }.
- */
-export function exchangerErrorDetail(bodyText?: string): string | undefined {
-  if (!bodyText) return undefined
-  let body: any
-  try {
-    body = JSON.parse(bodyText)
-  } catch {
-    return undefined
-  }
-  if (!body || typeof body !== 'object') return undefined
-
-  const source =
-    body.error && typeof body.error === 'object' ? body.error : body
-  const name = asText(source.name) ?? asText(body.title)
-  const message =
-    asText(source.message) ??
-    asText(body.detail) ??
-    (typeof body.error === 'string' ? asText(body.error) : undefined)
-
-  const detail =
-    name && message && name !== message
-      ? `${name}: ${message}`
-      : (message ?? name)
-  if (!detail) return undefined
-  return detail.length > MAX_DETAIL_LENGTH
-    ? `${detail.slice(0, MAX_DETAIL_LENGTH - 1)}…`
-    : detail
-}
-
-function asText(value: unknown): string | undefined {
-  return typeof value === 'string' && value.trim() ? value.trim() : undefined
 }

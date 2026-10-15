@@ -18,7 +18,6 @@ import {
 import { extractCredentialsFrom } from './verifiableObject'
 import {
   ExchangeFailedError,
-  exchangerErrorDetail,
   failureKindForStatus,
   isExchangeFailedError,
   isFollowUpStep,
@@ -235,7 +234,6 @@ export async function processRequest({
   console.log('SELECTED VCS:', selectedVcs)
 
   // Compose a VerifiablePresentation (to send to the requester) if appropriate
-  let sentDidAuth = false
   if (didAuthRequested || selectedVcs.length > 0) {
     walletResponse.verifiablePresentation = await composeVp({
       selectedProfile,
@@ -244,13 +242,13 @@ export async function processRequest({
       domain,
       didAuthRequested
     })
-    sentDidAuth = didAuthRequested
   }
 
   const sent: ISentSummary = {
     posted: true,
     credentials: selectedVcs,
-    didAuth: sentDidAuth,
+    // A DIDAuth request always results in a signed VP being posted
+    didAuth: didAuthRequested,
     zcaps: !!walletResponse.zcap
   }
   let responseFromExchanger
@@ -303,8 +301,10 @@ export async function vcMatchesFor({
  * @param payload {{ verifiablePresentation, zcap }}
  * @param checkStatus {boolean} - Set for VC-API exchange endpoints: a non-OK
  *   status or a network failure throws ExchangeFailedError, so an error reply
- *   is never mistaken for a successful step. When unset (a deep-link
- *   request's redirectUrl), the reply is parsed whatever its status.
+ *   is never mistaken for a successful step, and a successful status with an
+ *   empty or non-JSON body resolves to null. When unset (a deep-link
+ *   request's redirectUrl), the reply is parsed whatever its status, as it
+ *   always has been.
  */
 export async function sendToExchanger({
   exchangeUrl,
@@ -318,31 +318,68 @@ export async function sendToExchanger({
   }
   checkStatus?: boolean
 }): Promise<any> {
-  let status: number
-  let ok: boolean
-  let text: string
+  if (!checkStatus) {
+    // A deep-link request's redirectUrl: parsed whatever the status
+    try {
+      const exchangeResponseRaw = await fetch(exchangeUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+      const text = await exchangeResponseRaw.text()
+      return text ? JSON.parse(text) : null
+    } catch (err) {
+      console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`)
+      throw err
+    }
+  }
+
+  let exchangeResponseRaw: Response
   try {
-    const exchangeResponseRaw = await fetch(exchangeUrl, {
+    exchangeResponseRaw = await fetch(exchangeUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-    status = exchangeResponseRaw.status
-    ok = exchangeResponseRaw.ok
+  } catch (err) {
+    console.log(`Could not reach Exchanger endpoint "${exchangeUrl}".`, err)
+    throw new ExchangeFailedError('unreachable', { cause: err })
+  }
+
+  const { status, ok } = exchangeResponseRaw
+  let text: string | undefined
+  let readError: unknown
+  try {
     text = await exchangeResponseRaw.text()
   } catch (err) {
-    console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`, err)
-    if (checkStatus) {
-      throw new ExchangeFailedError('unreachable', { networkError: true })
-    }
-    throw err
+    // The status arrived, so classify by it rather than as a network error
+    readError = err
+    console.log(`Could not read the reply from "${exchangeUrl}".`, err)
   }
-  if (checkStatus && !ok) {
-    console.log(`Exchanger "${exchangeUrl}" replied HTTP ${status}:`, text)
+
+  if (!ok) {
+    // The exchanger's error body is logged for diagnosis but never shown:
+    // it is not the wallet's text to put in front of the user
+    console.log(
+      `Exchanger "${exchangeUrl}" replied HTTP ${status}:`,
+      text?.slice(0, 1000)
+    )
     throw new ExchangeFailedError(failureKindForStatus(status), {
       status,
-      detail: exchangerErrorDetail(text)
+      cause: readError
     })
   }
-  return text ? JSON.parse(text) : null
+
+  // A successful status with an empty, unreadable or non-JSON body is a
+  // reply with nothing further in it
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch (err) {
+    console.log(
+      `Exchanger "${exchangeUrl}" replied HTTP ${status} with a non-JSON body.`,
+      err
+    )
+    return null
+  }
 }

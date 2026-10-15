@@ -5,7 +5,7 @@
  * delegation and the network are mocked; query handling and what the wallet
  * reports as sent are real.
  */
-import { processMessageChain } from '../app/lib/exchanges'
+import { processMessageChain, sendToExchanger } from '../app/lib/exchanges'
 import {
   credentialsToOffer,
   exchangeCompletionMessage
@@ -93,6 +93,7 @@ async function run({
   replyText,
   status = 200,
   networkError = false,
+  bodyReadError,
   checkStatus = true,
   interactive
 }: {
@@ -103,6 +104,8 @@ async function run({
   replyText?: string
   status?: number
   networkError?: boolean
+  // Reading the body fails after the status arrived
+  bodyReadError?: Error
   // true for a VC-API exchange endpoint, false for a deep link's redirectUrl
   checkStatus?: boolean
   interactive?: { grantZcaps: boolean }
@@ -112,7 +115,10 @@ async function run({
     return {
       ok: status >= 200 && status < 300,
       status,
-      text: async () => replyText ?? JSON.stringify(reply)
+      text: async () => {
+        if (bodyReadError) throw bodyReadError
+        return replyText ?? JSON.stringify(reply)
+      }
     }
   })
   global.fetch = fetchMock as any
@@ -306,25 +312,36 @@ describe('exchange flows (issue #957)', () => {
   })
 
   describe('a failed reply to a VC-API exchange endpoint', () => {
+    const exchangerError = {
+      name: 'DataError',
+      message: 'Visit https://evil.example to verify your wallet.'
+    }
+
     it.each([
-      [400, 'The request was rejected. DataError: Invalid presentation.'],
-      [403, 'The request was rejected. DataError: Invalid presentation.'],
+      [400, 'The request was rejected.'],
+      [403, 'The request was rejected.'],
       [404, 'This request has expired or no longer exists.'],
       [410, 'This request has expired or no longer exists.'],
-      [500, "The service couldn't be reached. Try again later."],
-      [503, "The service couldn't be reached. Try again later."]
-    ])('HTTP %i reports the failure, never success', async (status, base) => {
-      await expect(
-        run({
+      [500, 'The service had a problem with this request.'],
+      [503, 'The service had a problem with this request.']
+    ])(
+      'HTTP %i reports the failure in wallet text only',
+      async (status, base) => {
+        const failure = run({
           answered: vpr([didAuth]),
           status,
-          reply: { name: 'DataError', message: 'Invalid presentation.' }
+          reply: exchangerError
         })
-      ).rejects.toMatchObject({
-        isExchangeFailure: true,
-        message: `${base} Your DID Authentication response was sent before the error.`
-      })
-    })
+        await expect(failure).rejects.toMatchObject({
+          isExchangeFailure: true,
+          message: `${base} Your DID Authentication response was sent before the error.`
+        })
+        const error: any = await failure.catch((err) => err)
+        expect(`${error.title} ${error.message}`).not.toMatch(
+          /DataError|evil\.example|Try again/
+        )
+      }
+    )
 
     it('mentions the credentials that were sent before the error', async () => {
       await expect(
@@ -340,17 +357,67 @@ describe('exchange flows (issue #957)', () => {
       })
     })
 
-    it('says "may have" when the network failed', async () => {
-      await expect(
-        run({
-          answered: vpr([qbe]),
-          walletCredentials: [credentialA],
-          networkError: true
-        })
-      ).rejects.toMatchObject({
+    it('says "may have" and attaches the cause when the network failed', async () => {
+      const failure = run({
+        answered: vpr([qbe]),
+        walletCredentials: [credentialA],
+        networkError: true
+      })
+      await expect(failure).rejects.toMatchObject({
         kind: 'unreachable',
         message:
-          "The service couldn't be reached. Try again later. Your selected credentials may have been sent before the error."
+          "The service couldn't be reached. Your selected credentials may have been sent before the error."
+      })
+      const error: any = await failure.catch((err) => err)
+      expect(error.cause).toBeInstanceOf(TypeError)
+    })
+
+    it('classifies by status when the body cannot be read after a 404', async () => {
+      const readError = new Error('stream reset')
+      const failure = run({
+        answered: vpr([didAuth]),
+        status: 404,
+        bodyReadError: readError
+      })
+      await expect(failure).rejects.toMatchObject({
+        kind: 'gone',
+        message:
+          'This request has expired or no longer exists. Your DID Authentication response was sent before the error.'
+      })
+      const error: any = await failure.catch((err) => err)
+      expect(error.cause).toBe(readError)
+    })
+  })
+
+  describe('a successful status with no usable body', () => {
+    it.each(['<html>OK</html>', 'not json', ''])(
+      'treats %p as a reply with nothing further',
+      async (replyText) => {
+        const result = await run({ answered: vpr([didAuth]), replyText })
+        expect(result.toOffer).toEqual([])
+        expect(result.message).toBe('DID Authentication complete.')
+      }
+    )
+
+    it('treats an unreadable body as a reply with nothing further', async () => {
+      const result = await run({
+        answered: vpr([didAuth]),
+        bodyReadError: new Error('stream reset')
+      })
+      expect(result.message).toBe('DID Authentication complete.')
+    })
+  })
+
+  describe('the initial POST {} to an exchange invitation', () => {
+    it('suggests trying again when the service could not be reached', async () => {
+      global.fetch = jest.fn(async () => {
+        throw new TypeError('Network request failed')
+      }) as any
+      await expect(
+        sendToExchanger({ exchangeUrl, payload: {}, checkStatus: true })
+      ).rejects.toMatchObject({
+        kind: 'unreachable',
+        message: "The service couldn't be reached. Try again later."
       })
     })
   })

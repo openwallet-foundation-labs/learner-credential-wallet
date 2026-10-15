@@ -3,7 +3,6 @@ import assert from 'node:assert'
 import {
   credentialsToOffer,
   exchangeCompletionMessage,
-  exchangerErrorDetail,
   exchangeFailureMessage,
   ExchangeFailedError,
   failureKindForStatus,
@@ -338,8 +337,8 @@ describe('exchange failures', () => {
     assert.strictEqual(failureKindForStatus(422), 'rejected')
     assert.strictEqual(failureKindForStatus(404), 'gone')
     assert.strictEqual(failureKindForStatus(410), 'gone')
-    assert.strictEqual(failureKindForStatus(500), 'unreachable')
-    assert.strictEqual(failureKindForStatus(503), 'unreachable')
+    assert.strictEqual(failureKindForStatus(500), 'server-error')
+    assert.strictEqual(failureKindForStatus(503), 'server-error')
   })
 
   it('gives each kind its message', () => {
@@ -347,21 +346,31 @@ describe('exchange failures', () => {
       title: 'Request Rejected',
       body: 'The request was rejected.'
     })
-    assert.deepStrictEqual(
-      exchangeFailureMessage('rejected', { detail: 'DataError: Bad VP.' }),
-      {
-        title: 'Request Rejected',
-        body: 'The request was rejected. DataError: Bad VP.'
-      }
-    )
     assert.deepStrictEqual(exchangeFailureMessage('gone'), {
       title: 'Request Expired',
       body: 'This request has expired or no longer exists.'
+    })
+    assert.deepStrictEqual(exchangeFailureMessage('server-error'), {
+      title: 'Service Error',
+      body: 'The service had a problem with this request.'
     })
     assert.deepStrictEqual(exchangeFailureMessage('unreachable'), {
       title: 'Service Unavailable',
       body: "The service couldn't be reached. Try again later."
     })
+  })
+
+  it('only suggests trying again before anything was sent', () => {
+    for (const kind of ['rejected', 'gone', 'server-error'] as const) {
+      assert.doesNotMatch(
+        exchangeFailureMessage(kind, { sentBefore: sentDidAuth }).body,
+        /try again/i
+      )
+    }
+    assert.strictEqual(
+      exchangeFailureMessage('unreachable', { sentBefore: sentDidAuth }).body,
+      "The service couldn't be reached. Your DID Authentication response may have been sent before the error."
+    )
   })
 
   it('says what had already been sent when the reply failed', () => {
@@ -380,10 +389,10 @@ describe('exchange failures', () => {
       'The request was rejected. Storage access was granted before the error.'
     )
     assert.strictEqual(
-      body('unreachable', {
+      body('server-error', {
         sentBefore: { ...shared(credentialA), zcaps: true }
       }),
-      "The service couldn't be reached. Try again later. Your selected credentials were sent and storage access was granted before the error."
+      'The service had a problem with this request. Your selected credentials were sent and storage access was granted before the error.'
     )
     // Nothing posted, nothing to add
     assert.strictEqual(
@@ -395,75 +404,31 @@ describe('exchange failures', () => {
   it('says "may have" when no response arrived', () => {
     assert.strictEqual(
       exchangeFailureMessage('unreachable', {
-        networkError: true,
         sentBefore: sentDidAuthAndZcaps
       }).body,
-      "The service couldn't be reached. Try again later. Your DID Authentication response may have been sent and storage access may have been granted before the error."
+      "The service couldn't be reached. Your DID Authentication response may have been sent and storage access may have been granted before the error."
     )
   })
 
-  it('reads name and message from an error body', () => {
-    assert.strictEqual(
-      exchangerErrorDetail(
-        JSON.stringify({
-          name: 'NotFoundError',
-          message: 'Exchange not found.'
-        })
-      ),
-      'NotFoundError: Exchange not found.'
-    )
-    assert.strictEqual(
-      exchangerErrorDetail(
-        JSON.stringify({
-          error: { name: 'DataError', message: 'Invalid presentation.' }
-        })
-      ),
-      'DataError: Invalid presentation.'
-    )
-    assert.strictEqual(
-      exchangerErrorDetail(JSON.stringify({ error: 'Exchange expired.' })),
-      'Exchange expired.'
-    )
-    assert.strictEqual(
-      exchangerErrorDetail(
-        JSON.stringify({ title: 'Bad Request', detail: 'Challenge mismatch.' })
-      ),
-      'Bad Request: Challenge mismatch.'
-    )
-  })
-
-  it('ignores bodies with no usable detail', () => {
-    for (const text of [undefined, '', '<html>502</html>', '{}', '[]', '"x"']) {
-      assert.strictEqual(exchangerErrorDetail(text), undefined)
-    }
-  })
-
-  it('truncates a long detail', () => {
-    const detail = exchangerErrorDetail(
-      JSON.stringify({ message: 'x'.repeat(500) })
-    )
-    assert.strictEqual(detail!.length, 200)
-  })
-
-  it('carries a user-facing message and is recognisable', () => {
-    const error = new ExchangeFailedError('rejected', {
-      status: 400,
-      detail: 'DataError: Bad VP.'
-    })
+  it('builds its title and message once, from wallet text only', () => {
+    const cause = new TypeError('Network request failed')
+    const error = new ExchangeFailedError('unreachable', { cause })
+    assert.strictEqual(error.title, 'Service Unavailable')
     assert.strictEqual(
       error.message,
-      'The request was rejected. DataError: Bad VP.'
+      "The service couldn't be reached. Try again later."
     )
-    assert.strictEqual(error.title, 'Request Rejected')
+    assert.strictEqual(error.cause, cause)
     assert.strictEqual(isExchangeFailedError(error), true)
     assert.strictEqual(errorMessageFrom(error), error.message)
 
     const afterReply = error.withSentBefore(shared(credentialA))
     assert.strictEqual(isExchangeFailedError(afterReply), true)
-    assert.strictEqual(afterReply.details.status, 400)
+    assert.strictEqual(afterReply.cause, cause)
+    assert.strictEqual(afterReply.title, 'Service Unavailable')
     assert.strictEqual(
       afterReply.message,
-      'The request was rejected. DataError: Bad VP. Your selected credentials were sent before the error.'
+      "The service couldn't be reached. Your selected credentials may have been sent before the error."
     )
 
     assert.strictEqual(isExchangeFailedError(new Error('x')), false)

@@ -12,7 +12,6 @@ import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
 import {
   credentialsToOffer,
   exchangeCompletionMessage,
-  exchangeFailureMessage,
   IMessage,
   isActionableExchangeMessage,
   isExchangeFailedError,
@@ -116,7 +115,7 @@ export default function ExchangeCredentials({
       if (isExchangeFailedError(err)) {
         // The exchange endpoint failed: say so, never success
         goHome()
-        showMessage(exchangeFailureMessage(err.kind, err.details))
+        showMessage({ title: err.title, body: err.message })
         return
       }
       throw err
