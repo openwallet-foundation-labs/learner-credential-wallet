@@ -11,8 +11,6 @@ import * as ExpoCrypto from 'expo-crypto'
 import cryptoPolyfill from './crypto-polyfill.js'
 
 // eslint-disable-next-line no-undef
-global.crypto = {}
-// eslint-disable-next-line no-undef
 global.Buffer = Buffer
 
 const subtle = {
@@ -38,34 +36,12 @@ const subtle = {
   }
 }
 
-crypto.subtle = subtle
-
-// Also make crypto functions available globally for module imports
-global.crypto = global.crypto || {}
-Object.assign(global.crypto, cryptoPolyfill)
-
-// The same module, for code that looks it up through these globals
-const cryptoModule = cryptoPolyfill
-
-// Make crypto functions available for imports
-global.__CRYPTO_POLYFILL__ = cryptoModule
-
-// Override require for crypto module
-const originalRequire = global.require
-if (originalRequire) {
-  global.require = function (id) {
-    if (id === 'crypto') {
-      console.log('crypto module requested - returning polyfill')
-      return cryptoModule
-    }
-    return originalRequire.apply(this, arguments)
-  }
-}
-
-// Make them available for direct module.exports as well
-if (typeof module !== 'undefined' && module.exports) {
-  module.exports = cryptoModule
-}
+// global.crypto: WebCrypto's subtle.digest (via expo-crypto), plus the same
+// Node-style functions that `crypto` imports resolve to (crypto-polyfill.js).
+// react-native-get-random-values, imported after this file, adds
+// getRandomValues.
+// eslint-disable-next-line no-undef
+global.crypto = { ...cryptoPolyfill, subtle }
 
 function patchedBigInt(value) {
   if (typeof value === 'string') {
