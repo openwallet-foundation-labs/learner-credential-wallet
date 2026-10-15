@@ -8,8 +8,8 @@ _Note: Preferable versions_
 
 |      | Version |
 | ---- | ------- |
-| node | 16.13   |
-| java | 11      |
+| node | 22.x    |
+| java | 17      |
 
 It is recommended to use nvm for managing multiple node version: https://github.com/nvm-sh/nvm
 
