@@ -161,12 +161,15 @@ export function exchangeCompletionMessage({
  * - gone: 404 or 410, the exchange has expired or never existed.
  * - server-error: a 5xx, the service answered but failed.
  * - unreachable: no HTTP response at all.
+ * - unreadable: a successful status, but a body that could not be read or
+ *   is not JSON (e.g. an HTML or proxy page), so its content is unknown.
  */
 export type ExchangeFailureKind =
   | 'rejected'
   | 'gone'
   | 'server-error'
   | 'unreachable'
+  | 'unreadable'
 
 export function failureKindForStatus(status: number): ExchangeFailureKind {
   if (status === 404 || status === 410) return 'gone'
@@ -245,6 +248,11 @@ export function exchangeFailureMessage(
     body = sentAnything
       ? "The service couldn't be reached."
       : "The service couldn't be reached. Try again later."
+  } else if (kind === 'unreadable') {
+    title = 'Request Incomplete'
+    body = sentAnything
+      ? "The service's reply couldn't be read."
+      : "The service's reply couldn't be read. Try again later."
   } else {
     title = 'Request Rejected'
     body = 'The request was rejected.'

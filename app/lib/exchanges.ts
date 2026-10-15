@@ -299,12 +299,12 @@ export async function vcMatchesFor({
  *
  * @param exchangeUrl
  * @param payload {{ verifiablePresentation, zcap }}
- * @param checkStatus {boolean} - Set for VC-API exchange endpoints: a non-OK
- *   status or a network failure throws ExchangeFailedError, so an error reply
- *   is never mistaken for a successful step, and a successful status with an
- *   empty or non-JSON body resolves to null. When unset (a deep-link
- *   request's redirectUrl), the reply is parsed whatever its status, as it
- *   always has been.
+ * @param checkStatus {boolean} - Set for VC-API exchange endpoints. Then a
+ *   network failure, a non-OK status, or a successful status whose body can't
+ *   be read or isn't JSON throws ExchangeFailedError, so a failed or garbled
+ *   reply is never mistaken for a successful step; only a genuinely empty
+ *   body resolves to null. When unset (a deep-link request's redirectUrl),
+ *   the reply is handled exactly as it always has been.
  */
 export async function sendToExchanger({
   exchangeUrl,
@@ -318,22 +318,6 @@ export async function sendToExchanger({
   }
   checkStatus?: boolean
 }): Promise<any> {
-  if (!checkStatus) {
-    // A deep-link request's redirectUrl: parsed whatever the status
-    try {
-      const exchangeResponseRaw = await fetch(exchangeUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-      const text = await exchangeResponseRaw.text()
-      return text ? JSON.parse(text) : null
-    } catch (err) {
-      console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`)
-      throw err
-    }
-  }
-
   let exchangeResponseRaw: Response
   try {
     exchangeResponseRaw = await fetch(exchangeUrl, {
@@ -342,8 +326,10 @@ export async function sendToExchanger({
       body: JSON.stringify(payload)
     })
   } catch (err) {
-    console.log(`Could not reach Exchanger endpoint "${exchangeUrl}".`, err)
-    throw new ExchangeFailedError('unreachable', { cause: err })
+    console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`, err)
+    if (checkStatus)
+      throw new ExchangeFailedError('unreachable', { cause: err })
+    throw err
   }
 
   const { status, ok } = exchangeResponseRaw
@@ -352,14 +338,28 @@ export async function sendToExchanger({
   try {
     text = await exchangeResponseRaw.text()
   } catch (err) {
-    // The status arrived, so classify by it rather than as a network error
     readError = err
     console.log(`Could not read the reply from "${exchangeUrl}".`, err)
   }
 
+  if (!checkStatus) {
+    // Deliberately unchanged from before status checking was added: a
+    // deep-link request's redirectUrl can legitimately be a landing page
+    // that answers with an error status or HTML, so its reply is parsed
+    // whatever the status, and read or parse errors are rethrown as is.
+    if (readError) throw readError
+    try {
+      return text ? JSON.parse(text) : null
+    } catch (err) {
+      console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`)
+      throw err
+    }
+  }
+
   if (!ok) {
     // The exchanger's error body is logged for diagnosis but never shown:
-    // it is not the wallet's text to put in front of the user
+    // it is not the wallet's text to put in front of the user. If the body
+    // couldn't be read, the status that arrived still classifies it.
     console.log(
       `Exchanger "${exchangeUrl}" replied HTTP ${status}:`,
       text?.slice(0, 1000)
@@ -370,16 +370,18 @@ export async function sendToExchanger({
     })
   }
 
-  // A successful status with an empty, unreadable or non-JSON body is a
-  // reply with nothing further in it
-  if (!text) return null
+  if (readError) {
+    throw new ExchangeFailedError('unreadable', { status, cause: readError })
+  }
+  // Only a genuinely empty body means "nothing more"
+  if (!text || !text.trim()) return null
   try {
     return JSON.parse(text)
   } catch (err) {
     console.log(
-      `Exchanger "${exchangeUrl}" replied HTTP ${status} with a non-JSON body.`,
-      err
+      `Exchanger "${exchangeUrl}" replied HTTP ${status} with a non-JSON body:`,
+      text.slice(0, 1000)
     )
-    return null
+    throw new ExchangeFailedError('unreadable', { status, cause: err })
   }
 }

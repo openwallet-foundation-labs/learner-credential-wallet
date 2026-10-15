@@ -358,15 +358,29 @@ describe('exchange failures', () => {
       title: 'Service Unavailable',
       body: "The service couldn't be reached. Try again later."
     })
+    assert.deepStrictEqual(exchangeFailureMessage('unreadable'), {
+      title: 'Request Incomplete',
+      body: "The service's reply couldn't be read. Try again later."
+    })
   })
 
   it('only suggests trying again before anything was sent', () => {
-    for (const kind of ['rejected', 'gone', 'server-error'] as const) {
+    for (const kind of [
+      'rejected',
+      'gone',
+      'server-error',
+      'unreachable',
+      'unreadable'
+    ] as const) {
       assert.doesNotMatch(
         exchangeFailureMessage(kind, { sentBefore: sentDidAuth }).body,
         /try again/i
       )
     }
+    assert.strictEqual(
+      exchangeFailureMessage('unreadable', { sentBefore: sentDidAuth }).body,
+      "The service's reply couldn't be read. Your DID Authentication response was sent before the error."
+    )
     assert.strictEqual(
       exchangeFailureMessage('unreachable', { sentBefore: sentDidAuth }).body,
       "The service couldn't be reached. Your DID Authentication response may have been sent before the error."

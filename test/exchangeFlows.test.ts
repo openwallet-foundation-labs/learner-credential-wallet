@@ -389,9 +389,12 @@ describe('exchange flows (issue #957)', () => {
     })
   })
 
-  describe('a successful status with no usable body', () => {
-    it.each(['<html>OK</html>', 'not json', ''])(
-      'treats %p as a reply with nothing further',
+  describe('a successful status', () => {
+    const unreadable =
+      "The service's reply couldn't be read. Your DID Authentication response was sent before the error."
+
+    it.each(['', '   \n'])(
+      'with an empty body %p completes normally',
       async (replyText) => {
         const result = await run({ answered: vpr([didAuth]), replyText })
         expect(result.toOffer).toEqual([])
@@ -399,12 +402,46 @@ describe('exchange flows (issue #957)', () => {
       }
     )
 
-    it('treats an unreadable body as a reply with nothing further', async () => {
-      const result = await run({
-        answered: vpr([didAuth]),
-        bodyReadError: new Error('stream reset')
+    it.each([
+      ['HTML', '<html><body>Gateway</body></html>'],
+      ['truncated JSON', '{"verifiablePresentation": {"verifiableCre'],
+      ['plain text', 'OK']
+    ])('with a %s body is unreadable, never success', async (_, replyText) => {
+      const failure = run({ answered: vpr([didAuth]), replyText })
+      await expect(failure).rejects.toMatchObject({
+        kind: 'unreadable',
+        title: 'Request Incomplete',
+        message: unreadable
       })
-      expect(result.message).toBe('DID Authentication complete.')
+      const error: any = await failure.catch((err) => err)
+      expect(error.cause).toBeInstanceOf(SyntaxError)
+    })
+
+    it('with a body that cannot be read is unreadable, never success', async () => {
+      const readError = new Error('stream reset')
+      const failure = run({
+        answered: vpr([didAuth]),
+        bodyReadError: readError
+      })
+      await expect(failure).rejects.toMatchObject({
+        kind: 'unreadable',
+        message: unreadable
+      })
+      const error: any = await failure.catch((err) => err)
+      expect(error.cause).toBe(readError)
+    })
+
+    it('with an unreadable body after shared credentials says they were sent', async () => {
+      await expect(
+        run({
+          answered: vpr([qbe]),
+          walletCredentials: [credentialA],
+          replyText: '<html>OK</html>'
+        })
+      ).rejects.toMatchObject({
+        message:
+          "The service's reply couldn't be read. Your selected credentials were sent before the error."
+      })
     })
   })
 
@@ -419,6 +456,31 @@ describe('exchange flows (issue #957)', () => {
         kind: 'unreachable',
         message: "The service couldn't be reached. Try again later."
       })
+    })
+
+    it('suggests trying again when its reply could not be read', async () => {
+      global.fetch = jest.fn(async () => ({
+        ok: true,
+        status: 200,
+        text: async () => '<html>Proxy</html>'
+      })) as any
+      await expect(
+        sendToExchanger({ exchangeUrl, payload: {}, checkStatus: true })
+      ).rejects.toMatchObject({
+        kind: 'unreadable',
+        message: "The service's reply couldn't be read. Try again later."
+      })
+    })
+
+    it('resolves to null for an empty reply', async () => {
+      global.fetch = jest.fn(async () => ({
+        ok: true,
+        status: 200,
+        text: async () => ''
+      })) as any
+      await expect(
+        sendToExchanger({ exchangeUrl, payload: {}, checkStatus: true })
+      ).resolves.toBeNull()
     })
   })
 
@@ -454,6 +516,27 @@ describe('exchange flows (issue #957)', () => {
           networkError: true
         })
       ).rejects.toThrow(TypeError)
+    })
+
+    it('rethrows a JSON parse error for an HTML 200, as on main', async () => {
+      await expect(
+        run({
+          answered: vpr([didAuth]),
+          checkStatus: false,
+          replyText: '<html>Thanks!</html>'
+        })
+      ).rejects.toThrow(SyntaxError)
+    })
+
+    it('rethrows a body read error unchanged, as on main', async () => {
+      const readError = new Error('stream reset')
+      await expect(
+        run({
+          answered: vpr([didAuth]),
+          checkStatus: false,
+          bodyReadError: readError
+        })
+      ).rejects.toBe(readError)
     })
   })
 })
