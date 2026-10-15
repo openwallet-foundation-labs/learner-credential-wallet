@@ -1,11 +1,16 @@
 /**
  * Drives processMessageChain through the exchange shapes from issue #957 and
- * feeds its result to credentialsToOffer, the same call ExchangeCredentials
- * makes. Signing, credential selection, zcap delegation and the network are
- * mocked; the query handling and what the wallet reports as sent are real.
+ * feeds its result to credentialsToOffer and exchangeCompletionMessage, the
+ * same calls ExchangeCredentials makes. Signing, credential selection, zcap
+ * delegation and the network are mocked; query handling and what the wallet
+ * reports as sent are real.
  */
 import { processMessageChain } from '../app/lib/exchanges'
-import { credentialsToOffer } from '../app/lib/exchangeResult'
+import {
+  credentialsToOffer,
+  exchangeCompletionMessage
+} from '../app/lib/exchangeResult'
+import { selectCredentials } from '../app/lib/selectCredentials'
 import { mockCredential } from '../app/mock/credential'
 
 // ESM-only and unused on this path
@@ -31,7 +36,8 @@ jest.mock('../app/lib/walletRequestApi', () => ({
 
 const exchangeUrl = 'https://exchanger.example/exchanges/123'
 
-const stored = { ...mockCredential, id: 'urn:uuid:stored' } as any
+const credentialA = { ...mockCredential, id: 'urn:uuid:a' } as any
+const credentialB = { ...mockCredential, id: 'urn:uuid:b' } as any
 const issued = {
   ...mockCredential,
   id: 'urn:uuid:newly-issued',
@@ -70,88 +76,169 @@ const zcapQuery = {
   }
 }
 
-let fetchMock: jest.Mock
+const originalFetch = global.fetch
+afterEach(() => {
+  global.fetch = originalFetch
+  jest.clearAllMocks()
+})
 
-function exchangerReplies(reply: unknown) {
-  fetchMock = jest.fn(async () => ({ text: async () => JSON.stringify(reply) }))
+/**
+ * Runs one exchange step the way ExchangeCredentials does and returns what
+ * the screen would act on, plus the payload the wallet posted (if any).
+ */
+async function run({
+  answered,
+  walletCredentials = [],
+  reply = {},
+  interactive
+}: {
+  answered: any
+  walletCredentials?: any[]
+  reply?: unknown
+  interactive?: { selected: any[]; grantZcaps: boolean }
+}) {
+  const fetchMock = jest.fn(async () => ({
+    text: async () => JSON.stringify(reply)
+  }))
   global.fetch = fetchMock as any
-}
+  if (interactive) {
+    ;(selectCredentials as jest.Mock).mockResolvedValue(
+      interactive.selected.map((credential) => ({ credential }))
+    )
+  }
 
-function sentPayload() {
-  return JSON.parse(fetchMock.mock.calls[0][1].body)
-}
-
-async function run(requestOrOffer: any, walletCredentials: any[] = []) {
   const result = await processMessageChain({
     exchangeUrl,
-    requestOrOffer,
+    requestOrOffer: answered,
     selectedProfile: {
       loadCredentials: async () =>
         walletCredentials.map((credential) => ({ credential }))
     } as any,
     wasController: {} as any,
-    modals: { enabled: false }
+    modals: interactive
+      ? {
+          enabled: true,
+          confirmZcapRequest: async () => interactive.grantZcaps
+        }
+      : { enabled: false }
   })
-  return { ...result, toOffer: credentialsToOffer(result) }
+
+  const calls = fetchMock.mock.calls as any[]
+  return {
+    sent: result.sent,
+    payload: calls.length > 0 ? JSON.parse(calls[0][1].body) : undefined,
+    toOffer: credentialsToOffer({ answered, ...result }),
+    message: exchangeCompletionMessage({ answered, sent: result.sent })?.body
+  }
 }
 
 describe('exchange flows (issue #957)', () => {
   it('offers the credentials in an offer', async () => {
-    const result = await run({ verifiablePresentation: vpWith(issued) })
-    expect(result.sentCredentials).toBeUndefined()
+    const result = await run({
+      answered: { verifiablePresentation: vpWith(issued) }
+    })
     expect(result.toOffer).toEqual([issued])
   })
 
-  it('offers nothing for an empty offer', async () => {
-    const result = await run({ verifiablePresentation: vpWith() })
+  it('says so when an offer has no credentials', async () => {
+    const result = await run({ answered: { verifiablePresentation: vpWith() } })
     expect(result.toOffer).toEqual([])
+    expect(result.message).toBe("This offer didn't include any credentials.")
   })
 
   it('offers a credential issued after a DIDAuth-only request', async () => {
-    exchangerReplies({ verifiablePresentation: vpWith(issued) })
-    const result = await run(vpr([didAuth]), [stored])
-    expect(sentPayload().verifiablePresentation.verifiableCredential).toBe(
+    const result = await run({
+      answered: vpr([didAuth]),
+      walletCredentials: [credentialA],
+      reply: { verifiablePresentation: vpWith(issued) }
+    })
+    expect(result.payload.verifiablePresentation.verifiableCredential).toBe(
       undefined
     )
-    expect(result.sentCredentials).toEqual([])
     expect(result.toOffer).toEqual([issued])
   })
 
   it('offers a credential issued after a DIDAuth + ZcapQuery request', async () => {
-    exchangerReplies({ verifiablePresentation: vpWith(issued) })
-    const result = await run(vpr([didAuth, zcapQuery]))
-    expect(sentPayload().zcap).toEqual([{ id: 'urn:zcap:granted' }])
-    expect(result.sentCredentials).toEqual([])
+    const result = await run({
+      answered: vpr([didAuth, zcapQuery]),
+      reply: { verifiablePresentation: vpWith(issued) }
+    })
+    expect(result.payload.zcap).toEqual([{ id: 'urn:zcap:granted' }])
     expect(result.toOffer).toEqual([issued])
   })
 
-  it('offers a credential issued after DIDAuth + QBE when nothing matched', async () => {
-    exchangerReplies({ verifiablePresentation: vpWith(issued) })
-    const result = await run(vpr([didAuth, qbe]), [])
-    expect(result.sentCredentials).toEqual([])
+  it('offers a credential issued after DIDAuth + a QBE with no match', async () => {
+    const result = await run({
+      answered: vpr([didAuth, qbe]),
+      walletCredentials: [],
+      reply: { verifiablePresentation: vpWith(issued) }
+    })
+    expect(result.sent?.credentials).toEqual([])
     expect(result.toOffer).toEqual([issued])
+  })
+
+  it('offers nothing when the wallet shared A and the verifier returned B', async () => {
+    const result = await run({
+      answered: vpr([qbe]),
+      walletCredentials: [credentialA],
+      reply: { verifiablePresentation: vpWith(credentialB) }
+    })
+    expect(result.payload.verifiablePresentation.verifiableCredential).toEqual([
+      credentialA
+    ])
+    expect(result.toOffer).toEqual([])
+    expect(result.message).toBe('You have shared the selected credentials.')
   })
 
   it('offers nothing when a verifier echoes the shared VP', async () => {
-    exchangerReplies({ verifiablePresentation: vpWith(stored) })
-    const result = await run(vpr([qbe]), [stored])
-    expect(sentPayload().verifiablePresentation.verifiableCredential).toEqual([
-      stored
-    ])
-    expect(result.sentCredentials).toEqual([stored])
+    const result = await run({
+      answered: vpr([didAuth, qbe]),
+      walletCredentials: [credentialA],
+      reply: { verifiablePresentation: vpWith(credentialA) }
+    })
     expect(result.toOffer).toEqual([])
+    expect(result.message).toBe('You have shared the selected credentials.')
   })
 
-  it('offers only the new credential when an echo and a new one come back', async () => {
-    exchangerReplies({ verifiablePresentation: vpWith(stored, issued) })
-    const result = await run(vpr([didAuth, qbe]), [stored])
-    expect(result.sentCredentials).toEqual([stored])
-    expect(result.toOffer).toEqual([issued])
+  it('says nothing was shared when no credential matched and nothing was posted', async () => {
+    const result = await run({
+      answered: vpr([qbe]),
+      walletCredentials: []
+    })
+    expect(result.payload).toBeUndefined()
+    expect(result.sent?.posted).toBe(false)
+    expect(result.toOffer).toEqual([])
+    expect(result.message).toBe('Nothing was shared.')
+  })
+
+  it('says nothing was shared when zcap consent was declined', async () => {
+    const result = await run({
+      answered: vpr([zcapQuery]),
+      interactive: { selected: [], grantZcaps: false }
+    })
+    expect(result.payload).toBeUndefined()
+    expect(result.message).toBe('Nothing was shared.')
+  })
+
+  it('says nothing was shared when the user deselected every credential', async () => {
+    const result = await run({
+      answered: vpr([qbe]),
+      walletCredentials: [credentialA],
+      interactive: { selected: [], grantZcaps: true }
+    })
+    expect(result.payload).toEqual({})
+    expect(result.message).toBe('Nothing was shared.')
+  })
+
+  it('reports granted storage access for a zcap-only request', async () => {
+    const result = await run({ answered: vpr([zcapQuery]) })
+    expect(result.payload.zcap).toEqual([{ id: 'urn:zcap:granted' }])
+    expect(result.message).toBe('Storage access granted.')
   })
 
   it('offers nothing when the exchanger replies without a VP', async () => {
-    exchangerReplies({})
-    const result = await run(vpr([didAuth]))
+    const result = await run({ answered: vpr([didAuth]) })
     expect(result.toOffer).toEqual([])
+    expect(result.message).toBe('DID Authentication complete.')
   })
 })

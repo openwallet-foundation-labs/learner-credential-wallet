@@ -2,173 +2,171 @@ import { it, describe } from 'node:test'
 import assert from 'node:assert'
 import {
   credentialsToOffer,
-  exchangeCompletionMessage
+  exchangeCompletionMessage,
+  ISentSummary
 } from '../app/lib/exchangeResult'
+import { isDIDAuthOnlyRequest, queriesOf } from '../app/lib/walletRequestApi'
 import { mockCredential } from '../app/mock/credential'
 
 /**
  * credentialsToOffer and exchangeCompletionMessage are what
  * ExchangeCredentials calls with the result of processMessageChain. The
- * end-to-end wiring (processMessageChain reporting what it sent) is covered
+ * end-to-end wiring (processMessageChain reporting what it posted) is covered
  * by test/exchangeFlows.test.ts under Jest.
  */
 
-const holderDid = 'did:key:z6MkHolder'
+const credentialA = { ...mockCredential, id: 'urn:uuid:a' } as any
+const credentialB = { ...mockCredential, id: 'urn:uuid:b' } as any
+const issued = { ...mockCredential, id: 'urn:uuid:newly-issued' } as any
 
-// mockCredential has no top-level id, so it can only match by content
-const sharedNoId = mockCredential as any
-const shared = { ...mockCredential, id: 'urn:uuid:shared' } as any
-const issued = {
-  ...mockCredential,
-  id: 'urn:uuid:newly-issued',
-  credentialSubject: {
-    ...(mockCredential as any).credentialSubject,
-    id: holderDid
-  }
-} as any
+const vpr = (query: unknown) =>
+  ({
+    verifiablePresentationRequest: {
+      query,
+      challenge: 'c',
+      domain: 'exchanger.example'
+    }
+  }) as any
 
-const didAuthOnly = {
-  verifiablePresentationRequest: {
-    query: [{ type: 'DIDAuthentication' }],
-    challenge: 'c',
-    domain: 'issuer.example'
-  }
-} as any
+const didAuth = { type: 'DIDAuthentication' }
+const qbe = {
+  type: 'QueryByExample',
+  credentialQuery: { example: { type: ['Assertion'] } }
+}
+const zcapQuery = { type: 'ZcapQuery', capabilityQuery: {} }
 
-const queryByExample = {
-  verifiablePresentationRequest: {
-    query: [
-      {
-        type: 'QueryByExample',
-        credentialQuery: { example: { type: 'VerifiableCredential' } }
-      }
-    ],
-    challenge: 'c',
-    domain: 'verifier.example'
-  }
-} as any
-
-const didAuthPlusQbe = {
-  verifiablePresentationRequest: {
-    query: [
-      { type: 'DIDAuthentication' },
-      {
-        type: 'QueryByExample',
-        credentialQuery: { example: { type: 'VerifiableCredential' } }
-      }
-    ],
-    challenge: 'c',
-    domain: 'verifier.example'
-  }
-} as any
+const nothingPosted: ISentSummary = {
+  posted: false,
+  credentials: [],
+  zcaps: false
+}
+const postedNoCredentials: ISentSummary = {
+  posted: true,
+  credentials: [],
+  zcaps: false
+}
+const postedZcaps: ISentSummary = { posted: true, credentials: [], zcaps: true }
+const shared = (...credentials: any[]): ISentSummary => ({
+  posted: true,
+  credentials,
+  zcaps: false
+})
 
 describe('credentialsToOffer', () => {
-  it('offers every credential in an offer (the wallet sent nothing)', () => {
+  it('offers everything in an offer', () => {
+    const answered = { verifiablePresentation: {} } as any
     assert.deepStrictEqual(
-      credentialsToOffer({ receivedCredentials: [shared, issued] }),
-      [shared, issued]
+      credentialsToOffer({ answered, receivedCredentials: [issued] }),
+      [issued]
     )
   })
 
-  it('offers a credential issued after a DIDAuth-only request', () => {
+  it('offers what comes back after DIDAuth-only', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
-        sentCredentials: [],
+        answered: vpr([didAuth]),
+        sent: postedNoCredentials,
         receivedCredentials: [issued]
       }),
       [issued]
     )
   })
 
-  it('offers nothing when a verifier echoes exactly what was shared', () => {
+  it('offers what comes back after DIDAuth + ZcapQuery', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
-        sentCredentials: [shared, sharedNoId],
-        receivedCredentials: [shared, sharedNoId]
-      }),
-      []
-    )
-  })
-
-  it('offers only the new credential when an echo and a new one come back', () => {
-    assert.deepStrictEqual(
-      credentialsToOffer({
-        sentCredentials: [shared],
-        receivedCredentials: [shared, issued]
+        answered: vpr([didAuth, zcapQuery]),
+        sent: postedZcaps,
+        receivedCredentials: [issued]
       }),
       [issued]
     )
   })
 
-  it('matches by id when both credentials have one, ignoring content', () => {
-    const reissuedSameId = { ...shared, issuanceDate: '2026-01-01T00:00:00Z' }
+  it('offers what comes back after DIDAuth + a QBE with no match', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
-        sentCredentials: [shared],
-        receivedCredentials: [reissuedSameId]
+        answered: vpr([didAuth, qbe]),
+        sent: postedNoCredentials,
+        receivedCredentials: [issued]
+      }),
+      [issued]
+    )
+  })
+
+  it('offers nothing after sharing A, even when B comes back', () => {
+    assert.deepStrictEqual(
+      credentialsToOffer({
+        answered: vpr([qbe]),
+        sent: shared(credentialA),
+        receivedCredentials: [credentialB]
       }),
       []
     )
   })
 
-  it('does not match equal content when both ids differ', () => {
-    const sameContentOtherId = { ...shared, id: 'urn:uuid:other' }
+  it('offers nothing after sharing, when the shared VP is echoed', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
-        sentCredentials: [shared],
-        receivedCredentials: [sameContentOtherId]
-      }),
-      [sameContentOtherId]
-    )
-  })
-
-  it('matches by content when an id is missing, regardless of key order', () => {
-    const reordered = Object.fromEntries(
-      Object.entries(sharedNoId).reverse()
-    ) as any
-    assert.deepStrictEqual(
-      credentialsToOffer({
-        sentCredentials: [sharedNoId],
-        receivedCredentials: [reordered]
+        answered: vpr([didAuth, qbe]),
+        sent: shared(credentialA),
+        receivedCredentials: [credentialA]
       }),
       []
     )
   })
 
-  it('treats different content without ids as new', () => {
-    const changed = {
-      ...sharedNoId,
-      issuanceDate: '2026-01-01T00:00:00Z'
-    }
+  it('offers nothing when the wallet posted no reply', () => {
     assert.deepStrictEqual(
       credentialsToOffer({
-        sentCredentials: [sharedNoId],
-        receivedCredentials: [changed]
+        answered: vpr([qbe]),
+        sent: nothingPosted,
+        receivedCredentials: [issued]
       }),
-      [changed]
+      []
+    )
+    assert.deepStrictEqual(
+      credentialsToOffer({
+        answered: vpr([didAuth]),
+        receivedCredentials: [issued]
+      }),
+      []
     )
   })
 
   it('offers nothing when nothing came back', () => {
-    assert.deepStrictEqual(credentialsToOffer({ receivedCredentials: [] }), [])
+    for (const receivedCredentials of [[], undefined, null]) {
+      assert.deepStrictEqual(
+        credentialsToOffer({
+          answered: vpr([didAuth]),
+          sent: postedNoCredentials,
+          receivedCredentials
+        }),
+        []
+      )
+    }
+  })
+
+  it('offers nothing for a message that is neither an offer nor a request', () => {
     assert.deepStrictEqual(
-      credentialsToOffer({ receivedCredentials: undefined }),
-      []
-    )
-    assert.deepStrictEqual(
-      credentialsToOffer({ receivedCredentials: null }),
+      credentialsToOffer({
+        answered: {} as any,
+        sent: postedNoCredentials,
+        receivedCredentials: [issued]
+      }),
       []
     )
   })
 })
 
 describe('exchangeCompletionMessage', () => {
+  const body = (answered: any, sent?: ISentSummary) =>
+    exchangeCompletionMessage({ answered, sent })?.body
+
   it('says an empty offer had no credentials', () => {
     assert.deepStrictEqual(
       exchangeCompletionMessage({
-        answered: {
-          verifiablePresentation: { type: 'VerifiablePresentation' }
-        } as any
+        answered: { verifiablePresentation: {} } as any
       }),
       {
         title: 'No Credentials',
@@ -177,41 +175,42 @@ describe('exchangeCompletionMessage', () => {
     )
   })
 
-  it('confirms sharing when the wallet sent credentials', () => {
+  it('confirms sharing when credentials were shared', () => {
     assert.strictEqual(
-      exchangeCompletionMessage({
-        answered: queryByExample,
-        sentCredentials: [shared]
-      })?.body,
+      body(vpr([qbe]), shared(credentialA)),
       'You have shared the selected credentials.'
     )
   })
 
-  it('confirms DID Authentication after a DIDAuth-only request', () => {
+  it('confirms DID Authentication when a DIDAuth VP was posted', () => {
     assert.strictEqual(
-      exchangeCompletionMessage({ answered: didAuthOnly, sentCredentials: [] })
-        ?.body,
+      body(vpr([didAuth]), postedNoCredentials),
+      'DID Authentication complete.'
+    )
+    assert.strictEqual(
+      body(vpr([didAuth, qbe]), postedNoCredentials),
       'DID Authentication complete.'
     )
   })
 
-  it('confirms DID Authentication when a DIDAuth + QBE request shared nothing', () => {
+  it('reports granted storage access for zcaps alone', () => {
     assert.strictEqual(
-      exchangeCompletionMessage({
-        answered: didAuthPlusQbe,
-        sentCredentials: []
-      })?.body,
-      'DID Authentication complete.'
+      body(vpr([zcapQuery]), postedZcaps),
+      'Storage access granted.'
     )
   })
 
-  it('does not claim credentials were shared when none were', () => {
+  it('does not claim success when nothing was posted', () => {
+    assert.deepStrictEqual(
+      exchangeCompletionMessage({ answered: vpr([qbe]), sent: nothingPosted }),
+      { title: 'Nothing Shared', body: 'Nothing was shared.' }
+    )
+  })
+
+  it('does not claim success when an empty reply was posted', () => {
     assert.strictEqual(
-      exchangeCompletionMessage({
-        answered: queryByExample,
-        sentCredentials: []
-      })?.body,
-      'Request complete.'
+      body(vpr([qbe]), postedNoCredentials),
+      'Nothing was shared.'
     )
   })
 
@@ -220,5 +219,29 @@ describe('exchangeCompletionMessage', () => {
       exchangeCompletionMessage({ answered: {} as any }),
       undefined
     )
+  })
+})
+
+describe('queriesOf', () => {
+  it('wraps a single query in an array', () => {
+    assert.deepStrictEqual(queriesOf({ query: didAuth as any }), [didAuth])
+  })
+
+  it('returns an array query as is, dropping non-object entries', () => {
+    assert.deepStrictEqual(queriesOf({ query: [didAuth, null, qbe] as any }), [
+      didAuth,
+      qbe
+    ])
+  })
+
+  it('returns no queries for a missing query or request', () => {
+    assert.deepStrictEqual(queriesOf({}), [])
+    assert.deepStrictEqual(queriesOf(undefined), [])
+  })
+
+  it('lets isDIDAuthOnlyRequest handle a missing query without throwing', () => {
+    assert.strictEqual(isDIDAuthOnlyRequest(vpr(undefined)), false)
+    assert.strictEqual(isDIDAuthOnlyRequest(vpr(didAuth)), true)
+    assert.strictEqual(isDIDAuthOnlyRequest(vpr([didAuth, zcapQuery])), false)
   })
 })

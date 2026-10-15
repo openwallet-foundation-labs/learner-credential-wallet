@@ -198,7 +198,7 @@ export default function ExchangeCredentials({
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const modals = { enabled: true, confirmZcapRequest }
-    const { receivedCredentials, sentCredentials } = await processMessageChain({
+    const { receivedCredentials, sent } = await processMessageChain({
       exchangeUrl,
       requestOrOffer,
       selectedProfile,
@@ -208,10 +208,15 @@ export default function ExchangeCredentials({
 
     clearGlobalModal()
 
-    // Offer whatever came back except credentials the wallet itself just
-    // sent, so a verifier echoing the shared VP stores nothing while an
-    // issuer's newly issued credential reaches the approval screen.
-    const toOffer = credentialsToOffer({ sentCredentials, receivedCredentials })
+    // Offers store their credentials. After a request, credentials are
+    // offered only if the wallet replied without sharing any (e.g. DIDAuth
+    // to an issuer binding to the holder DID); after a share, never, so a
+    // verifier's reply is not stored.
+    const toOffer = credentialsToOffer({
+      answered: requestOrOffer,
+      sent,
+      receivedCredentials
+    })
 
     if (toOffer.length > 0 && navigationRef.isReady()) {
       // We've been issued credentials to store - present to user for accepting
@@ -241,7 +246,7 @@ export default function ExchangeCredentials({
       })
       const completion = exchangeCompletionMessage({
         answered: requestOrOffer,
-        sentCredentials
+        sent
       })
       if (completion) {
         displayGlobalModal({

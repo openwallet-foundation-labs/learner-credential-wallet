@@ -1,53 +1,56 @@
 /**
  * Decides what to do with the result of a VC-API exchange, based on what the
- * wallet actually sent rather than on the shape of the request.
+ * wallet actually sent.
  *
  * Kept free of React Native dependencies so it can be unit tested in Node.
  */
 import { IVerifiableCredential } from '@digitalcredentials/ssi'
-import { canonicalCredentialJson } from './credentialHash'
-import { WalletApiMessage } from './walletRequestApi'
+import { queriesOf, WalletApiMessage } from './walletRequestApi'
 
-function isSameCredential(
-  a: IVerifiableCredential,
-  b: IVerifiableCredential
-): boolean {
-  if (a.id && b.id) return a.id === b.id
-  return canonicalCredentialJson(a) === canonicalCredentialJson(b)
+/**
+ * What the wallet posted in reply to a request.
+ * - posted: false when the wallet ended the exchange without replying.
+ * - credentials: the credentials in the VP it sent (empty for DIDAuth).
+ * - zcaps: whether it granted any zcaps.
+ */
+export type ISentSummary = {
+  posted: boolean
+  credentials: IVerifiableCredential[]
+  zcaps: boolean
 }
 
 /**
- * Returns the credentials from an exchange result that should be offered to
- * the user for storing: every received credential that is not one the wallet
- * itself just sent. A verifier echoing back the shared VP yields nothing;
- * anything newly issued is offered, whatever the request asked for.
+ * Returns the credentials from an exchange result to offer the user for
+ * storing.
  *
- * Credentials match by `id` when both have one, otherwise by canonical
- * content.
+ * - Offer: everything in it.
+ * - Request: whatever came back, but only if the wallet posted a reply that
+ *   shared no credentials (DIDAuthentication, zcaps, or a credential query it
+ *   had no match for). An issuer that only needed to learn the holder DID
+ *   returns newly issued credentials here.
+ * - Request where the wallet shared any credential: nothing, ever. What comes
+ *   back may be an echo or another credential the verifier chose to return,
+ *   and the wallet cannot tell them apart reliably.
  *
- * @param sentCredentials - Credentials the wallet put in the VP it sent
- *   (empty or undefined when it sent none, e.g. for an offer or DIDAuth).
- * @param receivedCredentials - Credentials extracted from the exchange result.
+ * @param answered - The offer or request the wallet answered.
+ * @param sent - What the wallet posted in reply to a request.
+ * @param receivedCredentials - Credentials from the offer, or from the
+ *   exchanger's reply.
  */
 export function credentialsToOffer({
-  sentCredentials = [],
+  answered,
+  sent,
   receivedCredentials
 }: {
-  sentCredentials?: IVerifiableCredential[]
+  answered: WalletApiMessage
+  sent?: ISentSummary
   receivedCredentials?: IVerifiableCredential[] | null
 }): IVerifiableCredential[] {
-  if (!receivedCredentials) return []
-  return receivedCredentials.filter(
-    (received) =>
-      !sentCredentials.some((sent) => isSameCredential(received, sent))
-  )
-}
-
-function queryTypes(message: WalletApiMessage): string[] {
-  if (!('verifiablePresentationRequest' in message)) return []
-  const { query } = message.verifiablePresentationRequest
-  const queries = Array.isArray(query) ? query : query ? [query] : []
-  return queries.map((q) => q?.type)
+  if (!receivedCredentials || !answered) return []
+  if ('verifiablePresentation' in answered) return receivedCredentials
+  if (!('verifiablePresentationRequest' in answered)) return []
+  if (!sent?.posted || sent.credentials.length > 0) return []
+  return receivedCredentials
 }
 
 /**
@@ -55,15 +58,16 @@ function queryTypes(message: WalletApiMessage): string[] {
  * storing, or undefined when there is nothing to say.
  *
  * @param answered - The offer or request the wallet answered.
- * @param sentCredentials - Credentials the wallet shared in its response.
+ * @param sent - What the wallet posted in reply to a request.
  */
 export function exchangeCompletionMessage({
   answered,
-  sentCredentials = []
+  sent
 }: {
   answered: WalletApiMessage
-  sentCredentials?: IVerifiableCredential[]
+  sent?: ISentSummary
 }): { title: string; body: string } | undefined {
+  if (!answered) return undefined
   if ('verifiablePresentation' in answered) {
     return {
       title: 'No Credentials',
@@ -72,14 +76,24 @@ export function exchangeCompletionMessage({
   }
   if (!('verifiablePresentationRequest' in answered)) return undefined
 
-  if (sentCredentials.length > 0) {
+  const nothingShared = { title: 'Nothing Shared', body: 'Nothing was shared.' }
+  if (!sent?.posted) return nothingShared
+  if (sent.credentials.length > 0) {
     return {
       title: 'Success',
       body: 'You have shared the selected credentials.'
     }
   }
-  if (queryTypes(answered).includes('DIDAuthentication')) {
+  // A DIDAuthentication query always results in a signed VP being posted
+  const didAuthSent = queriesOf(answered.verifiablePresentationRequest).some(
+    (q) => q.type === 'DIDAuthentication'
+  )
+  if (didAuthSent) {
     return { title: 'Success', body: 'DID Authentication complete.' }
   }
-  return { title: 'Success', body: 'Request complete.' }
+  if (sent.zcaps) {
+    return { title: 'Success', body: 'Storage access granted.' }
+  }
+  // An empty reply was posted, e.g. the user deselected every credential
+  return nothingShared
 }

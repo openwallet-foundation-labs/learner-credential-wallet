@@ -122,13 +122,23 @@ export function isDidAuthRequested({
 }
 
 /**
+ * Returns the queries of a verifiablePresentationRequest as an array,
+ * whether `query` is a single object, an array, or missing. Entries that are
+ * not objects are dropped, so callers can read `q.type` safely.
+ */
+export function queriesOf(request?: Partial<IVprDetails>): IVprQuery[] {
+  const query = request?.query
+  const queries = Array.isArray(query) ? query : query ? [query] : []
+  return queries.filter((q) => q !== null && typeof q === 'object')
+}
+
+/**
  * Returns true if the message is a VPR whose only query type is DIDAuthentication
  * (i.e. no credential sharing is involved).
  */
 export function isDIDAuthOnlyRequest(message: WalletApiMessage): boolean {
-  if (!('verifiablePresentationRequest' in message)) return false
-  const { query } = message.verifiablePresentationRequest
-  const queries = Array.isArray(query) ? query : [query]
+  if (!message || !('verifiablePresentationRequest' in message)) return false
+  const queries = queriesOf(message.verifiablePresentationRequest)
   return (
     queries.length > 0 && queries.every((q) => q.type === 'DIDAuthentication')
   )

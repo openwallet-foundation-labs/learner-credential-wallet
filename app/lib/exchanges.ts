@@ -7,6 +7,7 @@ import {
 import {
   processZcaps,
   isDidAuthRequested,
+  queriesOf,
   IVpOffer,
   IVprDetails,
   IVpRequest,
@@ -15,6 +16,7 @@ import {
   zcapsRequested
 } from './walletRequestApi'
 import { extractCredentialsFrom } from './verifiableObject'
+import { ISentSummary } from './exchangeResult'
 import { selectCredentials } from './selectCredentials'
 import { ISelectedProfile } from './did'
 import { composeVp } from './composeVp'
@@ -46,8 +48,8 @@ type IModalOptions = {
  *   Disabled for unit testing.
  * @param modals.confirmZcapRequest {function}
  * @returns receivedCredentials - credentials in the offer, or in the
- *   exchanger's reply to a request; sentCredentials - credentials the wallet
- *   shared in its reply to a request (undefined for an offer).
+ *   exchanger's reply to a request; sent - what the wallet posted in reply to
+ *   a request (undefined for an offer).
  */
 export async function processMessageChain({
   exchangeUrl,
@@ -63,7 +65,7 @@ export async function processMessageChain({
   modals: IModalOptions
 }): Promise<{
   receivedCredentials?: IVerifiableCredential[]
-  sentCredentials?: IVerifiableCredential[]
+  sent?: ISentSummary
   redirectUrl?: string
 }> {
   const { redirectUrl, credentialRequestOrigin } = requestOrOffer
@@ -82,7 +84,7 @@ export async function processMessageChain({
   if ('verifiablePresentationRequest' in requestOrOffer) {
     console.log('Processing request...')
     const request = requestOrOffer.verifiablePresentationRequest as IVprDetails
-    const { response, sentCredentials } = await processRequest({
+    const { response, sent } = await processRequest({
       request,
       exchangeUrl,
       selectedProfile,
@@ -94,7 +96,7 @@ export async function processMessageChain({
     const receivedCredentials = response?.verifiablePresentation
       ? (extractCredentialsFrom(response.verifiablePresentation) ?? [])
       : []
-    return { receivedCredentials, sentCredentials, redirectUrl }
+    return { receivedCredentials, sent, redirectUrl }
   }
 
   console.log('[processMessageChain] No offer or request found, exiting...')
@@ -131,10 +133,9 @@ export async function processRequest({
   wasController: IController
   modals: IModalOptions
 }): Promise<{
-  // The exchanger's reply, if the wallet sent anything
+  // The exchanger's reply, if the wallet posted anything
   response?: any
-  // Credentials the wallet put in the VP it sent (empty for DIDAuth-only)
-  sentCredentials: IVerifiableCredential[]
+  sent: ISentSummary
 }> {
   if (!exchangeUrl) {
     throw new Error('Missing exchangeUrl, cannot send response.')
@@ -143,7 +144,7 @@ export async function processRequest({
   // TODO: Display origin in consent modals
   console.log('credentialRequestOrigin: ', credentialRequestOrigin)
 
-  const queries = Array.isArray(request.query) ? request.query : [request.query]
+  const queries = queriesOf(request)
   /**
    * Queries come in 3 types:
    * 1. VC "queries by example" - requester wants one or more VCs.
@@ -180,7 +181,7 @@ export async function processRequest({
     console.log(
       '[processMessageChain] No zcaps or VCs matched request query, ending exchange.'
     )
-    return { sentCredentials: [] }
+    return { sent: { posted: false, credentials: [], zcaps: false } }
     // TODO: At some point, we should probably inform the user that no matches were found
   }
 
@@ -222,7 +223,14 @@ export async function processRequest({
     payload: walletResponse
   })
   console.log('Response from Exchanger: ', responseFromExchanger)
-  return { response: responseFromExchanger, sentCredentials: selectedVcs }
+  return {
+    response: responseFromExchanger,
+    sent: {
+      posted: true,
+      credentials: selectedVcs,
+      zcaps: !!walletResponse.zcap
+    }
+  }
 }
 
 /**
