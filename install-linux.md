@@ -8,7 +8,7 @@ _Note: Preferable versions_
 
 |      | Version |
 | ---- | ------- |
-| node | 22.x    |
+| node | see [`.tool-versions`](.tool-versions) |
 | java | 17      |
 
 It is recommended to use nvm for managing multiple node version: https://github.com/nvm-sh/nvm
@@ -68,7 +68,13 @@ origin  https://github.com/Your_Username/learner-credential-wallet.git (push)
 
 ### 4. Run it :checkered_flag:
 
-- Install dependencies
+- Install the Node version named in `.tool-versions` (with asdf, run `asdf install`; with nvm, run the command below)
+
+```
+nvm install $(awk '/^nodejs/ {print $2}' .tool-versions)
+```
+
+- Install dependencies. The committed `.npmrc` turns on `legacy-peer-deps`, so plain `npm install` resolves the same tree as CI and needs no extra flag.
 
 ```
 npm install
