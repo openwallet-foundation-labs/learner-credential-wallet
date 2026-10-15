@@ -23,7 +23,8 @@ const subtle = {
     if (typeof data === 'string') {
       inputData = new TextEncoder().encode(data) // Convert string to Uint8Array
     } else if (ArrayBuffer.isView(data)) {
-      inputData = new Uint8Array(data.buffer) // Convert TypedArray
+      // Only this view's bytes, not the whole underlying buffer
+      inputData = new Uint8Array(data.buffer, data.byteOffset, data.byteLength)
     } else if (data instanceof ArrayBuffer) {
       inputData = new Uint8Array(data) // Convert ArrayBuffer
     } else {
