@@ -6,10 +6,10 @@
  */
 
 import Realm from 'realm'
-import { generateSecureRandom } from 'react-native-securerandom'
 import { ObjectID } from 'bson'
 
 import { db } from './'
+import { randomObjectIdHex } from '../lib/objectId'
 
 export type EntityRecordRaw = {
   readonly _id: ObjectID
@@ -41,12 +41,7 @@ export class EntityRecord implements EntityRecordRaw {
   }
 
   public static async addEntityRecord(): Promise<void> {
-    const randomBytes = await generateSecureRandom(12)
-    const _id = new ObjectID(
-      Array.from(randomBytes)
-        .map((b) => b.toString(16).padStart(2, '0'))
-        .join('')
-    )
+    const _id = new ObjectID(randomObjectIdHex())
     const rawEntityRecord: EntityRecordRaw = {
       _id,
       createdAt: new Date(),
