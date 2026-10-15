@@ -81,10 +81,10 @@ Prerequisites:
 - [Java](https://www.java.com/en/download/manual.jsp) - **Java 17 or higher**
 - [nvm](https://collabnix.com/how-to-install-and-configure-nvm-on-mac-os/) or [asdf](https://asdf-vm.com/guide/getting-started.html#getting-started)
 - [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable) or [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
-- [Node.js](https://nodejs.org/en/) - **Version 20.x**
+- [Node.js](https://nodejs.org/en/) - **Version 22.x**
 - [Cocoapods](https://cocoapods.org/) (use brew, not gem, to install)
-- [XCode](https://developer.apple.com/xcode/) - **Version 16 
-- [Android Studio](https://developer.android.com/studio) - **Ladybug 
+- [XCode](https://developer.apple.com/xcode/) - **Version 16.2 or later** (Expo SDK 53 needs Xcode 16; Expo recommends 16.2+)
+- [Android Studio](https://developer.android.com/studio) - **Ladybug Feature Drop (2024.2.2) or later** (React Native 0.79 builds with Android Gradle Plugin 8.8)
 
 See [Installing on Linux](install-linux.md) on setting up the project on Linux.
 
