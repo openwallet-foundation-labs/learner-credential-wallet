@@ -45,7 +45,7 @@ it.each([
   expect(bytesToHex(pbkdf2(sha1, password, salt, { c, dkLen }))).toBe(hex)
 })
 
-describe('legacy-sha1 (releases up to 2.2.4)', () => {
+describe('legacy-sha1 (releases 2.1.0 to 2.2.4)', () => {
   // react-native-quick-crypto 0.7.x used OpenSSL; Node is the reference.
   it.each([
     [
@@ -67,7 +67,7 @@ describe('legacy-sha1 (releases up to 2.2.4)', () => {
   })
 })
 
-describe('pbkdf2-sha512 (release 2.2.5 and new wallets)', () => {
+describe('pbkdf2-sha512 (up to 2.0.24, 2.2.5, and new wallets)', () => {
   it.each([
     [
       PASSPHRASES[0],

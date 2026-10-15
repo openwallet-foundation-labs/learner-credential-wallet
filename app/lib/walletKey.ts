@@ -10,10 +10,12 @@ import { legacyPlaceholderPbkdf2 } from './legacyPlaceholderPbkdf2'
  * How a wallet's Realm key was derived from its passphrase and salt. Each
  * release line used one of these (issue #960):
  *
- * - 'legacy-sha1': releases up to 2.2.4 called react-native-quick-crypto
- *   0.7.x pbkdf2Sync without a digest, which defaults to SHA-1.
- * - 'pbkdf2-sha512': release 2.2.5 (quick-crypto 1.0.0-beta.20, digest
- *   'SHA-512'), and every new wallet from now on.
+ * - 'pbkdf2-sha512': releases up to 2.0.24 (react-native-aes-cipher
+ *   Aes.pbkdf2, PBKDF2-SHA512, 256 bits, hex: the same output as
+ *   deriveWalletKeyHex), release 2.2.5 (react-native-quick-crypto
+ *   1.0.0-beta.20, digest 'SHA-512'), and every new wallet from now on.
+ * - 'legacy-sha1': releases 2.1.0 to 2.2.4 called quick-crypto 0.7.x
+ *   pbkdf2Sync without a digest, which defaults to SHA-1.
  * - 'legacy-placeholder': releases 2.2.6 to 2.2.10, see
  *   legacyPlaceholderPbkdf2.
  *
