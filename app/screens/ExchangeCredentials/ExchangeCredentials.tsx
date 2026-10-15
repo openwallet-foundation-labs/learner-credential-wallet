@@ -11,12 +11,14 @@ import { processMessageChain, sendToExchanger } from '../../lib/exchanges'
 import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
 import {
   credentialsToOffer,
-  exchangeCompletionMessage
+  exchangeCompletionMessage,
+  IMessage,
+  isExchangeRejectedError
 } from '../../lib/exchangeResult'
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
 import { getGlobalModalBody } from '../../lib/globalModalBody'
 import { NavigationUtil } from '../../lib/navigationUtil'
-import { delay } from '../../lib/time'
+import { delay, waitFor } from '../../lib/time'
 import { ExchangeCredentialsProps } from './ExchangeCredentials.d'
 import { HumanReadableError } from '../../lib/error'
 import { useThemeContext } from '../../hooks/useThemeContext'
@@ -53,6 +55,23 @@ export default function ExchangeCredentials({
       subscription.remove()
     }
   }, [])
+
+  const goHome = () => {
+    navigationRef.navigate('HomeNavigation', {
+      screen: 'CredentialNavigation',
+      params: { screen: 'HomeScreen' }
+    })
+  }
+
+  const showMessage = ({ title, body }: IMessage) => {
+    displayGlobalModal({
+      title,
+      confirmButton: true,
+      confirmText: 'OK',
+      cancelButton: false,
+      body: getGlobalModalBody(body)
+    })
+  }
 
   const confirmZcapRequest = async () => {
     const confirmed = await displayGlobalModal({
@@ -91,6 +110,12 @@ export default function ExchangeCredentials({
       await runExchange()
     } catch (err) {
       clearGlobalModal()
+      if (isExchangeRejectedError(err)) {
+        // The exchanger answered with an error status: say so, never success
+        if (navigationRef.isReady()) goHome()
+        showMessage({ title: 'Request Rejected', body: err.message })
+        return
+      }
       throw err
     }
   }
@@ -198,7 +223,7 @@ export default function ExchangeCredentials({
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const modals = { enabled: true, confirmZcapRequest }
-    const { receivedCredentials, sent } = await processMessageChain({
+    const { receivedCredentials, sent, nextStep } = await processMessageChain({
       exchangeUrl,
       requestOrOffer,
       selectedProfile,
@@ -215,11 +240,20 @@ export default function ExchangeCredentials({
     const toOffer = credentialsToOffer({
       answered: requestOrOffer,
       sent,
+      nextStep,
       receivedCredentials
     })
 
-    if (toOffer.length > 0 && navigationRef.isReady()) {
+    if (toOffer.length > 0) {
       // We've been issued credentials to store - present to user for accepting
+      const navigationReady = await waitFor(() => navigationRef.isReady())
+      if (!navigationReady) {
+        showMessage({
+          title: 'Something Went Wrong',
+          body: "Couldn't open the approval screen. Please try again."
+        })
+        return
+      }
       const { credentialRequestOrigin } = requestOrOffer
       console.log('credentialRequestOrigin:', credentialRequestOrigin)
       console.log('[acceptExchange] Accepting credentials:', toOffer)
@@ -236,28 +270,17 @@ export default function ExchangeCredentials({
           rawProfileRecord
         }
       })
-    } else {
-      console.log('[acceptExchange] Exchanges completed.')
-      navigationRef.navigate('HomeNavigation', {
-        screen: 'CredentialNavigation',
-        params: {
-          screen: 'HomeScreen'
-        }
-      })
-      const completion = exchangeCompletionMessage({
-        answered: requestOrOffer,
-        sent
-      })
-      if (completion) {
-        displayGlobalModal({
-          title: completion.title,
-          confirmButton: true,
-          confirmText: 'OK',
-          cancelButton: false,
-          body: getGlobalModalBody(completion.body)
-        })
-      }
+      return
     }
+
+    console.log('[acceptExchange] Exchanges completed.')
+    goHome()
+    const completion = exchangeCompletionMessage({
+      answered: requestOrOffer,
+      sent,
+      nextStep
+    })
+    if (completion) showMessage(completion)
   }
 
   const rejectExchange = () => {

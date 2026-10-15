@@ -16,7 +16,12 @@ import {
   zcapsRequested
 } from './walletRequestApi'
 import { extractCredentialsFrom } from './verifiableObject'
-import { ISentSummary } from './exchangeResult'
+import {
+  ExchangeRejectedError,
+  exchangerErrorDetail,
+  isFollowUpStep,
+  ISentSummary
+} from './exchangeResult'
 import { selectCredentials } from './selectCredentials'
 import { ISelectedProfile } from './did'
 import { composeVp } from './composeVp'
@@ -49,7 +54,9 @@ type IModalOptions = {
  * @param modals.confirmZcapRequest {function}
  * @returns receivedCredentials - credentials in the offer, or in the
  *   exchanger's reply to a request; sent - what the wallet posted in reply to
- *   a request (undefined for an offer).
+ *   a request (undefined for an offer); nextStep - the exchanger's reply asked
+ *   for a further step, which is not processed.
+ * @throws ExchangeRejectedError if the exchanger rejects the wallet's reply.
  */
 export async function processMessageChain({
   exchangeUrl,
@@ -66,6 +73,7 @@ export async function processMessageChain({
 }): Promise<{
   receivedCredentials?: IVerifiableCredential[]
   sent?: ISentSummary
+  nextStep?: boolean
   redirectUrl?: string
 }> {
   const { redirectUrl, credentialRequestOrigin } = requestOrOffer
@@ -96,7 +104,11 @@ export async function processMessageChain({
     const receivedCredentials = response?.verifiablePresentation
       ? (extractCredentialsFrom(response.verifiablePresentation) ?? [])
       : []
-    return { receivedCredentials, sent, redirectUrl }
+    const nextStep = isFollowUpStep(response)
+    if (nextStep) {
+      console.log('[processMessageChain] Exchanger asked for another step.')
+    }
+    return { receivedCredentials, sent, nextStep, redirectUrl }
   }
 
   console.log('[processMessageChain] No offer or request found, exiting...')
@@ -181,7 +193,9 @@ export async function processRequest({
     console.log(
       '[processMessageChain] No zcaps or VCs matched request query, ending exchange.'
     )
-    return { sent: { posted: false, credentials: [], zcaps: false } }
+    return {
+      sent: { posted: false, credentials: [], didAuth: false, zcaps: false }
+    }
     // TODO: At some point, we should probably inform the user that no matches were found
   }
 
@@ -208,6 +222,7 @@ export async function processRequest({
   console.log('SELECTED VCS:', selectedVcs)
 
   // Compose a VerifiablePresentation (to send to the requester) if appropriate
+  let sentDidAuth = false
   if (didAuthRequested || selectedVcs.length > 0) {
     walletResponse.verifiablePresentation = await composeVp({
       selectedProfile,
@@ -216,6 +231,7 @@ export async function processRequest({
       domain,
       didAuthRequested
     })
+    sentDidAuth = didAuthRequested
   }
 
   const responseFromExchanger = await sendToExchanger({
@@ -228,6 +244,7 @@ export async function processRequest({
     sent: {
       posted: true,
       credentials: selectedVcs,
+      didAuth: sentDidAuth,
       zcaps: !!walletResponse.zcap
     }
   }
@@ -265,6 +282,8 @@ export async function vcMatchesFor({
  *
  * @param exchangeUrl
  * @param payload {{ verifiablePresentation, zcap }}
+ * @throws ExchangeRejectedError if the exchanger answers with a non-OK
+ *   status, so an error reply is never mistaken for a successful step.
  */
 export async function sendToExchanger({
   exchangeUrl,
@@ -283,6 +302,16 @@ export async function sendToExchanger({
       body: JSON.stringify(payload)
     })
     const text = await exchangeResponseRaw.text()
+    if (!exchangeResponseRaw.ok) {
+      console.log(
+        `Exchanger "${exchangeUrl}" rejected the request with HTTP ${exchangeResponseRaw.status}:`,
+        text
+      )
+      throw new ExchangeRejectedError(
+        exchangeResponseRaw.status,
+        exchangerErrorDetail(text)
+      )
+    }
     return text ? JSON.parse(text) : null
   } catch (err) {
     console.log(`Error sending to Exchanger endpoint "${exchangeUrl}".`)

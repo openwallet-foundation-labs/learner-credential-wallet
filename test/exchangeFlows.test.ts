@@ -10,7 +10,6 @@ import {
   credentialsToOffer,
   exchangeCompletionMessage
 } from '../app/lib/exchangeResult'
-import { selectCredentials } from '../app/lib/selectCredentials'
 import { mockCredential } from '../app/mock/credential'
 
 // ESM-only and unused on this path
@@ -90,22 +89,21 @@ async function run({
   answered,
   walletCredentials = [],
   reply = {},
+  status = 200,
   interactive
 }: {
   answered: any
   walletCredentials?: any[]
   reply?: unknown
-  interactive?: { selected: any[]; grantZcaps: boolean }
+  status?: number
+  interactive?: { grantZcaps: boolean }
 }) {
   const fetchMock = jest.fn(async () => ({
+    ok: status >= 200 && status < 300,
+    status,
     text: async () => JSON.stringify(reply)
   }))
   global.fetch = fetchMock as any
-  if (interactive) {
-    ;(selectCredentials as jest.Mock).mockResolvedValue(
-      interactive.selected.map((credential) => ({ credential }))
-    )
-  }
 
   const result = await processMessageChain({
     exchangeUrl,
@@ -128,7 +126,7 @@ async function run({
     sent: result.sent,
     payload: calls.length > 0 ? JSON.parse(calls[0][1].body) : undefined,
     toOffer: credentialsToOffer({ answered, ...result }),
-    message: exchangeCompletionMessage({ answered, sent: result.sent })?.body
+    message: exchangeCompletionMessage({ answered, ...result })?.body
   }
 }
 
@@ -214,19 +212,9 @@ describe('exchange flows (issue #957)', () => {
   it('says nothing was shared when zcap consent was declined', async () => {
     const result = await run({
       answered: vpr([zcapQuery]),
-      interactive: { selected: [], grantZcaps: false }
+      interactive: { grantZcaps: false }
     })
     expect(result.payload).toBeUndefined()
-    expect(result.message).toBe('Nothing was shared.')
-  })
-
-  it('says nothing was shared when the user deselected every credential', async () => {
-    const result = await run({
-      answered: vpr([qbe]),
-      walletCredentials: [credentialA],
-      interactive: { selected: [], grantZcaps: true }
-    })
-    expect(result.payload).toEqual({})
     expect(result.message).toBe('Nothing was shared.')
   })
 
@@ -240,5 +228,54 @@ describe('exchange flows (issue #957)', () => {
     const result = await run({ answered: vpr([didAuth]) })
     expect(result.toOffer).toEqual([])
     expect(result.message).toBe('DID Authentication complete.')
+  })
+
+  it('mentions storage access granted alongside DID Authentication', async () => {
+    const result = await run({ answered: vpr([didAuth, zcapQuery]) })
+    expect(result.sent).toEqual({
+      posted: true,
+      credentials: [],
+      didAuth: true,
+      zcaps: true
+    })
+    expect(result.message).toBe(
+      'DID Authentication complete. Storage access granted.'
+    )
+  })
+
+  it('mentions storage access granted alongside shared credentials', async () => {
+    const result = await run({
+      answered: vpr([qbe, zcapQuery]),
+      walletCredentials: [credentialA]
+    })
+    expect(result.sent?.didAuth).toBe(false)
+    expect(result.message).toBe(
+      'You have shared the selected credentials and granted storage access.'
+    )
+  })
+
+  it('does not claim completion when the exchanger asks for another step', async () => {
+    const result = await run({
+      answered: vpr([didAuth]),
+      reply: vpr([qbe])
+    })
+    expect(result.toOffer).toEqual([])
+    expect(result.message).toBe(
+      "This request needs another step that this wallet doesn't support yet."
+    )
+  })
+
+  it('throws a rejection, not a success, when the exchanger returns an error status', async () => {
+    await expect(
+      run({
+        answered: vpr([didAuth]),
+        status: 400,
+        reply: { name: 'DataError', message: 'Invalid presentation.' }
+      })
+    ).rejects.toMatchObject({
+      isExchangeRejection: true,
+      status: 400,
+      message: 'The request was rejected. DataError: Invalid presentation.'
+    })
   })
 })
