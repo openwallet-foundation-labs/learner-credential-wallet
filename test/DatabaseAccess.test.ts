@@ -649,7 +649,7 @@ describe('crash right after the pointer write', () => {
   })
 })
 
-describe('biometric unlock never rolls back to default.realm (item 1)', () => {
+describe('biometric unlock never rolls back to default.realm', () => {
   it('does not adopt default.realm when the pointer names a re-keyed file', async () => {
     // A re-keyed wallet whose old file is still kept, and a keychain that
     // somehow holds the old key.
@@ -712,7 +712,7 @@ describe('biometric unlock never rolls back to default.realm (item 1)', () => {
   })
 })
 
-describe('no usable pointer (item 4)', () => {
+describe('unlock without a usable pointer', () => {
   it.each([
     ['absent', () => undefined],
     ['unreadable', () => (mockFail.pointerUnreadable = true)],
@@ -815,7 +815,7 @@ describe('unlock: biometric keychain', () => {
   })
 })
 
-describe('re-key when the new key cannot be stored (item 2)', () => {
+describe('re-key when the new key cannot be stored in the keychain', () => {
   it('turns biometrics off before switching files', async () => {
     walletEncryptedWith(LEGACY_KEY)
     enableBiometricsWith(LEGACY_KEY)
@@ -851,7 +851,7 @@ describe('re-key when the new key cannot be stored (item 2)', () => {
   })
 })
 
-describe('disableBiometrics (item 3)', () => {
+describe('disableBiometrics order', () => {
   it('drops the fingerprint before anything else', async () => {
     enableBiometricsWith(REAL_KEY)
     await crashAt(
@@ -1010,7 +1010,7 @@ describe('initialize', () => {
     expect(Object.keys(walletFiles())).toEqual(['default.realm'])
   })
 
-  it('resets biometric state left by a previous install (item 6)', async () => {
+  it('resets biometric state left by a previous install', async () => {
     enableBiometricsWith('key-from-a-previous-install')
 
     await db.initialize(PASSPHRASE)
@@ -1128,7 +1128,7 @@ describe('reset', () => {
   })
 })
 
-describe('a pointed file that will not open (rule A)', () => {
+describe('a pointed file that will not open', () => {
   function setUp() {
     walletEncryptedWith(LEGACY_KEY)
     mockFiles.set(`${DIR}/wallet-500.realm`, realmFile(REAL_KEY))
@@ -1170,7 +1170,7 @@ describe('a pointed file that will not open (rule A)', () => {
   })
 })
 
-describe('choosing a file without a usable pointer (rule B)', () => {
+describe('choosing a file by modification time without a usable pointer', () => {
   it('takes the file written to last, not the newest name', async () => {
     // A stale orphan with a newer name but an older modification time
     walletEncryptedWith(REAL_KEY)
@@ -1200,7 +1200,7 @@ describe('choosing a file without a usable pointer (rule B)', () => {
   })
 })
 
-describe('stored-key forward moves (rule C)', () => {
+describe('stored-key moves to a newer re-keyed file', () => {
   it('refuses a newer-named orphan written before the current file', async () => {
     // An interrupted re-key left wallet-900 and the new key in the
     // keychain; the user then kept writing to default.realm.
@@ -1234,7 +1234,7 @@ describe('stored-key forward moves (rule C)', () => {
   })
 })
 
-describe('re-key when the biometrics status cannot be read (rule E)', () => {
+describe('re-key when the biometrics status cannot be read', () => {
   it('stays on the current file and key, and re-keys at the next unlock', async () => {
     walletEncryptedWith(LEGACY_KEY)
     mockFail.biometricsStatusUnreadable = true
@@ -1253,7 +1253,7 @@ describe('re-key when the biometrics status cannot be read (rule E)', () => {
   })
 })
 
-describe('pointer write failing after biometrics was turned off (rule F)', () => {
+describe('pointer write failing after biometrics was turned off for the re-key', () => {
   function setUp() {
     walletEncryptedWith(LEGACY_KEY)
     secure.set('wallet_file', 'default.realm')
@@ -1286,7 +1286,7 @@ describe('pointer write failing after biometrics was turned off (rule F)', () =>
   })
 })
 
-describe('initialize with a failing keychain (rule G)', () => {
+describe('initialize with a failing keychain', () => {
   it('still resets biometric state and creates the wallet', async () => {
     enableBiometricsWith('key-from-a-previous-install')
     mockFail.keychainResetRejects = true
@@ -1300,7 +1300,7 @@ describe('initialize with a failing keychain (rule G)', () => {
   })
 })
 
-describe('final check fixes', () => {
+describe('copy durability, marker on pointer read failure, biometrics status read failure', () => {
   it('commits a transaction on the copy, syncing it, before the pointer moves', async () => {
     walletEncryptedWith(LEGACY_KEY)
 
@@ -1364,7 +1364,7 @@ function acceptedTypo(passphrase: string): string {
   throw new Error('No such typo')
 }
 
-describe('placeholder wallets re-key only on a confirmed passphrase (holistic 1)', () => {
+describe('placeholder wallets re-key only on a confirmed passphrase', () => {
   const TYPO = acceptedTypo(PASSPHRASE)
   const TYPO_KEY = nodeCrypto
     .pbkdf2Sync(TYPO, SALT, 10000, 32, 'sha512')
@@ -1454,7 +1454,7 @@ describe('placeholder wallets re-key only on a confirmed passphrase (holistic 1)
   })
 })
 
-describe('holistic review 2-6', () => {
+describe('re-key file naming, biometrics clean-up, lock with running callbacks, missing wallet', () => {
   it('a failure choosing the new file name leaves the wallet unlocked on its legacy key', async () => {
     walletEncryptedWith(SHA1_KEY)
     secure.set('wallet_file', 'default.realm')
@@ -1542,7 +1542,7 @@ describe('holistic review 2-6', () => {
   })
 })
 
-describe('full-branch review', () => {
+describe('initialize roll-back and legacy key order', () => {
   it('a failed initialize leaves nothing behind, and setup can run again', async () => {
     const setItem = mockSecureStore.setItemAsync.getMockImplementation()!
     mockSecureStore.setItemAsync.mockImplementation(
