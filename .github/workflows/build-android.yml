@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: '22.x'
 
-      - run: npm i --legacy-peer-deps
+      - run: npm ci --legacy-peer-deps
       - run: npm run prebuild:android
 
       - run: ./gradlew assembleDebug -Dorg.gradle.logging.level=info
