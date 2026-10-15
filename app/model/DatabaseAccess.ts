@@ -178,6 +178,8 @@ type Candidates = {
    * so default.realm is current by definition.
    */
   pointerAbsent: boolean
+  /** The pointer could be read (it may still be absent) */
+  pointerReadable: boolean
 }
 
 /**
@@ -188,9 +190,11 @@ type Candidates = {
 async function walletCandidates(): Promise<Candidates> {
   let name: string | null = null
   let pointerAbsent = false
+  let pointerReadable = false
   try {
     name = await SecureStore.getItemAsync(WALLET_FILE)
     pointerAbsent = name === null
+    pointerReadable = true
   } catch (err) {
     console.error('Could not read the wallet file pointer:', err)
   }
@@ -198,12 +202,17 @@ async function walletCandidates(): Promise<Candidates> {
   if (name !== null) {
     const pointed = walletFiles.pathFor(name)
     if (await RNFS.exists(pointed)) {
-      return { pointed, fallbacks: [], pointerAbsent: false }
+      return {
+        pointed,
+        fallbacks: [],
+        pointerAbsent: false,
+        pointerReadable: true
+      }
     }
     console.error(`Wallet file ${pointed} is missing.`)
   }
   const fallbacks = await byModifiedTime(await existingWalletPaths())
-  return { pointed: null, fallbacks, pointerAbsent }
+  return { pointed: null, fallbacks, pointerAbsent, pointerReadable }
 }
 
 type OpenOptions = {
@@ -446,7 +455,8 @@ class DatabaseAccess {
    * a stored key does not say how it was derived.
    */
   private static async openWithStoredKey(keyHex: string): Promise<Realm> {
-    const { pointed, fallbacks, pointerAbsent } = await walletCandidates()
+    const { pointed, fallbacks, pointerAbsent, pointerReadable } =
+      await walletCandidates()
 
     let tries: string[]
     if (pointed === null) {
@@ -480,7 +490,11 @@ class DatabaseAccess {
     }
     if (realm === undefined) throw firstError
 
-    if (realm.path !== pointed) {
+    // The marker describes the file the pointer names (default.realm when
+    // there is none). Clear it only when this key opened a different file,
+    // which is known only if the pointer could be read.
+    const current = pointed ?? (pointerAbsent ? Realm.defaultPath : null)
+    if (pointerReadable && realm.path !== current) {
       await SecureStore.deleteItemAsync(WALLET_KEY_DERIVATION).catch(
         console.error
       )
@@ -684,15 +698,18 @@ class DatabaseAccess {
    * 1. Write an encrypted copy to a new file, wallet-<timestamp>.realm.
    * 2. Check the copy opens with the new key, needs no migration, and holds
    *    the same number of records.
-   * 3. If biometrics is on, store the new key in the keychain, so a
+   * 3. Make the copy durable: commit a write transaction on it, which syncs
+   *    the file to disk.
+   * 4. If biometrics is on, store the new key in the keychain, so a
    *    biometric unlock can find the new file even if the app stops before
-   *    step 4. If it cannot be stored, turn biometrics off first.
-   * 4. Point WALLET_FILE at the new file. This one write is the switch.
+   *    step 5. If it cannot be stored, turn biometrics off first.
+   * 5. Point WALLET_FILE at the new file. This one write is the switch.
    *
-   * The old file is kept: unlock deletes it once the new file has opened in
-   * a later process (see makeCurrent), and until then a passphrase can still
-   * open it if the new file proves unreadable. A failure before step 4
-   * deletes only the new file and puts the old key back in the keychain.
+   * A failure before step 5 deletes only the new file and puts biometrics
+   * back as it was. After the switch, unlock opens only the new file (see
+   * walletCandidates). The old file is kept, as a copy for manual recovery
+   * only, until the new file has opened in a later process; then makeCurrent
+   * deletes it.
    */
   private static async rekey(
     legacy: Opened,
@@ -724,6 +741,14 @@ class DatabaseAccess {
         }
       })
       assertSameContents(legacy.realm, copy)
+
+      // writeCopyTo does not sync the file to disk: in realm-core 20.1.0,
+      // Group::write only flushes its stream buffer. A committed write
+      // transaction does, even an empty one: commitTransaction always runs
+      // DB::do_commit, whose GroupCommitter::commit calls File::barrier
+      // (fsync on Android, F_BARRIERFSYNC on iOS) under Realm's default Full
+      // durability. So the pointer never names a file that is not on disk.
+      copy.write(() => undefined)
 
       if (biometrics) {
         // From here the keychain may hold either key, so the fingerprint
@@ -822,6 +847,12 @@ class DatabaseAccess {
   private static async refreshBiometricKey(keyHex: string): Promise<void> {
     try {
       if (!(await DatabaseAccess.isBiometricsEnabled())) return
+    } catch (err) {
+      // Without the status, neither store a key nor turn biometrics off.
+      console.error('Could not read the biometrics status.', err)
+      return
+    }
+    try {
       const stored = await SecureStore.getItemAsync(BIOMETRIC_KEY_FINGERPRINT)
       if (stored === walletKeyFingerprint(keyHex)) return
     } catch (err) {

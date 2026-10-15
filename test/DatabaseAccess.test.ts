@@ -165,6 +165,13 @@ jest.mock('realm', () => {
       return { length: this.file.counts[name] }
     }
 
+    write(callback: () => unknown) {
+      if (this.isClosed) throw new Error('Realm is closed')
+      callback()
+      // A committed transaction syncs the file to disk.
+      mockLog.push(`commit ${short(this.path)}`)
+    }
+
     writeCopyTo(config: any) {
       mockLog.push(`writeCopyTo ${short(config.path)}`)
       if (mockFail.writeCopyTo) throw new Error('writeCopyTo failed')
@@ -1271,5 +1278,49 @@ describe('initialize with a failing keychain (rule G)', () => {
     expect(secure.has('biometric_key_fingerprint')).toBe(false)
     expect(await db.isUnlocked()).toBe(true)
     expect(Object.keys(walletFiles())).toEqual(['default.realm'])
+  })
+})
+
+describe('final check fixes', () => {
+  it('commits a transaction on the copy, syncing it, before the pointer moves', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+
+    await db.unlock(PASSPHRASE)
+
+    const [name] = rekeyedNames()
+    const commitAt = mockLog.indexOf(`commit ${name}`)
+    expect(commitAt).toBeGreaterThan(mockLog.indexOf(`writeCopyTo ${name}`))
+    expect(commitAt).toBeLessThan(mockLog.indexOf(`pointer ${name}`))
+  })
+
+  it('keeps the marker when the pointer cannot be read but the same file opens', async () => {
+    walletEncryptedWith(REAL_KEY, `${DIR}/wallet-500.realm`)
+    secure.set('wallet_file', 'wallet-500.realm')
+    secure.set('wallet_key_derivation', 'pbkdf2-sha512')
+    enableBiometricsWith(REAL_KEY)
+    mockFail.pointerUnreadable = true
+
+    await db.unlockWithBiometrics()
+
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+    expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
+  })
+
+  it('leaves biometrics alone when its status cannot be read after an unlock', async () => {
+    walletEncryptedWith(REAL_KEY)
+    secure.set('wallet_file', 'default.realm')
+    secure.set('biometrics_status', 'enabled')
+    secure.set('biometric_key_fingerprint', 'stale')
+    mockKeychain.key = 'old key'
+    mockFail.biometricsStatusUnreadable = true
+
+    await db.unlock(PASSPHRASE)
+
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+    expect(storeInBiometricKeychain).not.toHaveBeenCalled()
+    expect(resetBiometricKeychain).not.toHaveBeenCalled()
+    expect(secure.get('biometrics_status')).toBe('enabled')
+    expect(secure.get('biometric_key_fingerprint')).toBe('stale')
+    expect(mockKeychain.key).toBe('old key')
   })
 })
