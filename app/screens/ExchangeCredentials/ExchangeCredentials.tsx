@@ -8,7 +8,10 @@ import { selectWithFactory } from '../../store/selectorFactories'
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile'
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer'
 import { processMessageChain, sendToExchanger } from '../../lib/exchanges'
-import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
+import {
+  isDIDAuthOnlyRequest,
+  shouldStoreExchangeCredentials
+} from '../../lib/walletRequestApi'
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
 import { getGlobalModalBody } from '../../lib/globalModalBody'
 import { NavigationUtil } from '../../lib/navigationUtil'
@@ -202,9 +205,20 @@ export default function ExchangeCredentials({
 
     clearGlobalModal()
 
-    // In a VPR (presentation request) flow the verifier may echo back a VP,
-    // but we never want to store it — just confirm to the user.
-    if (!isVPRFlow && acceptCredentials && navigationRef.isReady()) {
+    // A verifier may echo back the VP the wallet shared; never store that.
+    // An issuer that asked only for DIDAuthentication returns newly issued
+    // credentials, which are stored like an offer. processMessageChain
+    // answers requestOrOffer and nothing else, so isVPRFlow and isDIDAuthOnly
+    // describe the request these credentials came back from.
+    if (
+      acceptCredentials &&
+      shouldStoreExchangeCredentials({
+        isVPRFlow,
+        isDIDAuthOnly,
+        receivedCredentials: acceptCredentials
+      }) &&
+      navigationRef.isReady()
+    ) {
       // We've been issued credentials to store - present to user for accepting
       const { credentialRequestOrigin } = requestOrOffer
       console.log('credentialRequestOrigin:', credentialRequestOrigin)

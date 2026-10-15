@@ -135,6 +135,37 @@ export function isDIDAuthOnlyRequest(message: WalletApiMessage): boolean {
 }
 
 /**
+ * Decides whether credentials returned at the end of a VC-API exchange should
+ * be offered to the user for storing.
+ *
+ * - Offer flow (the exchange started with a VP): store.
+ * - DIDAuthentication-only request: the wallet sent no credentials, so
+ *   anything returned is newly issued (typically bound to the holder DID).
+ *   Store.
+ * - Any other request (e.g. QueryByExample, or DIDAuth mixed with other
+ *   queries): the wallet may have shared credentials and a verifier may echo
+ *   them back. Never store.
+ *
+ * @param isVPRFlow - The message the wallet answered was a
+ *   verifiablePresentationRequest.
+ * @param isDIDAuthOnly - That request asked only for DIDAuthentication
+ *   (see isDIDAuthOnlyRequest).
+ * @param receivedCredentials - Credentials extracted from the exchange result.
+ */
+export function shouldStoreExchangeCredentials({
+  isVPRFlow,
+  isDIDAuthOnly,
+  receivedCredentials
+}: {
+  isVPRFlow: boolean
+  isDIDAuthOnly: boolean
+  receivedCredentials?: unknown[] | null
+}): boolean {
+  if (!receivedCredentials || receivedCredentials.length === 0) return false
+  return !isVPRFlow || isDIDAuthOnly
+}
+
+/**
  * Assembles and signs requested zcaps. Assumes user consent was already
  * prompted for.
  *
