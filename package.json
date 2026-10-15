@@ -92,7 +92,7 @@
     "expo-status-bar": "~2.2.3",
     "expo-system-ui": "~5.0.11",
     "expo-updates": "~0.28.17",
-    "handlebars": "^4.7.8",
+    "handlebars": "^4.7.10",
     "html-entities": "^2.3.2",
     "json-canonicalize": "^1.0.4",
     "jsonpath-plus": "^10.3.0",
