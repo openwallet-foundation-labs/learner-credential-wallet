@@ -54,6 +54,15 @@ const BIOMETRIC_KEY_FINGERPRINT = 'biometric_key_fingerprint'
 const WALLET_KEY_DERIVATION = 'wallet_key_derivation'
 
 /**
+ * walletKeyFingerprint of the PBKDF2-SHA512 key derived from the passphrase
+ * that last opened a placeholder-key wallet (releases 2.2.6 to 2.2.10). The
+ * placeholder can accept some wrong passphrases, such as some typos, so such
+ * a wallet is re-keyed only once the same passphrase has opened it on two
+ * separate unlocks: otherwise a typo could become the wallet's key.
+ */
+const PENDING_REKEY_FINGERPRINT = 'pending_rekey_fingerprint'
+
+/**
  * The name of the current wallet file, in the directory of
  * Realm.defaultPath. Absent means Realm.defaultPath. Re-keying writes a new
  * file and switches to it by changing this one value, so no wallet file is
@@ -76,16 +85,27 @@ const walletFiles = {
     return path.slice(path.lastIndexOf('/') + 1)
   },
   /** A file written by a re-key: wallet-<timestamp>.realm */
-  isRekeyedName(name: string): boolean {
-    return /^wallet-\d+\.realm$/.test(name)
+  nameFor(stamp: number): string {
+    return `wallet-${stamp}.realm`
+  },
+  sideSuffixes: ['.lock', '.note', '.management'],
+  sideFiles(path: string): string[] {
+    return walletFiles.sideSuffixes.map((s) => path + s)
   },
   /** A re-keyed file, or one of its side files */
   isRekeyedFileName(name: string): boolean {
-    return /^wallet-\d+\.realm(\.lock|\.note|\.management)?$/.test(name)
-  },
-  sideFiles(path: string): string[] {
-    return ['.lock', '.note', '.management'].map((s) => path + s)
+    const side = walletFiles.sideSuffixes.find((s) => name.endsWith(s))
+    return rekeyedStamp(side ? name.slice(0, -side.length) : name) !== null
   }
+}
+
+/**
+ * The timestamp in a re-keyed file's name (wallet-<timestamp>.realm), or
+ * null if the name or path is not one. The only parser of these names.
+ */
+function rekeyedStamp(nameOrPath: string): number | null {
+  const match = /^wallet-(\d+)\.realm$/.exec(walletFiles.nameOf(nameOrPath))
+  return match ? Number(match[1]) : null
 }
 
 /** Realm's 64-byte encryption key is the ASCII of the 64-character hex key. */
@@ -122,21 +142,18 @@ async function removeRealmFiles(path: string): Promise<void> {
 
 /** The timestamp in a re-keyed file's name; default.realm is the oldest. */
 function age(path: string): number {
-  const match = /wallet-(\d+)\.realm$/.exec(path)
-  return match ? Number(match[1]) : 0
+  return rekeyedStamp(path) ?? 0
 }
 
-const isRekeyed = (path: string) =>
-  walletFiles.isRekeyedName(walletFiles.nameOf(path))
+const isRekeyed = (path: string) => rekeyedStamp(path) !== null
 
 /** Every wallet file that exists, newest first (default.realm last). */
 async function existingWalletPaths(): Promise<string[]> {
-  const [hasDefault, entries] = await Promise.all([
-    RNFS.exists(Realm.defaultPath),
-    RNFS.readDir(walletFiles.dir())
-  ])
+  const entries = await RNFS.readDir(walletFiles.dir())
+  const defaultName = walletFiles.nameOf(Realm.defaultPath)
+  const hasDefault = entries.some((entry) => entry.name === defaultName)
   const rekeyed = entries
-    .filter((entry) => walletFiles.isRekeyedName(entry.name))
+    .filter((entry) => isRekeyed(entry.name))
     .map((entry) => entry.path)
     .sort((a, b) => age(b) - age(a))
   return hasDefault ? [...rekeyed, Realm.defaultPath] : rekeyed
@@ -255,7 +272,39 @@ class DatabaseAccess {
   ): Promise<T> {
     const database = await DatabaseAccess.instance()
 
-    return callback(database)
+    DatabaseAccess.activeCallbacks++
+    try {
+      return await callback(database)
+    } finally {
+      DatabaseAccess.activeCallbacks--
+      if (DatabaseAccess.activeCallbacks === 0) {
+        for (const resolve of DatabaseAccess.idleWaiters.splice(0)) resolve()
+      }
+    }
+  }
+
+  /** withInstance callbacks still running, which lock waits for */
+  private static activeCallbacks = 0
+  private static idleWaiters: (() => void)[] = []
+  private static readonly CALLBACK_WAIT_MS = 5000
+
+  /**
+   * Waits until no withInstance callback is running, or the timeout passes,
+   * so that lock does not close the Realm under one.
+   */
+  private static async callbacksFinished(): Promise<void> {
+    if (DatabaseAccess.activeCallbacks === 0) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    await Promise.race([
+      new Promise<void>((resolve) => DatabaseAccess.idleWaiters.push(resolve)),
+      new Promise<void>((resolve) => {
+        timer = setTimeout(() => {
+          console.error('Closing the wallet with a withInstance call running.')
+          resolve()
+        }, DatabaseAccess.CALLBACK_WAIT_MS)
+      })
+    ])
+    clearTimeout(timer)
   }
 
   public static async isUnlocked(): Promise<boolean> {
@@ -303,7 +352,10 @@ class DatabaseAccess {
     })
   }
 
-  /** Leaves biometrics off if the key cannot be stored in the keychain. */
+  /**
+   * If the key cannot be stored in the keychain, sets biometrics off and
+   * throws, so the Settings switch goes back.
+   */
   public static enableBiometrics(): Promise<void> {
     return DatabaseAccess.exclusive(async () => {
       const key = await SecureStore.getItemAsync(PRIVILEGED_KEY_KID)
@@ -314,8 +366,8 @@ class DatabaseAccess {
 
       await SecureStore.deleteItemAsync(BIOMETRIC_KEY_FINGERPRINT)
       if (!(await storeInBiometricKeychain(key))) {
-        console.error('Could not store the key; biometrics stays off.')
-        return
+        await SecureStore.setItemAsync(BIOMETRICS_STATUS, DISABLED)
+        throw new Error('Could not store the key for biometric unlock.')
       }
       await SecureStore.setItemAsync(BIOMETRICS_STATUS, ENABLED)
       await SecureStore.setItemAsync(
@@ -338,7 +390,11 @@ class DatabaseAccess {
   private static async disableBiometricsExclusive(): Promise<void> {
     await SecureStore.deleteItemAsync(BIOMETRIC_KEY_FINGERPRINT)
     await SecureStore.setItemAsync(BIOMETRICS_STATUS, DISABLED)
-    await resetBiometricKeychain()
+    // Biometrics is already off; a leftover keychain item opens nothing
+    // without the status, so a failure here must not stop the caller.
+    await resetBiometricKeychain().catch((err) =>
+      console.error('Could not clear the biometric keychain:', err)
+    )
   }
 
   /**
@@ -367,11 +423,12 @@ class DatabaseAccess {
   private static async unlockExclusive(passphrase: string): Promise<void> {
     if (await DatabaseAccess.isUnlocked()) return
 
-    const salt = await DatabaseAccess.salt()
-    const keyHex = deriveWalletKeyHex(passphrase, salt)
     const { pointed, fallbacks } = await walletCandidates()
     const paths = pointed !== null ? [pointed] : fallbacks
     if (paths.length === 0) throw new Error('Wallet database not found.')
+
+    const salt = await DatabaseAccess.salt()
+    const keyHex = deriveWalletKeyHex(passphrase, salt)
 
     // The marker is only ever written after a successful open with that
     // derivation, so 'pbkdf2-sha512' means no legacy key can be right.
@@ -411,7 +468,11 @@ class DatabaseAccess {
 
     let final: Opened = opened
     let derivation = opened.derivation
-    if (derivation !== 'pbkdf2-sha512') {
+    if (
+      derivation === 'legacy-sha1' ||
+      (derivation === 'legacy-placeholder' &&
+        (await DatabaseAccess.confirmPlaceholderPassphrase(keyHex)))
+    ) {
       const rekeyed = await DatabaseAccess.rekey(opened, keyHex)
       if (rekeyed !== null) {
         final = { realm: rekeyed, keyHex }
@@ -421,6 +482,29 @@ class DatabaseAccess {
 
     await DatabaseAccess.adopt(final, derivation)
     await DatabaseAccess.refreshBiometricKey(final.keyHex)
+  }
+
+  /**
+   * True if this passphrase (by the fingerprint of its PBKDF2-SHA512 key)
+   * also opened the placeholder-key wallet at the previous passphrase
+   * unlock. Otherwise records it, so that the next unlock can confirm it.
+   */
+  private static async confirmPlaceholderPassphrase(
+    keyHex: string
+  ): Promise<boolean> {
+    const fingerprint = walletKeyFingerprint(keyHex)
+    const pending = await SecureStore.getItemAsync(
+      PENDING_REKEY_FINGERPRINT
+    ).catch(() => null)
+    if (pending === fingerprint) return true
+
+    await SecureStore.setItemAsync(
+      PENDING_REKEY_FINGERPRINT,
+      fingerprint
+    ).catch((err) =>
+      console.error('Could not record the passphrase to confirm:', err)
+    )
+    return false
   }
 
   /** Tries each legacy derivation in turn; throws if none opens the file. */
@@ -575,14 +659,19 @@ class DatabaseAccess {
   private static async lockExclusive(): Promise<void> {
     if (!(await DatabaseAccess.isUnlocked())) return
 
-    // Mark it locked first, so nothing reopens it once it is closed.
+    // Detach the open Realm and mark the wallet locked first, so a new
+    // withInstance waits for this lock and is then refused. Callbacks
+    // already running get to finish before the Realm is closed.
+    const realm = DatabaseAccess.realm
+    DatabaseAccess.realm = null
     try {
       await Promise.all([
         SecureStore.setItemAsync(PRIVILEGED_KEY_STATUS_ID, LOCKED),
         SecureStore.setItemAsync(PRIVILEGED_KEY_KID, '')
       ])
     } finally {
-      DatabaseAccess.closeRealm()
+      await DatabaseAccess.callbacksFinished()
+      if (realm !== null && !realm.isClosed) realm.close()
     }
   }
 
@@ -617,6 +706,7 @@ class DatabaseAccess {
       ])
       await SecureStore.deleteItemAsync(WALLET_FILE)
       await SecureStore.deleteItemAsync(WALLET_KEY_DERIVATION)
+      await SecureStore.deleteItemAsync(PENDING_REKEY_FINGERPRINT)
     })
   }
 
@@ -637,9 +727,8 @@ class DatabaseAccess {
         throw new Error('Wallet must be in reset state to be initialized')
       }
       // Biometrics starts off; a keychain failure must not block onboarding.
-      await SecureStore.deleteItemAsync(BIOMETRIC_KEY_FINGERPRINT)
-      await SecureStore.setItemAsync(BIOMETRICS_STATUS, DISABLED)
-      await resetBiometricKeychain().catch(console.error)
+      await DatabaseAccess.disableBiometricsExclusive()
+      await SecureStore.deleteItemAsync(PENDING_REKEY_FINGERPRINT)
 
       const decoder = new encoding.TextDecoder()
       const rawSalt = await generateSecureRandom(64)
@@ -724,13 +813,14 @@ class DatabaseAccess {
       console.error('Could not read the biometrics status; not re-keying.', err)
       return null
     }
-    const newPath = await DatabaseAccess.newWalletPath()
+    let newPath: string | null = null
     let copy: Realm | null = null
     let keychainTouched = false
     let keychainHasNewKey = false
     let biometricsTurnedOff = false
 
     try {
+      newPath = await DatabaseAccess.newWalletPath()
       legacy.realm.writeCopyTo({
         path: newPath,
         encryptionKey: realmKeyFromHex(keyHex)
@@ -768,8 +858,10 @@ class DatabaseAccess {
       await DatabaseAccess.writePointer(newPath)
     } catch (err) {
       console.error('Wallet re-key failed; keeping the original key.', err)
-      if (copy !== null) copy.close()
-      await removeRealmFiles(newPath).catch(console.error)
+      if (copy !== null && !copy.isClosed) copy.close()
+      if (newPath !== null) {
+        await removeRealmFiles(newPath).catch(console.error)
+      }
       if (biometricsTurnedOff) {
         await DatabaseAccess.reenableBiometrics(legacy.keyHex)
       } else if (keychainTouched) {
@@ -781,6 +873,9 @@ class DatabaseAccess {
     // Switched: the new file is current. The old one stays for now.
     DatabaseAccess.madeCurrentThisProcess.add(newPath)
     legacy.realm.close()
+    await SecureStore.deleteItemAsync(PENDING_REKEY_FINGERPRINT).catch(
+      console.error
+    )
     if (keychainHasNewKey) {
       await SecureStore.setItemAsync(
         BIOMETRIC_KEY_FINGERPRINT,
@@ -794,7 +889,7 @@ class DatabaseAccess {
   private static async newWalletPath(): Promise<string> {
     const newestAge = Math.max(0, ...(await existingWalletPaths()).map(age))
     for (let stamp = Math.max(Date.now(), newestAge + 1); ; stamp++) {
-      const path = walletFiles.pathFor(`wallet-${stamp}.realm`)
+      const path = walletFiles.pathFor(walletFiles.nameFor(stamp))
       if (!(await RNFS.exists(path))) return path
     }
   }

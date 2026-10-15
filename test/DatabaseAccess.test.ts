@@ -78,6 +78,7 @@ const mockFail: {
   keychainStore?: boolean | ((key: string) => boolean)
   keychainResetRejects?: boolean
   biometricsStatusUnreadable?: boolean
+  readDir?: boolean
 } = {}
 const mockNever = () => new Promise<never>(() => undefined)
 
@@ -90,14 +91,15 @@ jest.mock('react-native-fs', () => {
       if (!mockFiles.has(p)) throw new Error(`ENOENT ${p}`)
       return { mtime: new Date(mockMtimes.get(p) ?? 0) }
     }),
-    readDir: jest.fn(async (dir: string) =>
-      [...mockFiles.keys()]
+    readDir: jest.fn(async (dir: string) => {
+      if (mockFail.readDir) throw new Error('readDir failed')
+      return [...mockFiles.keys()]
         .filter(
           (p) =>
             p.startsWith(`${dir}/`) && !p.slice(dir.length + 1).includes('/')
         )
         .map((p) => ({ name: p.slice(dir.length + 1), path: p }))
-    ),
+    }),
     readFile: jest.fn(async (p: string) => {
       const file = mockFiles.get(p)
       if (file?.kind !== 'text') throw new Error(`ENOENT ${p}`)
@@ -227,6 +229,11 @@ function realmFile(key: string): MockRealmFile {
 function walletEncryptedWith(key: string, path = WALLET) {
   mockFiles.set(SALT_PATH, { kind: 'text', text: SALT })
   mockFiles.set(path, realmFile(key))
+  // A placeholder-key wallet is re-keyed only once the same passphrase has
+  // opened it twice; most tests start as if PASSPHRASE already had once.
+  if (key === LEGACY_KEY) {
+    secure.set('pending_rekey_fingerprint', fingerprint(REAL_KEY))
+  }
 }
 
 /** Realm files that exist, by name, with the key that opens each. */
@@ -1058,15 +1065,18 @@ describe('unlockWithBiometrics', () => {
 })
 
 describe('enableBiometrics', () => {
-  it('stays off, with no fingerprint, if the key cannot be stored', async () => {
+  it('sets biometrics off, with no fingerprint, and reports it if the key cannot be stored', async () => {
     walletEncryptedWith(REAL_KEY)
     await db.unlock(PASSPHRASE)
+    secure.set('biometrics_status', 'enabled')
     secure.set('biometric_key_fingerprint', 'stale')
     mockFail.keychainStore = true
 
-    await db.enableBiometrics()
+    await expect(db.enableBiometrics()).rejects.toThrow(
+      'Could not store the key for biometric unlock.'
+    )
 
-    expect(secure.get('biometrics_status')).not.toBe('enabled')
+    expect(secure.get('biometrics_status')).toBe('disabled')
     expect(secure.has('biometric_key_fingerprint')).toBe(false)
   })
 
@@ -1322,5 +1332,205 @@ describe('final check fixes', () => {
     expect(secure.get('biometrics_status')).toBe('enabled')
     expect(secure.get('biometric_key_fingerprint')).toBe('stale')
     expect(mockKeychain.key).toBe('old key')
+  })
+})
+
+/**
+ * A different passphrase that the placeholder derivation accepts in place of
+ * `passphrase`: two adjacent characters changed so that its rolling hash is
+ * unchanged.
+ */
+function acceptedTypo(passphrase: string): string {
+  for (let j = 0; j + 1 < passphrase.length; j++) {
+    const a = passphrase.charCodeAt(j) + 1
+    const b = passphrase.charCodeAt(j + 1) - 31
+    if (a <= 126 && b >= 32) {
+      return (
+        passphrase.slice(0, j) +
+        String.fromCharCode(a, b) +
+        passphrase.slice(j + 2)
+      )
+    }
+  }
+  throw new Error('No such typo')
+}
+
+describe('placeholder wallets re-key only on a confirmed passphrase (holistic 1)', () => {
+  const TYPO = acceptedTypo(PASSPHRASE)
+  const TYPO_KEY = nodeCrypto
+    .pbkdf2Sync(TYPO, SALT, 10000, 32, 'sha512')
+    .toString('hex')
+
+  function unconfirmedPlaceholderWallet() {
+    walletEncryptedWith(LEGACY_KEY)
+    secure.delete('pending_rekey_fingerprint')
+  }
+
+  const rekeys = () => mockLog.filter((e) => e.startsWith('writeCopyTo')).length
+
+  async function unlockThenLock(passphrase: string) {
+    await db.unlock(passphrase)
+    await db.lock()
+  }
+
+  it('the typo really is accepted by the placeholder, and is a different key', () => {
+    expect(TYPO).not.toBe(PASSPHRASE)
+    expect(legacyPlaceholderPbkdf2(TYPO, SALT, 10000, 32)).toEqual(
+      legacyPlaceholderPbkdf2(PASSPHRASE, SALT, 10000, 32)
+    )
+    expect(TYPO_KEY).not.toBe(REAL_KEY)
+  })
+
+  it('a wrong but accepted passphrase opens the wallet without re-keying it', async () => {
+    unconfirmedPlaceholderWallet()
+
+    await db.unlock(TYPO)
+
+    expect(secure.get('privileged_key')).toBe(LEGACY_KEY)
+    expect(secure.get('wallet_key_derivation')).toBe('legacy-placeholder')
+    expect(rekeys()).toBe(0)
+    expect(walletFiles()).toEqual({ 'default.realm': LEGACY_KEY })
+    expect(secure.get('pending_rekey_fingerprint')).toBe(fingerprint(TYPO_KEY))
+  })
+
+  it('two different accepted passphrases in turn never re-key', async () => {
+    unconfirmedPlaceholderWallet()
+
+    for (const p of [PASSPHRASE, TYPO, PASSPHRASE, TYPO])
+      await unlockThenLock(p)
+
+    expect(rekeys()).toBe(0)
+    expect(walletFiles()).toEqual({ 'default.realm': LEGACY_KEY })
+  })
+
+  it('the same passphrase on two unlocks re-keys under that passphrase', async () => {
+    unconfirmedPlaceholderWallet()
+
+    await unlockThenLock(PASSPHRASE)
+    expect(rekeys()).toBe(0)
+    await unlockThenLock(PASSPHRASE)
+
+    expect(rekeys()).toBe(1)
+    expect(currentFile()).toEqual(realmFile(REAL_KEY))
+    expect(secure.has('pending_rekey_fingerprint')).toBe(false)
+    await expect(db.unlock(TYPO)).rejects.toThrow()
+    await db.unlock(PASSPHRASE)
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+  })
+
+  it('wallets on the SHA-1 key still re-key at the first unlock', async () => {
+    walletEncryptedWith(SHA1_KEY)
+
+    await db.unlock(PASSPHRASE)
+
+    expect(rekeys()).toBe(1)
+  })
+
+  it('reset clears the pending passphrase', async () => {
+    unconfirmedPlaceholderWallet()
+    await unlockThenLock(PASSPHRASE)
+    expect(secure.has('pending_rekey_fingerprint')).toBe(true)
+
+    await db.reset()
+
+    expect(secure.has('pending_rekey_fingerprint')).toBe(false)
+  })
+
+  it('initialize clears the pending passphrase', async () => {
+    secure.set('pending_rekey_fingerprint', fingerprint(REAL_KEY))
+
+    await db.initialize(PASSPHRASE)
+
+    expect(secure.has('pending_rekey_fingerprint')).toBe(false)
+  })
+})
+
+describe('holistic review 2-6', () => {
+  it('a failure choosing the new file name leaves the wallet unlocked on its legacy key', async () => {
+    walletEncryptedWith(SHA1_KEY)
+    secure.set('wallet_file', 'default.realm')
+    mockFail.readDir = true
+
+    await db.unlock(PASSPHRASE)
+
+    expect(secure.get('privileged_key')).toBe(SHA1_KEY)
+    expect(secure.get('privileged_key_status')).toBe('unlocked')
+    expect(mockLog).not.toContainEqual(expect.stringMatching(/writeCopyTo/))
+    expect(
+      [...mockOpenRealms].filter((r) => !r.isClosed).map((r) => r.path)
+    ).toEqual([WALLET])
+  })
+
+  it('disableBiometrics finishes even if clearing the keychain fails', async () => {
+    enableBiometricsWith(REAL_KEY)
+    mockFail.keychainResetRejects = true
+
+    await expect(db.disableBiometrics()).resolves.toBeUndefined()
+
+    expect(secure.has('biometric_key_fingerprint')).toBe(false)
+    expect(secure.get('biometrics_status')).toBe('disabled')
+  })
+
+  it('reset finishes even if clearing the keychain fails', async () => {
+    walletEncryptedWith(REAL_KEY)
+    enableBiometricsWith(REAL_KEY)
+    mockFail.keychainResetRejects = true
+
+    await db.reset()
+
+    expect(await db.isInitialized()).toBe(false)
+  })
+
+  it('lock waits for a running withInstance callback before closing', async () => {
+    walletEncryptedWith(REAL_KEY)
+    await db.unlock(PASSPHRASE)
+    let finish: () => void = () => undefined
+    let closedDuringCallback: boolean | undefined
+    const running = db.withInstance(async (realm) => {
+      await new Promise<void>((resolve) => (finish = resolve))
+      closedDuringCallback = (realm as any).isClosed
+    })
+    await settle()
+
+    const locking = db.lock()
+    await settle()
+    const [open] = [...mockOpenRealms].filter((r) => r.path === WALLET)
+    expect(open.isClosed).toBe(false)
+    expect(secure.get('privileged_key_status')).toBe('locked')
+    // A new caller waits for the lock, then is refused.
+    const late = db.withInstance((realm) => realm)
+
+    finish()
+    await running
+    await locking
+    expect(closedDuringCallback).toBe(false)
+    expect(open.isClosed).toBe(true)
+    await expect(late).rejects.toThrow('Wallet is not unlocked.')
+  })
+
+  it('lock closes anyway once the wait times out', async () => {
+    walletEncryptedWith(REAL_KEY)
+    await db.unlock(PASSPHRASE)
+    ;(db as any).CALLBACK_WAIT_MS = 20
+    void db.withInstance(() => new Promise(() => undefined))
+    await settle()
+
+    await db.lock()
+
+    expect([...mockOpenRealms].every((r) => r.isClosed)).toBe(true)
+    ;(db as any).CALLBACK_WAIT_MS = 5000
+  })
+
+  it('unlock reports a missing wallet before deriving any key', async () => {
+    mockFiles.set(SALT_PATH, { kind: 'text', text: SALT })
+    const walletKey = require('../app/lib/walletKey')
+    const derive = jest.spyOn(walletKey, 'deriveWalletKeyHex')
+
+    await expect(db.unlock(PASSPHRASE)).rejects.toThrow(
+      'Wallet database not found.'
+    )
+
+    expect(derive).not.toHaveBeenCalled()
+    derive.mockRestore()
   })
 })
