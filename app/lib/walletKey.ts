@@ -66,12 +66,29 @@ export function deriveLegacyKeyHex(
 ): string {
   switch (derivation) {
     case 'legacy-sha1':
-      return bytesToHex(
-        pbkdf2(sha1, utf8(passphrase), utf8(salt), { c: 10000, dkLen: 32 })
-      )
+      return legacyPbkdf2Sha1Hex(passphrase, salt, 10000, 32)
     case 'legacy-placeholder':
       return bytesToHex(legacyPlaceholderPbkdf2(passphrase, salt, 10000, 32))
   }
+}
+
+/**
+ * PBKDF2-HMAC-SHA1 with UTF-8 strings, as react-native-quick-crypto 0.7.x
+ * computed it. Exported so its test vectors can run through the same code
+ * as deriveLegacyKeyHex('legacy-sha1'); do not use it for new keys.
+ */
+export function legacyPbkdf2Sha1Hex(
+  passphrase: string,
+  salt: string,
+  iterations: number,
+  keyLength: number
+): string {
+  return bytesToHex(
+    pbkdf2(sha1, utf8(passphrase), utf8(salt), {
+      c: iterations,
+      dkLen: keyLength
+    })
+  )
 }
 
 /**

@@ -1,12 +1,10 @@
 import * as nodeCrypto from 'node:crypto'
-import { pbkdf2 } from '@noble/hashes/pbkdf2'
-import { sha1 } from '@noble/hashes/legacy'
-import { bytesToHex } from '@noble/hashes/utils'
 
 import {
   deriveLegacyKeyHex,
   deriveWalletKeyHex,
   LEGACY_KEY_DERIVATIONS,
+  legacyPbkdf2Sha1Hex,
   walletKeyFingerprint
 } from '../app/lib/walletKey'
 
@@ -27,8 +25,8 @@ it('tries SHA-1 before the placeholder', () => {
   expect(LEGACY_KEY_DERIVATIONS).toEqual(['legacy-sha1', 'legacy-placeholder'])
 })
 
-// RFC 6070, the PBKDF2-HMAC-SHA1 test vectors, with the primitives the
-// legacy SHA-1 derivation uses
+// RFC 6070, the PBKDF2-HMAC-SHA1 test vectors, through the function that
+// deriveLegacyKeyHex('legacy-sha1') calls
 it.each([
   ['password', 'salt', 1, 20, '0c60c80f961f0e71f3a9b524af6012062fe037a6'],
   ['password', 'salt', 2, 20, 'ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'],
@@ -42,7 +40,7 @@ it.each([
   ],
   ['pass\0word', 'sa\0lt', 4096, 16, '56fa6aa75548099dcc37d7f03425e0c3']
 ])('PBKDF2-HMAC-SHA1(%j, %j, %i, %i)', (password, salt, c, dkLen, hex) => {
-  expect(bytesToHex(pbkdf2(sha1, password, salt, { c, dkLen }))).toBe(hex)
+  expect(legacyPbkdf2Sha1Hex(password, salt, c, dkLen)).toBe(hex)
 })
 
 describe('legacy-sha1 (releases 2.1.0 to 2.2.4)', () => {
