@@ -253,18 +253,8 @@ export default function ExchangeCredentials({
     })
 
     if (toOffer.length > 0) {
-      // We've been issued credentials to store - present to user for accepting
-      // This screen is mounted inside the navigator, so this should always
-      // hold; if it ever doesn't, the one-time exchange can't be retried
-      if (!navigationRef.isReady()) {
-        await showMessage({
-          title: 'Something Went Wrong',
-          body: "These credentials couldn't be shown and weren't saved. Ask the issuer to send them again."
-        })
-        // Don't leave the user on this blank screen if navigation is back
-        if (navigationRef.isReady()) goHome()
-        return
-      }
+      // We've been issued credentials to store - stage them for the user to
+      // accept, then present them
       const { credentialRequestOrigin } = requestOrOffer
       console.log('credentialRequestOrigin:', credentialRequestOrigin)
       console.log('[acceptExchange] Accepting credentials:', toOffer)
@@ -274,13 +264,27 @@ export default function ExchangeCredentials({
           profileRecordId: rawProfileRecord._id
         })
       )
+      const openApproval = () =>
+        navigationRef.navigate('AcceptCredentialsNavigation', {
+          screen: 'ApproveCredentialsScreen',
+          params: {
+            rawProfileRecord
+          }
+        })
+      // This screen is mounted inside the navigator, so this should always
+      // hold. If it ever doesn't, the staged credentials live only in memory
+      // until the approval screen opens, so say they aren't saved yet and
+      // open it once the message is dismissed, if navigation is back.
+      if (!navigationRef.isReady()) {
+        await showMessage({
+          title: 'Credentials Received',
+          body: "Your new credentials were received but haven't been saved yet. Close this message to review and accept them."
+        })
+        if (navigationRef.isReady()) openApproval()
+        return
+      }
       await delay(500)
-      navigationRef.navigate('AcceptCredentialsNavigation', {
-        screen: 'ApproveCredentialsScreen',
-        params: {
-          rawProfileRecord
-        }
-      })
+      openApproval()
       return
     }
 
@@ -288,8 +292,10 @@ export default function ExchangeCredentials({
     goHome()
     const completion = exchangeCompletionMessage({
       answered: requestOrOffer,
+      channel,
       sent,
-      nextStep
+      nextStep,
+      receivedCredentials
     })
     if (completion) showMessage(completion)
   }

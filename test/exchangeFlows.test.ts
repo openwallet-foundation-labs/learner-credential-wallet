@@ -150,7 +150,11 @@ async function run({
       channel: checkStatus ? 'vcapi' : 'redirect',
       ...result
     }),
-    message: exchangeCompletionMessage({ answered, ...result })?.body
+    message: exchangeCompletionMessage({
+      answered,
+      channel: checkStatus ? 'vcapi' : 'redirect',
+      ...result
+    })?.body
   }
 }
 
@@ -209,7 +213,9 @@ describe('exchange flows (issue #957)', () => {
       credentialA
     ])
     expect(result.toOffer).toEqual([])
-    expect(result.message).toBe('You have shared the selected credentials.')
+    expect(result.message).toBe(
+      "You have shared the selected credentials. The service also sent back credentials, which weren't saved."
+    )
   })
 
   it('offers nothing when a verifier echoes the shared VP', async () => {
@@ -219,7 +225,9 @@ describe('exchange flows (issue #957)', () => {
       reply: { verifiablePresentation: vpWith(credentialA) }
     })
     expect(result.toOffer).toEqual([])
-    expect(result.message).toBe('You have shared the selected credentials.')
+    expect(result.message).toBe(
+      "You have shared the selected credentials. The service also sent back credentials, which weren't saved."
+    )
   })
 
   it('says nothing was shared when no credential matched and nothing was posted', async () => {
@@ -285,7 +293,7 @@ describe('exchange flows (issue #957)', () => {
     })
     expect(result.toOffer).toEqual([])
     expect(result.message).toBe(
-      "This request needs another step that this wallet doesn't support yet."
+      "This request needs another step that this wallet doesn't support yet. Your DID Authentication response was sent."
     )
   })
 
@@ -296,15 +304,20 @@ describe('exchange flows (issue #957)', () => {
     })
     expect(result.toOffer).toEqual([])
     expect(result.message).toBe(
-      "This request needs another step that this wallet doesn't support yet."
+      "This request needs another step that this wallet doesn't support yet. Your DID Authentication response was sent."
     )
   })
 
-  it('posts nothing when zcaps were requested but none could be made', async () => {
+  it('posts {} as before when zcaps were approved but none could be made', async () => {
     ;(processZcaps as jest.Mock).mockResolvedValueOnce([])
     const result = await run({ answered: vpr([zcapQuery]) })
-    expect(result.payload).toBeUndefined()
-    expect(result.sent?.posted).toBe(false)
+    expect(result.payload).toEqual({})
+    expect(result.sent).toEqual({
+      posted: true,
+      credentials: [],
+      didAuth: false,
+      zcaps: false
+    })
     expect(result.message).toBe('Nothing was shared.')
   })
 
@@ -325,6 +338,7 @@ describe('exchange flows (issue #957)', () => {
     it.each([
       [400, 'The request was rejected.'],
       [403, 'The request was rejected.'],
+      [302, "The service's reply couldn't be read."],
       [408, 'The service is busy.'],
       [429, 'The service is busy.'],
       [404, 'This request has expired or no longer exists.'],

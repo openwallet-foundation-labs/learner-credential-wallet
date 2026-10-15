@@ -115,23 +115,34 @@ export function credentialsToOffer({
  * credentialsToOffer returned nothing.
  *
  * @param answered - The offer or request the wallet answered.
+ * @param channel - Whether the request came over a VC-API exchange or a
+ *   deep link's redirectUrl.
  * @param sent - What the wallet posted in reply to a request.
  * @param nextStep - The exchanger's reply asked for another step.
+ * @param receivedCredentials - Credentials the exchanger sent back. On a
+ *   VC-API exchange, any that came back but weren't offered are mentioned.
  */
 export function exchangeCompletionMessage({
   answered,
+  channel,
   sent,
-  nextStep
+  nextStep,
+  receivedCredentials
 }: {
   answered: WalletApiMessage
+  channel: ExchangeChannel
   sent?: ISentSummary
   nextStep?: boolean
+  receivedCredentials?: IVerifiableCredential[] | null
 }): IMessage | undefined {
   if (!answered) return undefined
   if (nextStep) {
+    const alreadySent = whatWasSent(sent, { uncertain: false, ending: '.' })
+    const body =
+      "This request needs another step that this wallet doesn't support yet."
     return {
       title: 'Request Incomplete',
-      body: "This request needs another step that this wallet doesn't support yet."
+      body: alreadySent ? `${body} ${alreadySent}` : body
     }
   }
   if ('verifiablePresentation' in answered) {
@@ -142,6 +153,21 @@ export function exchangeCompletionMessage({
   }
   if (!('verifiablePresentationRequest' in answered)) return undefined
 
+  const message = requestCompletionMessage(sent)
+  // Credentials that came back but weren't offered (e.g. after a share)
+  const returnedNotSaved =
+    channel === 'vcapi' &&
+    !!receivedCredentials &&
+    receivedCredentials.length > 0
+  return returnedNotSaved
+    ? {
+        ...message,
+        body: `${message.body} The service also sent back credentials, which weren't saved.`
+      }
+    : message
+}
+
+function requestCompletionMessage(sent?: ISentSummary): IMessage {
   const sharedCredentials = !!sent?.posted && sent.credentials.length > 0
   const didAuth = !!sent?.posted && sent.didAuth
   const zcaps = !!sent?.posted && sent.zcaps
@@ -176,8 +202,9 @@ export function exchangeCompletionMessage({
  * - gone: 404 or 410, the exchange has expired or never existed.
  * - server-error: a 5xx, the service answered but failed.
  * - unreachable: no HTTP response at all.
- * - unreadable: a successful status, but a body that could not be read or
- *   is not JSON (e.g. an HTML or proxy page), so its content is unknown.
+ * - unreadable: a successful status whose body could not be read or is not
+ *   JSON (e.g. an HTML or proxy page), or a non-2xx status below 400 (e.g. a
+ *   redirect), so the reply's content is unknown.
  */
 export type ExchangeFailureKind =
   | 'rejected'
@@ -188,6 +215,8 @@ export type ExchangeFailureKind =
   | 'unreadable'
 
 export function failureKindForStatus(status: number): ExchangeFailureKind {
+  // Not an error status but not a usable reply either (e.g. a redirect)
+  if (status < 400) return 'unreadable'
   if (status === 404 || status === 410) return 'gone'
   if (status === 408 || status === 429) return 'busy'
   if (status >= 500) return 'server-error'
@@ -279,13 +308,20 @@ export function exchangeFailureMessage(
     title = 'Request Rejected'
     body = 'The request was rejected.'
   }
-  const alreadySent = sentBeforeError(sentBefore, kind === 'unreachable')
+  const alreadySent = whatWasSent(sentBefore, {
+    uncertain: kind === 'unreachable',
+    ending: ' before the error.'
+  })
   return { title, body: alreadySent ? `${body} ${alreadySent}` : body }
 }
 
-function sentBeforeError(
+/**
+ * A sentence saying what the wallet had already posted, e.g. "Your selected
+ * credentials were sent before the error." Undefined if it posted nothing.
+ */
+function whatWasSent(
   sent: ISentSummary | undefined,
-  uncertain: boolean
+  { uncertain, ending }: { uncertain: boolean; ending: string }
 ): string | undefined {
   if (!sent?.posted) return undefined
   const wasSent = uncertain ? 'may have been sent' : 'were sent'
@@ -301,6 +337,6 @@ function sentBeforeError(
   if (sent.zcaps) parts.push(`storage access ${granted}`)
   if (parts.length === 0) return undefined
 
-  const sentence = `${parts.join(' and ')} before the error.`
+  const sentence = `${parts.join(' and ')}${ending}`
   return sentence.charAt(0).toUpperCase() + sentence.slice(1)
 }

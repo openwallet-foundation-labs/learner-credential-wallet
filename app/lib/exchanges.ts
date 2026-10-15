@@ -200,7 +200,9 @@ export async function processRequest({
   }
 
   const zcapsGranted = !!zcaps && zcaps.length > 0
-  if (vcMatches.length === 0 && !zcapsGranted && !didAuthRequested) {
+  // As before: once zcaps were approved, reply even if none could be made
+  // (posting {}), so the exchange is advanced or closed
+  if (vcMatches.length === 0 && !zcaps && !didAuthRequested) {
     // No matches were found, nothing to send to requester
     console.log(
       '[processMessageChain] No zcaps or VCs matched request query, ending exchange.'

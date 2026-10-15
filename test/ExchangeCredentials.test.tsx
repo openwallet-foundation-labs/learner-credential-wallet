@@ -164,29 +164,39 @@ describe('ExchangeCredentials', () => {
     expect(shownBodies()).toEqual(['DID Authentication complete.'])
   })
 
-  it('says the credentials were not saved if navigation is not ready', async () => {
+  it('stages the credentials and says so if navigation is not ready', async () => {
     isReady.mockReturnValue(false)
     ;(processMessageChain as jest.Mock).mockResolvedValue({
       receivedCredentials: [issued]
     })
     await acceptExchange(offer)
 
-    expect(shownBodies()).toEqual([
-      "These credentials couldn't be shown and weren't saved. Ask the issuer to send them again."
-    ])
-    expect(stageCredentialsForProfile).not.toHaveBeenCalled()
+    expect(stageCredentialsForProfile).toHaveBeenCalledWith({
+      credentials: [issued],
+      profileRecordId: 'profile-1'
+    })
+    expect(showModal).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'Credentials Received',
+        body: "Your new credentials were received but haven't been saved yet. Close this message to review and accept them."
+      })
+    )
+    expect(shownBodies().join(' ')).not.toMatch(/weren't saved|didn't include/)
     expect(navigate).not.toHaveBeenCalled()
   })
 
-  it('goes home after that message if navigation has become ready', async () => {
+  it('opens the approval screen after that message if navigation has become ready', async () => {
     isReady.mockReturnValueOnce(false).mockReturnValue(true)
     ;(processMessageChain as jest.Mock).mockResolvedValue({
       receivedCredentials: [issued]
     })
     await acceptExchange(offer)
 
-    expect(stageCredentialsForProfile).not.toHaveBeenCalled()
-    expect(navigate).toHaveBeenCalledWith('HomeNavigation', expect.anything())
+    expect(stageCredentialsForProfile).toHaveBeenCalled()
+    expect(navigate).toHaveBeenCalledWith(
+      'AcceptCredentialsNavigation',
+      expect.objectContaining({ screen: 'ApproveCredentialsScreen' })
+    )
   })
 
   it('shows the failure, never success, when the exchange endpoint fails', async () => {

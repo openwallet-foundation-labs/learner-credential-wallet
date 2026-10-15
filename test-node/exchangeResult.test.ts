@@ -220,11 +220,13 @@ describe('credentialsToOffer', () => {
 
 describe('exchangeCompletionMessage', () => {
   const body = (answered: any, sent?: ISentSummary, nextStep?: boolean) =>
-    exchangeCompletionMessage({ answered, sent, nextStep })?.body
+    exchangeCompletionMessage({ channel: 'vcapi', answered, sent, nextStep })
+      ?.body
 
   it('says an empty offer had no credentials', () => {
     assert.deepStrictEqual(
       exchangeCompletionMessage({
+        channel: 'vcapi',
         answered: { verifiablePresentation: {} } as any
       }),
       {
@@ -280,30 +282,78 @@ describe('exchangeCompletionMessage', () => {
 
   it('does not claim success when nothing was posted', () => {
     assert.deepStrictEqual(
-      exchangeCompletionMessage({ answered: vpr([qbe]), sent: nothingPosted }),
+      exchangeCompletionMessage({
+        channel: 'vcapi',
+        answered: vpr([qbe]),
+        sent: nothingPosted
+      }),
       { title: 'Nothing Shared', body: 'Nothing was shared.' }
     )
   })
 
-  it('does not claim completion when another step is needed', () => {
-    for (const sent of [sentDidAuth, shared(credentialA)]) {
+  it('does not claim completion when another step is needed, and says what was sent', () => {
+    const step =
+      "This request needs another step that this wallet doesn't support yet."
+    for (const [sent, note] of [
+      [sentDidAuth, 'Your DID Authentication response was sent.'],
+      [shared(credentialA), 'Your selected credentials were sent.'],
+      [
+        sentDidAuthAndZcaps,
+        'Your DID Authentication response was sent and storage access was granted.'
+      ]
+    ] as const) {
       assert.deepStrictEqual(
         exchangeCompletionMessage({
+          channel: 'vcapi',
           answered: vpr([didAuth]),
           sent,
           nextStep: true
         }),
-        {
-          title: 'Request Incomplete',
-          body: "This request needs another step that this wallet doesn't support yet."
-        }
+        { title: 'Request Incomplete', body: `${step} ${note}` }
       )
     }
   })
 
+  it('says when credentials came back over VC-API but were not saved', () => {
+    assert.deepStrictEqual(
+      exchangeCompletionMessage({
+        channel: 'vcapi',
+        answered: vpr([qbe]),
+        sent: shared(credentialA),
+        receivedCredentials: [credentialB]
+      }),
+      {
+        title: 'Success',
+        body: "You have shared the selected credentials. The service also sent back credentials, which weren't saved."
+      }
+    )
+    // Nothing came back: no note
+    assert.strictEqual(
+      exchangeCompletionMessage({
+        channel: 'vcapi',
+        answered: vpr([qbe]),
+        sent: shared(credentialA),
+        receivedCredentials: []
+      })?.body,
+      'You have shared the selected credentials.'
+    )
+  })
+
+  it("keeps main's message on a deep link's redirectUrl", () => {
+    assert.strictEqual(
+      exchangeCompletionMessage({
+        channel: 'redirect',
+        answered: vpr([didAuth]),
+        sent: sentDidAuth,
+        receivedCredentials: [issued]
+      })?.body,
+      'DID Authentication complete.'
+    )
+  })
+
   it('says nothing for a message that is neither an offer nor a request', () => {
     assert.strictEqual(
-      exchangeCompletionMessage({ answered: {} as any }),
+      exchangeCompletionMessage({ channel: 'vcapi', answered: {} as any }),
       undefined
     )
   })
@@ -374,6 +424,9 @@ describe('isActionableExchangeMessage', () => {
 
 describe('exchange failures', () => {
   it('classifies HTTP statuses', () => {
+    assert.strictEqual(failureKindForStatus(0), 'unreadable')
+    assert.strictEqual(failureKindForStatus(301), 'unreadable')
+    assert.strictEqual(failureKindForStatus(304), 'unreadable')
     assert.strictEqual(failureKindForStatus(400), 'rejected')
     assert.strictEqual(failureKindForStatus(401), 'rejected')
     assert.strictEqual(failureKindForStatus(403), 'rejected')
