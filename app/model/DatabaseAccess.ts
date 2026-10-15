@@ -272,39 +272,39 @@ class DatabaseAccess {
   ): Promise<T> {
     const database = await DatabaseAccess.instance()
 
-    DatabaseAccess.activeCallbacks++
+    const running = DatabaseAccess.activeCallbacks
+    running.set(database, (running.get(database) ?? 0) + 1)
     try {
       return await callback(database)
     } finally {
-      DatabaseAccess.activeCallbacks--
-      if (DatabaseAccess.activeCallbacks === 0) {
-        for (const resolve of DatabaseAccess.idleWaiters.splice(0)) resolve()
+      const left = (running.get(database) ?? 1) - 1
+      if (left > 0) {
+        running.set(database, left)
+      } else {
+        running.delete(database)
+        if (DatabaseAccess.closeWhenIdle.delete(database)) {
+          if (!database.isClosed) database.close()
+        }
       }
     }
   }
 
-  /** withInstance callbacks still running, which lock waits for */
-  private static activeCallbacks = 0
-  private static idleWaiters: (() => void)[] = []
-  private static readonly CALLBACK_WAIT_MS = 5000
+  /** How many withInstance callbacks are running on each Realm instance */
+  private static activeCallbacks = new Map<Realm, number>()
+  /** Instances to close once their last running callback finishes */
+  private static closeWhenIdle = new Set<Realm>()
 
   /**
-   * Waits until no withInstance callback is running, or the timeout passes,
-   * so that lock does not close the Realm under one.
+   * Closes a Realm instance that is no longer the open wallet: now if no
+   * withInstance callback is using it, otherwise when the last one ends.
    */
-  private static async callbacksFinished(): Promise<void> {
-    if (DatabaseAccess.activeCallbacks === 0) return
-    let timer: ReturnType<typeof setTimeout> | undefined
-    await Promise.race([
-      new Promise<void>((resolve) => DatabaseAccess.idleWaiters.push(resolve)),
-      new Promise<void>((resolve) => {
-        timer = setTimeout(() => {
-          console.error('Closing the wallet with a withInstance call running.')
-          resolve()
-        }, DatabaseAccess.CALLBACK_WAIT_MS)
-      })
-    ])
-    clearTimeout(timer)
+  private static release(realm: Realm | null): void {
+    if (realm === null || realm.isClosed) return
+    if (DatabaseAccess.activeCallbacks.has(realm)) {
+      DatabaseAccess.closeWhenIdle.add(realm)
+    } else {
+      realm.close()
+    }
   }
 
   public static async isUnlocked(): Promise<boolean> {
@@ -431,11 +431,12 @@ class DatabaseAccess {
     const keyHex = deriveWalletKeyHex(passphrase, salt)
 
     // The marker is only ever written after a successful open with that
-    // derivation, so 'pbkdf2-sha512' means no legacy key can be right.
-    const legacyPossible =
-      (await SecureStore.getItemAsync(WALLET_KEY_DERIVATION).catch(
-        () => null
-      )) !== 'pbkdf2-sha512'
+    // derivation, so 'pbkdf2-sha512' means no legacy key can be right, and a
+    // legacy value names the legacy key to try first.
+    const marker = await SecureStore.getItemAsync(WALLET_KEY_DERIVATION).catch(
+      () => null
+    )
+    const legacyPossible = marker !== 'pbkdf2-sha512'
 
     let opened: (Opened & { derivation: KeyDerivation }) | undefined
     let firstError: unknown
@@ -452,7 +453,8 @@ class DatabaseAccess {
           opened = await DatabaseAccess.openWithLegacyKey(
             passphrase,
             salt,
-            path
+            path,
+            marker
           )
           break
         } catch {
@@ -507,13 +509,21 @@ class DatabaseAccess {
     return false
   }
 
-  /** Tries each legacy derivation in turn; throws if none opens the file. */
+  /**
+   * Tries each legacy derivation in turn, the one the marker names first;
+   * throws if none opens the file.
+   */
   private static async openWithLegacyKey(
     passphrase: string,
     salt: string,
-    path: string
+    path: string,
+    marker: string | null
   ): Promise<Opened & { derivation: KeyDerivation }> {
-    for (const derivation of LEGACY_KEY_DERIVATIONS) {
+    const known = LEGACY_KEY_DERIVATIONS.find((d) => d === marker)
+    const order = known
+      ? [known, ...LEGACY_KEY_DERIVATIONS.filter((d) => d !== known)]
+      : LEGACY_KEY_DERIVATIONS
+    for (const derivation of order) {
       const keyHex = deriveLegacyKeyHex(derivation, passphrase, salt)
       try {
         const realm = await DatabaseAccess.open(keyHex, path)
@@ -659,9 +669,10 @@ class DatabaseAccess {
   private static async lockExclusive(): Promise<void> {
     if (!(await DatabaseAccess.isUnlocked())) return
 
-    // Detach the open Realm and mark the wallet locked first, so a new
-    // withInstance waits for this lock and is then refused. Callbacks
-    // already running get to finish before the Realm is closed.
+    // Detach the open Realm and mark the wallet locked, so a new
+    // withInstance waits for this lock and is then refused. The Realm closes
+    // now if nothing is using it, otherwise when the last running callback
+    // finishes; lock does not wait for that.
     const realm = DatabaseAccess.realm
     DatabaseAccess.realm = null
     try {
@@ -670,8 +681,7 @@ class DatabaseAccess {
         SecureStore.setItemAsync(PRIVILEGED_KEY_KID, '')
       ])
     } finally {
-      await DatabaseAccess.callbacksFinished()
-      if (realm !== null && !realm.isClosed) realm.close()
+      DatabaseAccess.release(realm)
     }
   }
 
@@ -734,16 +744,35 @@ class DatabaseAccess {
       const rawSalt = await generateSecureRandom(64)
       const salt: string = decoder.decode(rawSalt)
 
-      await RNFS.writeFile(PBKDF2_SALT_PATH, salt, 'utf8')
+      let realm: Realm | null = null
+      try {
+        await RNFS.writeFile(PBKDF2_SALT_PATH, salt, 'utf8')
 
-      // Create the Realm with the current key only. Read the salt back as
-      // unlock will, so both derive the key from the same string.
-      const keyHex = deriveWalletKeyHex(passphrase, await DatabaseAccess.salt())
-      const realm = await DatabaseAccess.open(keyHex, Realm.defaultPath, {
-        create: true
-      })
-      await DatabaseAccess.makeCurrent(realm, null)
-      await DatabaseAccess.adopt({ realm, keyHex }, 'pbkdf2-sha512')
+        // Create the Realm with the current key only. Read the salt back as
+        // unlock will, so both derive the key from the same string.
+        const keyHex = deriveWalletKeyHex(
+          passphrase,
+          await DatabaseAccess.salt()
+        )
+        realm = await DatabaseAccess.open(keyHex, Realm.defaultPath, {
+          create: true
+        })
+        await DatabaseAccess.makeCurrent(realm, null)
+        await DatabaseAccess.adopt({ realm, keyHex }, 'pbkdf2-sha512')
+      } catch (err) {
+        // Leave nothing half-created, so setup can simply run again.
+        console.error('Wallet setup failed; removing what it created.', err)
+        DatabaseAccess.closeRealm()
+        if (realm !== null && !realm.isClosed) realm.close()
+        await DatabaseAccess.clearUnlockedState()
+        await Promise.allSettled([
+          removeRealmFiles(Realm.defaultPath),
+          removeFiles([PBKDF2_SALT_PATH]),
+          SecureStore.deleteItemAsync(WALLET_FILE),
+          SecureStore.deleteItemAsync(WALLET_KEY_DERIVATION)
+        ])
+        throw err
+      }
     })
   }
 
@@ -969,16 +998,14 @@ class DatabaseAccess {
   /** Replaces the open wallet, closing the previous instance. */
   private static setRealm(realm: Realm): void {
     const previous = DatabaseAccess.realm
-    if (previous !== null && previous !== realm && !previous.isClosed) {
-      previous.close()
-    }
     DatabaseAccess.realm = realm
+    if (previous !== realm) DatabaseAccess.release(previous)
   }
 
   private static closeRealm(): void {
     const realm = DatabaseAccess.realm
     DatabaseAccess.realm = null
-    if (realm !== null && !realm.isClosed) realm.close()
+    DatabaseAccess.release(realm)
   }
 
   /**

@@ -276,6 +276,8 @@ function restart() {
   ;(db as any).realm = null
   ;(db as any).queue = Promise.resolve()
   ;(db as any).madeCurrentThisProcess = new Set()
+  ;(db as any).activeCallbacks = new Map()
+  ;(db as any).closeWhenIdle = new Set()
   for (const r of mockOpenRealms) r.isClosed = true
   for (const k of Object.keys(mockFail)) delete (mockFail as any)[k]
   mockLog.length = 0
@@ -306,6 +308,8 @@ beforeEach(() => {
   ;(db as any).realm = null
   ;(db as any).queue = Promise.resolve()
   ;(db as any).madeCurrentThisProcess = new Set()
+  ;(db as any).activeCallbacks = new Map()
+  ;(db as any).closeWhenIdle = new Set()
   mockSecureStore.getItemAsync.mockImplementation(async (k: string) => {
     if (k === 'wallet_file' && mockFail.pointerUnreadable) {
       throw new Error('SecureStore read failed')
@@ -399,12 +403,17 @@ describe('unlock: wallet already on the current key (PBKDF2-SHA512)', () => {
 })
 
 describe.each([
-  ['2.1.0-2.2.4 (PBKDF2-SHA1)', SHA1_KEY, 'legacy-sha1', [REAL_KEY, SHA1_KEY]],
+  [
+    '2.1.0-2.2.4 (PBKDF2-SHA1)',
+    SHA1_KEY,
+    'legacy-sha1',
+    [REAL_KEY, LEGACY_KEY, SHA1_KEY]
+  ],
   [
     '2.2.6-2.2.10 (placeholder)',
     LEGACY_KEY,
     'legacy-placeholder',
-    [REAL_KEY, SHA1_KEY, LEGACY_KEY]
+    [REAL_KEY, LEGACY_KEY]
   ]
 ])('unlock: wallet set up on %s', (_, oldKey, oldDerivation, tried) => {
   it('tries the current key, then the legacy keys, then re-keys to a new file', async () => {
@@ -930,7 +939,7 @@ describe('concurrency', () => {
       mockLog.indexOf(`pointer ${name}`)
     )
     // The biometric unlock found the wallet already unlocked.
-    expect(openedKeys()).toHaveLength(4)
+    expect(openedKeys()).toHaveLength(3)
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
   })
 
@@ -1481,7 +1490,7 @@ describe('holistic review 2-6', () => {
     expect(await db.isInitialized()).toBe(false)
   })
 
-  it('lock waits for a running withInstance callback before closing', async () => {
+  it('lock lets a running withInstance callback finish, then closes the Realm', async () => {
     walletEncryptedWith(REAL_KEY)
     await db.unlock(PASSPHRASE)
     let finish: () => void = () => undefined
@@ -1489,36 +1498,34 @@ describe('holistic review 2-6', () => {
     const running = db.withInstance(async (realm) => {
       await new Promise<void>((resolve) => (finish = resolve))
       closedDuringCallback = (realm as any).isClosed
+      return 'done'
     })
     await settle()
 
-    const locking = db.lock()
-    await settle()
+    // lock does not wait for the callback
+    await db.lock()
     const [open] = [...mockOpenRealms].filter((r) => r.path === WALLET)
     expect(open.isClosed).toBe(false)
     expect(secure.get('privileged_key_status')).toBe('locked')
-    // A new caller waits for the lock, then is refused.
-    const late = db.withInstance((realm) => realm)
+    // A new caller is refused.
+    await expect(db.withInstance((realm) => realm)).rejects.toThrow(
+      'Wallet is not unlocked.'
+    )
 
     finish()
-    await running
-    await locking
+    await expect(running).resolves.toBe('done')
     expect(closedDuringCallback).toBe(false)
     expect(open.isClosed).toBe(true)
-    await expect(late).rejects.toThrow('Wallet is not unlocked.')
   })
 
-  it('lock closes anyway once the wait times out', async () => {
+  it('lock with nothing running closes the Realm at once', async () => {
     walletEncryptedWith(REAL_KEY)
     await db.unlock(PASSPHRASE)
-    ;(db as any).CALLBACK_WAIT_MS = 20
-    void db.withInstance(() => new Promise(() => undefined))
-    await settle()
+    await db.withInstance((realm) => realm)
 
     await db.lock()
 
     expect([...mockOpenRealms].every((r) => r.isClosed)).toBe(true)
-    ;(db as any).CALLBACK_WAIT_MS = 5000
   })
 
   it('unlock reports a missing wallet before deriving any key', async () => {
@@ -1532,5 +1539,57 @@ describe('holistic review 2-6', () => {
 
     expect(derive).not.toHaveBeenCalled()
     derive.mockRestore()
+  })
+})
+
+describe('full-branch review', () => {
+  it('a failed initialize leaves nothing behind, and setup can run again', async () => {
+    const setItem = mockSecureStore.setItemAsync.getMockImplementation()!
+    mockSecureStore.setItemAsync.mockImplementation(
+      async (k: string, v: string) => {
+        if (k === 'privileged_key_status' && v === 'unlocked') {
+          throw new Error('SecureStore failed')
+        }
+        return setItem(k, v)
+      }
+    )
+
+    await expect(db.initialize(PASSPHRASE)).rejects.toThrow(
+      'SecureStore failed'
+    )
+
+    expect(await db.isInitialized()).toBe(false)
+    expect([...mockFiles.keys()]).toEqual([])
+    expect(secure.has('wallet_file')).toBe(false)
+    expect(secure.has('wallet_key_derivation')).toBe(false)
+    expect(await db.isUnlocked()).toBe(false)
+    expect([...mockOpenRealms].every((r) => r.isClosed)).toBe(true)
+
+    mockSecureStore.setItemAsync.mockImplementation(setItem)
+    await db.initialize(PASSPHRASE)
+    expect(await db.isUnlocked()).toBe(true)
+    expect(Object.keys(walletFiles())).toEqual(['default.realm'])
+  })
+
+  it('a failed pointer write in initialize also leaves nothing behind', async () => {
+    mockFail.pointerWrite = true
+
+    await expect(db.initialize(PASSPHRASE)).rejects.toThrow()
+
+    expect([...mockFiles.keys()]).toEqual([])
+    delete mockFail.pointerWrite
+    await db.initialize(PASSPHRASE)
+    expect(await db.isInitialized()).toBe(true)
+  })
+
+  it('tries the legacy key the marker names first', async () => {
+    walletEncryptedWith(SHA1_KEY)
+    secure.set('wallet_file', 'default.realm')
+    secure.set('wallet_key_derivation', 'legacy-sha1')
+    mockFail.writeCopyTo = true
+
+    await db.unlock(PASSPHRASE)
+
+    expect(openedKeys()).toEqual([REAL_KEY, SHA1_KEY])
   })
 })

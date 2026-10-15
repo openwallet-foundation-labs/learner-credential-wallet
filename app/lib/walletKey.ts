@@ -30,10 +30,15 @@ export type KeyDerivation =
 
 export type LegacyKeyDerivation = Exclude<KeyDerivation, 'pbkdf2-sha512'>
 
-/** The order in which unlock tries the legacy derivations. */
+/**
+ * The order in which unlock tries the legacy derivations (after the one the
+ * derivation marker names, if any). The placeholder is cheap to derive and
+ * cannot open a SHA-1 wallet, so trying it first saves the SHA-1 derivation
+ * on placeholder wallets.
+ */
 export const LEGACY_KEY_DERIVATIONS: readonly LegacyKeyDerivation[] = [
-  'legacy-sha1',
-  'legacy-placeholder'
+  'legacy-placeholder',
+  'legacy-sha1'
 ]
 
 const WALLET_KEY_ITERATIONS = 10000

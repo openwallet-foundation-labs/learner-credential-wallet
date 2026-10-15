@@ -21,8 +21,8 @@ const PASSPHRASES = [
   'pässwörd ünïcode \u{1F511}'
 ]
 
-it('tries SHA-1 before the placeholder', () => {
-  expect(LEGACY_KEY_DERIVATIONS).toEqual(['legacy-sha1', 'legacy-placeholder'])
+it('tries the placeholder before SHA-1', () => {
+  expect(LEGACY_KEY_DERIVATIONS).toEqual(['legacy-placeholder', 'legacy-sha1'])
 })
 
 // RFC 6070, the PBKDF2-HMAC-SHA1 test vectors, through the function that
