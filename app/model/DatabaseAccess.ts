@@ -272,66 +272,31 @@ class DatabaseAccess {
   ): Promise<T> {
     const database = await DatabaseAccess.instance()
 
-    const running = DatabaseAccess.activeCallbacks
-    running.set(database, (running.get(database) ?? 0) + 1)
-    try {
-      return await callback(database)
-    } finally {
-      const left = (running.get(database) ?? 1) - 1
-      if (left > 0) {
-        running.set(database, left)
-      } else {
-        running.delete(database)
-        if (DatabaseAccess.closeWhenIdle.delete(database)) {
-          DatabaseAccess.closeDetached(database).catch(console.error)
-        }
-      }
-    }
-  }
-
-  /** How many withInstance callbacks are running on each Realm instance */
-  private static activeCallbacks = new Map<Realm, number>()
-  /** Instances to close once their last running callback finishes */
-  private static closeWhenIdle = new Set<Realm>()
-
-  /**
-   * Closes a detached instance whose last callback has ended, in turn with
-   * unlocks so none is half done. realm-js opens with `cache: true`, so an
-   * unlock of the same file while this instance was still open returned a
-   * new JS Realm sharing its core Realm, and close() on either closes that
-   * shared core Realm. So if the open wallet is now the same file, this
-   * instance is left to close with it.
-   */
-  private static closeDetached(realm: Realm): Promise<void> {
-    return DatabaseAccess.exclusive(async () => {
-      if (realm.isClosed) return
-      if (DatabaseAccess.realm?.path === realm.path) return
-      realm.close()
-    })
+    return callback(database)
   }
 
   /**
-   * Closes every detached instance now, even under a running callback
-   * (which then fails on a closed Realm). Only for reset and initialize.
+   * Every Realm instance this module has opened since the last reset.
+   *
+   * Instances are otherwise never closed: realm-js opens with `cache: true`,
+   * so all instances of one file share a core Realm, and closing any of them
+   * would close it under every other instance, including a withInstance
+   * callback still running after a lock. Only reset and initialize, which
+   * delete or replace the files, close them all.
    */
-  private static forceCloseDetached(): void {
-    for (const realm of DatabaseAccess.closeWhenIdle) {
+  private static openedRealms = new Set<Realm>()
+
+  /**
+   * Closes every instance this module has opened. Callbacks still running
+   * then fail on a closed Realm, which is acceptable while the wallet is
+   * being reset or set up.
+   */
+  private static closeAllOpened(): void {
+    DatabaseAccess.realm = null
+    for (const realm of DatabaseAccess.openedRealms) {
       if (!realm.isClosed) realm.close()
     }
-    DatabaseAccess.closeWhenIdle.clear()
-  }
-
-  /**
-   * Closes a Realm instance that is no longer the open wallet: now if no
-   * withInstance callback is using it, otherwise when the last one ends.
-   */
-  private static release(realm: Realm | null): void {
-    if (realm === null || realm.isClosed) return
-    if (DatabaseAccess.activeCallbacks.has(realm)) {
-      DatabaseAccess.closeWhenIdle.add(realm)
-    } else {
-      realm.close()
-    }
+    DatabaseAccess.openedRealms.clear()
   }
 
   public static async isUnlocked(): Promise<boolean> {
@@ -465,6 +430,8 @@ class DatabaseAccess {
     )
     const legacyPossible = marker !== 'pbkdf2-sha512'
 
+    // The current key on every candidate first; only if none opens, the
+    // legacy keys, which only ever encrypted default.realm.
     let opened: (Opened & { derivation: KeyDerivation }) | undefined
     let firstError: unknown
     for (const path of paths) {
@@ -475,18 +442,21 @@ class DatabaseAccess {
       } catch (err) {
         if (firstError === undefined) firstError = err
       }
-      if (path === Realm.defaultPath && legacyPossible) {
-        try {
-          opened = await DatabaseAccess.openWithLegacyKey(
-            passphrase,
-            salt,
-            path,
-            marker
-          )
-          break
-        } catch {
-          // Not this file either
-        }
+    }
+    if (
+      opened === undefined &&
+      legacyPossible &&
+      paths.includes(Realm.defaultPath)
+    ) {
+      try {
+        opened = await DatabaseAccess.openWithLegacyKey(
+          passphrase,
+          salt,
+          Realm.defaultPath,
+          marker
+        )
+      } catch {
+        // No legacy key opens it either
       }
     }
     // No key opens it: report the current key's error, as before, and
@@ -639,12 +609,7 @@ class DatabaseAccess {
     pointed: string | null
   ): Promise<void> {
     if (realm.path !== pointed) {
-      try {
-        await DatabaseAccess.writePointer(realm.path)
-      } catch (err) {
-        realm.close()
-        throw err
-      }
+      await DatabaseAccess.writePointer(realm.path)
       DatabaseAccess.madeCurrentThisProcess.add(realm.path)
       return
     }
@@ -664,25 +629,24 @@ class DatabaseAccess {
   }
 
   /**
-   * Makes `realm` the open wallet and records the unlocked state. On failure
-   * nothing is left unlocked.
+   * Records the unlocked state, then makes `realm` the open wallet. On
+   * failure nothing is left unlocked and `realm` was never handed to a
+   * withInstance caller.
    */
   private static async adopt(
     { realm, keyHex }: Opened,
     derivation?: KeyDerivation
   ): Promise<void> {
     try {
-      DatabaseAccess.setRealm(realm)
       await Promise.all([
         SecureStore.setItemAsync(PRIVILEGED_KEY_STATUS_ID, UNLOCKED),
         SecureStore.setItemAsync(PRIVILEGED_KEY_KID, keyHex)
       ])
     } catch (err) {
-      DatabaseAccess.closeRealm()
-      if (!realm.isClosed) realm.close()
       await DatabaseAccess.clearUnlockedState()
       throw err
     }
+    DatabaseAccess.realm = realm
 
     if (derivation !== undefined) {
       await SecureStore.setItemAsync(WALLET_KEY_DERIVATION, derivation).catch(
@@ -698,20 +662,14 @@ class DatabaseAccess {
   private static async lockExclusive(): Promise<void> {
     if (!(await DatabaseAccess.isUnlocked())) return
 
-    // Detach the open Realm and mark the wallet locked, so a new
-    // withInstance waits for this lock and is then refused. The Realm closes
-    // now if nothing is using it, otherwise when the last running callback
-    // finishes; lock does not wait for that.
-    const realm = DatabaseAccess.realm
+    // Forget the open Realm and mark the wallet locked, so a new
+    // withInstance waits for this lock and is then refused. The Realm is not
+    // closed (see openedRealms): a callback still running keeps working.
     DatabaseAccess.realm = null
-    try {
-      await Promise.all([
-        SecureStore.setItemAsync(PRIVILEGED_KEY_STATUS_ID, LOCKED),
-        SecureStore.setItemAsync(PRIVILEGED_KEY_KID, '')
-      ])
-    } finally {
-      DatabaseAccess.release(realm)
-    }
+    await Promise.all([
+      SecureStore.setItemAsync(PRIVILEGED_KEY_STATUS_ID, LOCKED),
+      SecureStore.setItemAsync(PRIVILEGED_KEY_KID, '')
+    ])
   }
 
   /**
@@ -731,7 +689,7 @@ class DatabaseAccess {
       if (await DatabaseAccess.isUnlocked()) {
         throw new Error('Cannot reset unlocked wallet.')
       }
-      DatabaseAccess.forceCloseDetached()
+      DatabaseAccess.closeAllOpened()
 
       await DatabaseAccess.disableBiometricsExclusive()
 
@@ -766,7 +724,7 @@ class DatabaseAccess {
       if ((await existingWalletPaths()).length > 0) {
         throw new Error('Wallet must be in reset state to be initialized')
       }
-      DatabaseAccess.forceCloseDetached()
+      DatabaseAccess.closeAllOpened()
       // Biometrics starts off; a keychain failure must not block onboarding.
       await DatabaseAccess.disableBiometricsExclusive()
       await SecureStore.deleteItemAsync(PENDING_REKEY_FINGERPRINT)
@@ -791,9 +749,11 @@ class DatabaseAccess {
         await DatabaseAccess.makeCurrent(realm, null)
         await DatabaseAccess.adopt({ realm, keyHex }, 'pbkdf2-sha512')
       } catch (err) {
-        // Leave nothing half-created, so setup can simply run again.
+        // Leave nothing half-created, so setup can simply run again. adopt
+        // exposes the Realm only once it succeeds, so no withInstance
+        // callback can be using this new instance, and there is no other
+        // instance of the file (closeAllOpened ran above).
         console.error('Wallet setup failed; removing what it created.', err)
-        DatabaseAccess.closeRealm()
         if (realm !== null && !realm.isClosed) realm.close()
         await DatabaseAccess.clearUnlockedState()
         await Promise.allSettled([
@@ -830,13 +790,15 @@ class DatabaseAccess {
       throw new Error('Wallet database not found.')
     }
 
-    return Realm.open({
+    const realm = await Realm.open({
       path,
       schema: await getModels(),
       schemaVersion,
       onMigration: onMigration ?? runMigrations,
       encryptionKey: realmKeyFromHex(keyHex)
     })
+    DatabaseAccess.openedRealms.add(realm)
+    return realm
   }
 
   /**
@@ -918,6 +880,8 @@ class DatabaseAccess {
       await DatabaseAccess.writePointer(newPath)
     } catch (err) {
       console.error('Wallet re-key failed; keeping the original key.', err)
+      // Only rekey has opened the new file, so closing its copy cannot
+      // close anything else; the current file is not touched.
       if (copy !== null && !copy.isClosed) copy.close()
       if (newPath !== null) {
         await removeRealmFiles(newPath).catch(console.error)
@@ -932,7 +896,8 @@ class DatabaseAccess {
 
     // Switched: the new file is current. The old one stays for now.
     DatabaseAccess.madeCurrentThisProcess.add(newPath)
-    legacy.realm.close()
+    // legacy.realm is not closed: the old file's core Realm may be shared
+    // (see openedRealms), and it is no longer the open wallet.
     await SecureStore.deleteItemAsync(PENDING_REKEY_FINGERPRINT).catch(
       console.error
     )
@@ -1026,19 +991,6 @@ class DatabaseAccess {
 
   private static realm: Realm | null = null
 
-  /** Replaces the open wallet, closing the previous instance. */
-  private static setRealm(realm: Realm): void {
-    const previous = DatabaseAccess.realm
-    DatabaseAccess.realm = realm
-    if (previous !== realm) DatabaseAccess.release(previous)
-  }
-
-  private static closeRealm(): void {
-    const realm = DatabaseAccess.realm
-    DatabaseAccess.realm = null
-    DatabaseAccess.release(realm)
-  }
-
   /**
    * The open wallet. Opening it (after a restart that kept it unlocked)
    * waits for any unlock, lock, re-key or reset in progress, and refuses if
@@ -1061,7 +1013,7 @@ class DatabaseAccess {
       }
 
       const realm = await DatabaseAccess.openWithStoredKey(keyHex)
-      DatabaseAccess.setRealm(realm)
+      DatabaseAccess.realm = realm
       return realm
     })
   }
