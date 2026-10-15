@@ -8,10 +8,11 @@ import { selectWithFactory } from '../../store/selectorFactories'
 import { makeSelectDidFromProfile } from '../../store/selectorFactories/makeSelectDidFromProfile'
 import { stageCredentialsForProfile } from '../../store/slices/credentialFoyer'
 import { processMessageChain, sendToExchanger } from '../../lib/exchanges'
+import { isDIDAuthOnlyRequest } from '../../lib/walletRequestApi'
 import {
-  isDIDAuthOnlyRequest,
-  shouldStoreExchangeCredentials
-} from '../../lib/walletRequestApi'
+  credentialsToOffer,
+  exchangeCompletionMessage
+} from '../../lib/exchangeResult'
 import { displayGlobalModal, clearGlobalModal } from '../../lib/globalModal'
 import { getGlobalModalBody } from '../../lib/globalModalBody'
 import { NavigationUtil } from '../../lib/navigationUtil'
@@ -158,11 +159,13 @@ export default function ExchangeCredentials({
         ? {
             goBack: () => {
               displayGlobalModal({
-                title: 'Cancel Send',
+                title: isDIDAuthOnly ? 'Cancel Request' : 'Cancel Send',
                 confirmButton: false,
                 cancelButton: false,
                 body: getGlobalModalBody(
-                  'Ending credential request. To send credentials, open another request.',
+                  isDIDAuthOnly
+                    ? 'Request cancelled.'
+                    : 'Ending credential request. To send credentials, open another request.',
                   true
                 )
               })
@@ -195,7 +198,7 @@ export default function ExchangeCredentials({
     //  2) the exchange ends (we've sent off all requested items)
     // TODO: Open the 'redirectUrl' if present?
     const modals = { enabled: true, confirmZcapRequest }
-    const { acceptCredentials } = await processMessageChain({
+    const { receivedCredentials, sentCredentials } = await processMessageChain({
       exchangeUrl,
       requestOrOffer,
       selectedProfile,
@@ -205,27 +208,19 @@ export default function ExchangeCredentials({
 
     clearGlobalModal()
 
-    // A verifier may echo back the VP the wallet shared; never store that.
-    // An issuer that asked only for DIDAuthentication returns newly issued
-    // credentials, which are stored like an offer. processMessageChain
-    // answers requestOrOffer and nothing else, so isVPRFlow and isDIDAuthOnly
-    // describe the request these credentials came back from.
-    if (
-      acceptCredentials &&
-      shouldStoreExchangeCredentials({
-        isVPRFlow,
-        isDIDAuthOnly,
-        receivedCredentials: acceptCredentials
-      }) &&
-      navigationRef.isReady()
-    ) {
+    // Offer whatever came back except credentials the wallet itself just
+    // sent, so a verifier echoing the shared VP stores nothing while an
+    // issuer's newly issued credential reaches the approval screen.
+    const toOffer = credentialsToOffer({ sentCredentials, receivedCredentials })
+
+    if (toOffer.length > 0 && navigationRef.isReady()) {
       // We've been issued credentials to store - present to user for accepting
       const { credentialRequestOrigin } = requestOrOffer
       console.log('credentialRequestOrigin:', credentialRequestOrigin)
-      console.log('[acceptExchange] Accepting credentials:', acceptCredentials)
+      console.log('[acceptExchange] Accepting credentials:', toOffer)
       await dispatch(
         stageCredentialsForProfile({
-          credentials: acceptCredentials,
+          credentials: toOffer,
           profileRecordId: rawProfileRecord._id
         })
       )
@@ -244,17 +239,17 @@ export default function ExchangeCredentials({
           screen: 'HomeScreen'
         }
       })
-      if (isVPRFlow) {
+      const completion = exchangeCompletionMessage({
+        answered: requestOrOffer,
+        sentCredentials
+      })
+      if (completion) {
         displayGlobalModal({
-          title: 'Success',
+          title: completion.title,
           confirmButton: true,
           confirmText: 'OK',
           cancelButton: false,
-          body: getGlobalModalBody(
-            isDIDAuthOnly
-              ? 'DID Authentication complete.'
-              : 'You have shared the selected credentials.'
-          )
+          body: getGlobalModalBody(completion.body)
         })
       }
     }
