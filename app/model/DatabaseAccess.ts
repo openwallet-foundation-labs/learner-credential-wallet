@@ -283,7 +283,7 @@ class DatabaseAccess {
       } else {
         running.delete(database)
         if (DatabaseAccess.closeWhenIdle.delete(database)) {
-          if (!database.isClosed) database.close()
+          DatabaseAccess.closeDetached(database).catch(console.error)
         }
       }
     }
@@ -293,6 +293,33 @@ class DatabaseAccess {
   private static activeCallbacks = new Map<Realm, number>()
   /** Instances to close once their last running callback finishes */
   private static closeWhenIdle = new Set<Realm>()
+
+  /**
+   * Closes a detached instance whose last callback has ended, in turn with
+   * unlocks so none is half done. realm-js opens with `cache: true`, so an
+   * unlock of the same file while this instance was still open returned a
+   * new JS Realm sharing its core Realm, and close() on either closes that
+   * shared core Realm. So if the open wallet is now the same file, this
+   * instance is left to close with it.
+   */
+  private static closeDetached(realm: Realm): Promise<void> {
+    return DatabaseAccess.exclusive(async () => {
+      if (realm.isClosed) return
+      if (DatabaseAccess.realm?.path === realm.path) return
+      realm.close()
+    })
+  }
+
+  /**
+   * Closes every detached instance now, even under a running callback
+   * (which then fails on a closed Realm). Only for reset and initialize.
+   */
+  private static forceCloseDetached(): void {
+    for (const realm of DatabaseAccess.closeWhenIdle) {
+      if (!realm.isClosed) realm.close()
+    }
+    DatabaseAccess.closeWhenIdle.clear()
+  }
 
   /**
    * Closes a Realm instance that is no longer the open wallet: now if no
@@ -510,8 +537,9 @@ class DatabaseAccess {
   }
 
   /**
-   * Tries each legacy derivation in turn, the one the marker names first;
-   * throws if none opens the file.
+   * Tries the legacy derivation the marker names, or each in turn when it
+   * names none; throws if none opens the file. default.realm is never
+   * re-encrypted in place, so a known derivation stays right.
    */
   private static async openWithLegacyKey(
     passphrase: string,
@@ -520,9 +548,7 @@ class DatabaseAccess {
     marker: string | null
   ): Promise<Opened & { derivation: KeyDerivation }> {
     const known = LEGACY_KEY_DERIVATIONS.find((d) => d === marker)
-    const order = known
-      ? [known, ...LEGACY_KEY_DERIVATIONS.filter((d) => d !== known)]
-      : LEGACY_KEY_DERIVATIONS
+    const order = known ? [known] : LEGACY_KEY_DERIVATIONS
     for (const derivation of order) {
       const keyHex = deriveLegacyKeyHex(derivation, passphrase, salt)
       try {
@@ -554,8 +580,11 @@ class DatabaseAccess {
 
     let tries: string[]
     if (pointed === null) {
+      // default.realm only when it must be current: there is no pointer,
+      // or no re-keyed file for an unreadable pointer to have named.
+      const defaultAllowed = pointerAbsent || !fallbacks.some(isRekeyed)
       tries = fallbacks.filter(
-        (p) => isRekeyed(p) || (pointerAbsent && p === Realm.defaultPath)
+        (p) => isRekeyed(p) || (defaultAllowed && p === Realm.defaultPath)
       )
     } else {
       tries = [pointed]
@@ -702,6 +731,7 @@ class DatabaseAccess {
       if (await DatabaseAccess.isUnlocked()) {
         throw new Error('Cannot reset unlocked wallet.')
       }
+      DatabaseAccess.forceCloseDetached()
 
       await DatabaseAccess.disableBiometricsExclusive()
 
@@ -736,6 +766,7 @@ class DatabaseAccess {
       if ((await existingWalletPaths()).length > 0) {
         throw new Error('Wallet must be in reset state to be initialized')
       }
+      DatabaseAccess.forceCloseDetached()
       // Biometrics starts off; a keychain failure must not block onboarding.
       await DatabaseAccess.disableBiometricsExclusive()
       await SecureStore.deleteItemAsync(PENDING_REKEY_FINGERPRINT)

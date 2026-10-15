@@ -62,6 +62,12 @@ class MockFileMap extends Map<string, MockFile> {
 const mockFiles = new MockFileMap()
 const mockLog: string[] = []
 const mockOpenRealms = new Set<{ path: string; isClosed: boolean }>()
+/**
+ * Like realm-js (`cache: true`), opening a file that already has an open
+ * Realm returns a new instance sharing its core; closing any instance closes
+ * the core, and so all of them.
+ */
+const mockCores = new Map<string, { closed: boolean }>()
 const mockKeychain: { key: string | null } = { key: null }
 const mockFail: {
   /**
@@ -69,7 +75,7 @@ const mockFail: {
    * 'keychain', 'keychain reset'
    */
   hang?: (step: string) => boolean
-  pointerUnreadable?: boolean
+  pointerUnreadable?: boolean | 'once'
   writeCopyTo?: boolean
   open?: (path: string, key: string) => boolean
   copyCountOff?: boolean
@@ -146,17 +152,35 @@ jest.mock('realm', () => {
       if (mockFail.open?.(config.path, key)) throw new Error('open failed')
       // Like Realm, open creates side files next to the database.
       mockFiles.set(`${config.path}.lock`, { kind: 'text', text: '' })
-      return new MockRealm(config.path, file)
+      let core = mockCores.get(config.path)
+      if (core === undefined || core.closed) {
+        core = { closed: false }
+        mockCores.set(config.path, core)
+      }
+      return new MockRealm(config.path, file, core)
     })
 
-    isClosed = false
     schema = SCHEMA.map((name) => ({ name }))
     path: string
     file: MockRealmFile
-    constructor(realmPath: string, realmFile: MockRealmFile) {
+    core: { closed: boolean }
+    constructor(
+      realmPath: string,
+      realmFile: MockRealmFile,
+      core: { closed: boolean }
+    ) {
       this.path = realmPath
       this.file = realmFile
+      this.core = core
       mockOpenRealms.add(this)
+    }
+
+    get isClosed() {
+      return this.core.closed
+    }
+
+    set isClosed(closed: boolean) {
+      this.core.closed = closed
     }
 
     get schemaVersion() {
@@ -164,6 +188,7 @@ jest.mock('realm', () => {
     }
 
     objects(name: string) {
+      if (this.isClosed) throw new Error('Realm is closed')
       return { length: this.file.counts[name] }
     }
 
@@ -297,6 +322,7 @@ const isRekeyPointerWrite = (step: string) =>
 
 beforeEach(() => {
   mockFiles.clear()
+  mockCores.clear()
   mockMtimes.clear()
   mockClock.now = 0
   mockLog.length = 0
@@ -312,6 +338,8 @@ beforeEach(() => {
   ;(db as any).closeWhenIdle = new Set()
   mockSecureStore.getItemAsync.mockImplementation(async (k: string) => {
     if (k === 'wallet_file' && mockFail.pointerUnreadable) {
+      if (mockFail.pointerUnreadable === 'once')
+        delete mockFail.pointerUnreadable
       throw new Error('SecureStore read failed')
     }
     if (k === 'biometrics_status' && mockFail.biometricsStatusUnreadable) {
@@ -1592,4 +1620,103 @@ describe('initialize roll-back and legacy key order', () => {
 
     expect(openedKeys()).toEqual([REAL_KEY, SHA1_KEY])
   })
+})
+
+describe('lock-deferred closes, pointer read failures, reset, marker-known derivation', () => {
+  it('a lock-deferred close does not close the wallet unlocked again on the same file', async () => {
+    walletEncryptedWith(REAL_KEY)
+    secure.set('wallet_file', 'default.realm')
+    await db.unlock(PASSPHRASE)
+    let finish: () => void = () => undefined
+    const running = db.withInstance(
+      () => new Promise<void>((resolve) => (finish = resolve))
+    )
+    await settle()
+    await db.lock()
+
+    await db.unlock(PASSPHRASE)
+    const adopted = (db as any).realm
+    // Same file: realm-js shares the core between the two instances.
+    expect(adopted.core).toBe(
+      (
+        [...mockOpenRealms].find(
+          (r) => r !== adopted && r.path === WALLET
+        ) as any
+      )?.core
+    )
+    finish()
+    await running
+    await settle()
+
+    expect(adopted.isClosed).toBe(false)
+    await db.withInstance((realm) => {
+      expect(realm).toBe(adopted)
+      expect(realm.objects('CredentialRecord').length).toBe(5)
+    })
+  })
+
+  it.each([
+    ['instance()', 'unlocked'],
+    ['biometric unlock', 'biometrics']
+  ])(
+    '%s still opens default.realm when the pointer read fails and no re-keyed file exists',
+    async (_, how) => {
+      walletEncryptedWith(REAL_KEY)
+      secure.set('wallet_file', 'default.realm')
+      secure.set('wallet_key_derivation', 'pbkdf2-sha512')
+      mockFail.pointerUnreadable = 'once'
+
+      if (how === 'unlocked') {
+        secure.set('privileged_key_status', 'unlocked')
+        secure.set('privileged_key', REAL_KEY)
+        const path = await db.withInstance((realm) => realm.path)
+        expect(path).toBe(WALLET)
+      } else {
+        enableBiometricsWith(REAL_KEY)
+        await db.unlockWithBiometrics()
+        expect(secure.get('privileged_key')).toBe(REAL_KEY)
+      }
+      expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
+    }
+  )
+
+  it('reset closes a lock-deferred Realm, and setup then works with a new key', async () => {
+    walletEncryptedWith(REAL_KEY)
+    await db.unlock(PASSPHRASE)
+    const running = db.withInstance(() => new Promise(() => undefined))
+    await settle()
+    await db.lock()
+    void running
+
+    await db.reset()
+    expect(await db.isInitialized()).toBe(false)
+
+    await db.initialize('a new passphrase')
+    const salt = (mockFiles.get(SALT_PATH) as { text: string }).text
+    const newKey = nodeCrypto
+      .pbkdf2Sync('a new passphrase', salt, 10000, 32, 'sha512')
+      .toString('hex')
+    expect(walletFiles()).toEqual({ 'default.realm': newKey })
+    expect(await db.isUnlocked()).toBe(true)
+  })
+
+  it.each([
+    ['legacy-sha1', SHA1_KEY],
+    ['legacy-placeholder', LEGACY_KEY]
+  ])(
+    'with the marker %s, tries only that legacy derivation',
+    async (marker, key) => {
+      walletEncryptedWith(key)
+      secure.set('wallet_file', 'default.realm')
+      secure.set('wallet_key_derivation', marker)
+      const walletKey = require('../app/lib/walletKey')
+      const derive = jest.spyOn(walletKey, 'deriveLegacyKeyHex')
+
+      await expect(db.unlock('wrong passphrase')).rejects.toThrow()
+
+      expect(derive.mock.calls.map(([d]) => d)).toEqual([marker])
+      expect(openedKeys()).toHaveLength(2)
+      derive.mockRestore()
+    }
+  )
 })
