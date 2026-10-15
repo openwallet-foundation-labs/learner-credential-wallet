@@ -142,11 +142,37 @@ async function existingWalletPaths(): Promise<string[]> {
   return hasDefault ? [...rekeyed, Realm.defaultPath] : rekeyed
 }
 
+/** When the file was last written to, in milliseconds. */
+async function modifiedAt(path: string): Promise<number> {
+  // RNFS returns a Date here, although its typings say number.
+  const mtime = (await RNFS.stat(path)).mtime as unknown
+  return mtime instanceof Date ? mtime.getTime() : Number(mtime)
+}
+
+/**
+ * Newest first by modification time: the file last written to is the live
+ * one. Ties go to the newer name, and default.realm comes last.
+ */
+async function byModifiedTime(paths: string[]): Promise<string[]> {
+  const times = new Map(
+    await Promise.all(
+      paths.map(async (p) => [p, await modifiedAt(p)] as [string, number])
+    )
+  )
+  return [...paths].sort(
+    (a, b) =>
+      (times.get(b) as number) - (times.get(a) as number) || age(b) - age(a)
+  )
+}
+
 type Candidates = {
-  /** Wallet files to try, in order */
-  paths: string[]
-  /** The existing file the pointer explicitly names, or null */
+  /** The existing file the pointer names, or null */
   pointed: string | null
+  /**
+   * Without a usable pointer: every wallet file, last written first.
+   * Empty when `pointed` is set.
+   */
+  fallbacks: string[]
   /**
    * The pointer is absent (not unreadable, and not naming a missing file),
    * so default.realm is current by definition.
@@ -155,9 +181,9 @@ type Candidates = {
 }
 
 /**
- * The wallet files, in the order to try them: the file the pointer names,
- * then the others, newest first. Without a usable pointer, the newest
- * re-keyed file comes first and default.realm last.
+ * The current wallet file. If the pointer is readable and names a file that
+ * exists, that is the only candidate. Otherwise every wallet file is, last
+ * written first.
  */
 async function walletCandidates(): Promise<Candidates> {
   let name: string | null = null
@@ -169,19 +195,15 @@ async function walletCandidates(): Promise<Candidates> {
     console.error('Could not read the wallet file pointer:', err)
   }
 
-  const existing = await existingWalletPaths()
   if (name !== null) {
     const pointed = walletFiles.pathFor(name)
-    if (existing.includes(pointed)) {
-      return {
-        paths: [pointed, ...existing.filter((p) => p !== pointed)],
-        pointed,
-        pointerAbsent: false
-      }
+    if (await RNFS.exists(pointed)) {
+      return { pointed, fallbacks: [], pointerAbsent: false }
     }
     console.error(`Wallet file ${pointed} is missing.`)
   }
-  return { paths: existing, pointed: null, pointerAbsent }
+  const fallbacks = await byModifiedTime(await existingWalletPaths())
+  return { pointed: null, fallbacks, pointerAbsent }
 }
 
 type OpenOptions = {
@@ -209,11 +231,11 @@ class DatabaseAccess {
   }
 
   /**
-   * Re-keyed files written by this process. The file a re-key replaced is
-   * kept until its replacement has opened in a later process, which shows
-   * the new file survived on disk.
+   * Files this process made current: written by a re-key, or chosen without
+   * a usable pointer. Older files are kept until the current one has opened
+   * in a later process, which shows it survived on disk.
    */
-  private static writtenThisProcess = new Set<string>()
+  private static madeCurrentThisProcess = new Set<string>()
 
   /**
    * Do not store off the instance from withInstance for any reason. If you need
@@ -317,13 +339,15 @@ class DatabaseAccess {
    *      the variable passed to this function.
    *   2. Never store the key generated in any place but SecureStorage
    *
-   * Each wallet file is tried with the current key (PBKDF2-SHA512) and, for
-   * default.realm only, with each legacy key in LEGACY_KEY_DERIVATIONS (see
-   * walletKey.ts and issue #960). Re-keyed files are only ever written with
-   * the current key. If a legacy key opens default.realm, the wallet is
-   * re-encrypted with the current key into a new file (see rekey). If that
-   * fails, it stays on the legacy key and re-encryption is tried again at
-   * the next unlock.
+   * Only the file the pointer names is tried, if there is one (see
+   * walletCandidates). It is tried with the current key (PBKDF2-SHA512) and,
+   * if it is default.realm, with each legacy key in LEGACY_KEY_DERIVATIONS
+   * (see walletKey.ts and issue #960), unless the derivation marker says the
+   * wallet is already on the current key. Re-keyed files are only ever
+   * written with the current key. If a legacy key opens default.realm, the
+   * wallet is re-encrypted with the current key into a new file (see rekey).
+   * If that fails, it stays on the legacy key and re-encryption is tried
+   * again at the next unlock.
    */
   public static unlock(passphrase: string): Promise<void> {
     return DatabaseAccess.exclusive(() =>
@@ -336,8 +360,16 @@ class DatabaseAccess {
 
     const salt = await DatabaseAccess.salt()
     const keyHex = deriveWalletKeyHex(passphrase, salt)
-    const { paths, pointed } = await walletCandidates()
+    const { pointed, fallbacks } = await walletCandidates()
+    const paths = pointed !== null ? [pointed] : fallbacks
     if (paths.length === 0) throw new Error('Wallet database not found.')
+
+    // The marker is only ever written after a successful open with that
+    // derivation, so 'pbkdf2-sha512' means no legacy key can be right.
+    const legacyPossible =
+      (await SecureStore.getItemAsync(WALLET_KEY_DERIVATION).catch(
+        () => null
+      )) !== 'pbkdf2-sha512'
 
     let opened: (Opened & { derivation: KeyDerivation }) | undefined
     let firstError: unknown
@@ -349,7 +381,7 @@ class DatabaseAccess {
       } catch (err) {
         if (firstError === undefined) firstError = err
       }
-      if (path === Realm.defaultPath) {
+      if (path === Realm.defaultPath && legacyPossible) {
         try {
           opened = await DatabaseAccess.openWithLegacyKey(
             passphrase,
@@ -362,7 +394,8 @@ class DatabaseAccess {
         }
       }
     }
-    // No key opens any file: report the current key's error, as before.
+    // No key opens it: report the current key's error, as before, and
+    // change nothing.
     if (opened === undefined) throw firstError
 
     await DatabaseAccess.makeCurrent(opened.realm, pointed)
@@ -401,26 +434,39 @@ class DatabaseAccess {
 
   /**
    * Opens the wallet with a key that was stored rather than derived (from
-   * the biometric keychain, or SecureStore after a restart). Such a key can
-   * only move the wallet forward: past the current file it tries only
-   * re-keyed files newer than it, and default.realm only when it is current
-   * because there is no pointer. A different file that opens becomes
-   * current, and the derivation marker is cleared, since a stored key does
-   * not say how it was derived.
+   * the biometric keychain, or SecureStore after a restart).
+   *
+   * With a pointer, only the file it names is tried, plus one forward move:
+   * if that file does not open with this key, a newer re-keyed file left by
+   * an interrupted re-key may, but only if it was written no earlier than
+   * the pointed file, so a stale copy never replaces a file written since.
+   * Without a pointer, re-keyed files are tried last written first, and
+   * default.realm only when there is no pointer at all. A different file
+   * that opens becomes current, and the derivation marker is cleared, since
+   * a stored key does not say how it was derived.
    */
   private static async openWithStoredKey(keyHex: string): Promise<Realm> {
-    const { paths, pointed, pointerAbsent } = await walletCandidates()
-    const tries =
-      pointed !== null
-        ? [
-            pointed,
-            ...paths.filter(
-              (p) => p !== pointed && isRekeyed(p) && age(p) > age(pointed)
-            )
-          ]
-        : paths.filter(
-            (p) => isRekeyed(p) || (pointerAbsent && p === Realm.defaultPath)
-          )
+    const { pointed, fallbacks, pointerAbsent } = await walletCandidates()
+
+    let tries: string[]
+    if (pointed === null) {
+      tries = fallbacks.filter(
+        (p) => isRekeyed(p) || (pointerAbsent && p === Realm.defaultPath)
+      )
+    } else {
+      tries = [pointed]
+      try {
+        const pointedAt = await modifiedAt(pointed)
+        const newer = (await existingWalletPaths()).filter(
+          (p) => isRekeyed(p) && age(p) > age(pointed)
+        )
+        for (const p of await byModifiedTime(newer)) {
+          if ((await modifiedAt(p)) >= pointedAt) tries.push(p)
+        }
+      } catch (err) {
+        console.error('Could not look for a newer wallet file:', err)
+      }
+    }
 
     let realm: Realm | undefined
     let firstError: unknown = new Error('Wallet database not found.')
@@ -444,10 +490,12 @@ class DatabaseAccess {
   }
 
   /**
-   * Makes the file `realm` has open the current one: points WALLET_FILE at
-   * it if the pointer did not already name it. If it did, and the file was
-   * not written by this process, deletes the older wallet files: this one
-   * has now opened in a process after the one that wrote it.
+   * Makes the file `realm` has open the current one. If the pointer did not
+   * name it, points WALLET_FILE at it and deletes nothing in this process.
+   * If it did, and this process did not make it current, deletes the
+   * wallet files that are older than it (by name) and were not written to
+   * after it: it has now opened in a process after the one that switched
+   * to it.
    */
   private static async makeCurrent(
     realm: Realm,
@@ -460,15 +508,19 @@ class DatabaseAccess {
         realm.close()
         throw err
       }
+      DatabaseAccess.madeCurrentThisProcess.add(realm.path)
       return
     }
-    if (DatabaseAccess.writtenThisProcess.has(realm.path)) return
+    if (DatabaseAccess.madeCurrentThisProcess.has(realm.path)) return
 
     try {
+      const currentAt = await modifiedAt(realm.path)
       const older = (await existingWalletPaths()).filter(
         (p) => age(p) < age(realm.path)
       )
-      await Promise.all(older.map((p) => removeRealmFiles(p)))
+      for (const p of older) {
+        if ((await modifiedAt(p)) <= currentAt) await removeRealmFiles(p)
+      }
     } catch (err) {
       console.error('Could not remove old wallet files:', err)
     }
@@ -570,7 +622,10 @@ class DatabaseAccess {
       if ((await existingWalletPaths()).length > 0) {
         throw new Error('Wallet must be in reset state to be initialized')
       }
-      await DatabaseAccess.disableBiometricsExclusive()
+      // Biometrics starts off; a keychain failure must not block onboarding.
+      await SecureStore.deleteItemAsync(BIOMETRIC_KEY_FINGERPRINT)
+      await SecureStore.setItemAsync(BIOMETRICS_STATUS, DISABLED)
+      await resetBiometricKeychain().catch(console.error)
 
       const decoder = new encoding.TextDecoder()
       const rawSalt = await generateSecureRandom(64)
@@ -643,10 +698,16 @@ class DatabaseAccess {
     legacy: Opened,
     keyHex: string
   ): Promise<Realm | null> {
+    // Without knowing whether biometrics is on, the keychain cannot be kept
+    // in step with the switch: leave the wallet as it is and retry later.
+    let biometrics: boolean
+    try {
+      biometrics = await DatabaseAccess.isBiometricsEnabled()
+    } catch (err) {
+      console.error('Could not read the biometrics status; not re-keying.', err)
+      return null
+    }
     const newPath = await DatabaseAccess.newWalletPath()
-    const biometrics = await DatabaseAccess.isBiometricsEnabled().catch(
-      () => false
-    )
     let copy: Realm | null = null
     let keychainTouched = false
     let keychainHasNewKey = false
@@ -684,14 +745,16 @@ class DatabaseAccess {
       console.error('Wallet re-key failed; keeping the original key.', err)
       if (copy !== null) copy.close()
       await removeRealmFiles(newPath).catch(console.error)
-      if (keychainTouched && !biometricsTurnedOff) {
+      if (biometricsTurnedOff) {
+        await DatabaseAccess.reenableBiometrics(legacy.keyHex)
+      } else if (keychainTouched) {
         await DatabaseAccess.setBiometricKey(legacy.keyHex)
       }
       return null
     }
 
     // Switched: the new file is current. The old one stays for now.
-    DatabaseAccess.writtenThisProcess.add(newPath)
+    DatabaseAccess.madeCurrentThisProcess.add(newPath)
     legacy.realm.close()
     if (keychainHasNewKey) {
       await SecureStore.setItemAsync(
@@ -731,6 +794,24 @@ class DatabaseAccess {
       console.error('Could not update the biometric key; disabling.', err)
     }
     await DatabaseAccess.disableBiometricsExclusive().catch(console.error)
+  }
+
+  /**
+   * Turns biometrics back on with `keyHex`, which opens the current wallet
+   * file, if it can be stored in the keychain; otherwise leaves it off.
+   */
+  private static async reenableBiometrics(keyHex: string): Promise<void> {
+    try {
+      if (!(await storeInBiometricKeychain(keyHex))) return
+      await SecureStore.setItemAsync(BIOMETRICS_STATUS, ENABLED)
+      await SecureStore.setItemAsync(
+        BIOMETRIC_KEY_FINGERPRINT,
+        walletKeyFingerprint(keyHex)
+      )
+    } catch (err) {
+      console.error('Could not turn biometrics back on.', err)
+      await DatabaseAccess.disableBiometricsExclusive().catch(console.error)
+    }
   }
 
   /**

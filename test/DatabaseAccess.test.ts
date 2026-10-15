@@ -50,7 +50,16 @@ type MockRealmFile = {
 }
 type MockFile = MockRealmFile | { kind: 'text'; text: string }
 
-const mockFiles = new Map<string, MockFile>()
+/** Modification times; every write to a file stamps it with the next tick. */
+const mockMtimes = new Map<string, number>()
+const mockClock = { now: 0 }
+class MockFileMap extends Map<string, MockFile> {
+  set(path: string, file: MockFile) {
+    mockMtimes.set(path, ++mockClock.now)
+    return super.set(path, file)
+  }
+}
+const mockFiles = new MockFileMap()
 const mockLog: string[] = []
 const mockOpenRealms = new Set<{ path: string; isClosed: boolean }>()
 const mockKeychain: { key: string | null } = { key: null }
@@ -65,7 +74,10 @@ const mockFail: {
   open?: (path: string, key: string) => boolean
   copyCountOff?: boolean
   pointerWrite?: boolean
-  keychainStore?: boolean
+  /** Report a failed store, for every key or the keys this matches */
+  keychainStore?: boolean | ((key: string) => boolean)
+  keychainResetRejects?: boolean
+  biometricsStatusUnreadable?: boolean
 } = {}
 const mockNever = () => new Promise<never>(() => undefined)
 
@@ -74,6 +86,10 @@ jest.mock('react-native-fs', () => {
   return {
     DocumentDirectoryPath: '/mock/docs',
     exists: jest.fn(async (p: string) => mockFiles.has(p)),
+    stat: jest.fn(async (p: string) => {
+      if (!mockFiles.has(p)) throw new Error(`ENOENT ${p}`)
+      return { mtime: new Date(mockMtimes.get(p) ?? 0) }
+    }),
     readDir: jest.fn(async (dir: string) =>
       [...mockFiles.keys()]
         .filter(
@@ -245,7 +261,7 @@ async function settle() {
 function restart() {
   ;(db as any).realm = null
   ;(db as any).queue = Promise.resolve()
-  ;(db as any).writtenThisProcess = new Set()
+  ;(db as any).madeCurrentThisProcess = new Set()
   for (const r of mockOpenRealms) r.isClosed = true
   for (const k of Object.keys(mockFail)) delete (mockFail as any)[k]
   mockLog.length = 0
@@ -265,6 +281,8 @@ const isRekeyPointerWrite = (step: string) =>
 
 beforeEach(() => {
   mockFiles.clear()
+  mockMtimes.clear()
+  mockClock.now = 0
   mockLog.length = 0
   mockOpenRealms.clear()
   mockKeychain.key = null
@@ -273,9 +291,12 @@ beforeEach(() => {
   mockRealmOpen.mockClear()
   ;(db as any).realm = null
   ;(db as any).queue = Promise.resolve()
-  ;(db as any).writtenThisProcess = new Set()
+  ;(db as any).madeCurrentThisProcess = new Set()
   mockSecureStore.getItemAsync.mockImplementation(async (k: string) => {
     if (k === 'wallet_file' && mockFail.pointerUnreadable) {
+      throw new Error('SecureStore read failed')
+    }
+    if (k === 'biometrics_status' && mockFail.biometricsStatusUnreadable) {
       throw new Error('SecureStore read failed')
     }
     return secure.get(k) ?? null
@@ -298,7 +319,10 @@ beforeEach(() => {
     .mockReset()
     .mockImplementation(async (key: string) => {
       if (mockFail.hang?.('keychain')) return mockNever()
-      if (mockFail.keychainStore) return false
+      const fail = mockFail.keychainStore
+      if (fail === true || (typeof fail === 'function' && fail(key))) {
+        return false
+      }
       mockLog.push('keychain store')
       mockKeychain.key = key
       return true
@@ -314,6 +338,7 @@ beforeEach(() => {
     .mockReset()
     .mockImplementation(async () => {
       if (mockFail.hang?.('keychain reset')) return mockNever()
+      if (mockFail.keychainResetRejects) throw new Error('Keychain failed')
       mockLog.push('keychain reset')
       mockKeychain.key = null
     })
@@ -409,21 +434,19 @@ describe.each([
     expect(walletFiles()).toEqual({ [name]: REAL_KEY })
   })
 
-  it('opens the old file with the legacy key if the new one is unreadable', async () => {
+  it('does not fall back to the old file if the new one will not open', async () => {
     walletEncryptedWith(oldKey)
     await db.unlock(PASSPHRASE)
-    const [first] = rekeyedNames()
+    const [name] = rekeyedNames()
     await db.lock()
     restart()
-    mockFail.open = (path) => path === `${DIR}/${first}`
+    mockFail.open = (path) => path === `${DIR}/${name}`
 
-    await db.unlock(PASSPHRASE)
+    await expect(db.unlock(PASSPHRASE)).rejects.toThrow('open failed')
 
-    expect(secure.get('privileged_key')).toBe(REAL_KEY)
-    const newest = rekeyedNames().sort().pop() as string
-    expect(newest).not.toBe(first)
-    expect(secure.get('wallet_file')).toBe(newest)
-    expect(currentFile()).toEqual(realmFile(REAL_KEY))
+    expect(openedKeys()).toEqual([REAL_KEY])
+    expect(secure.get('wallet_file')).toBe(name)
+    expect(Object.keys(walletFiles())).toHaveLength(2)
   })
 
   it('records the legacy derivation when re-keying fails', async () => {
@@ -637,16 +660,22 @@ describe('biometric unlock never rolls back to default.realm (item 1)', () => {
     expect(Object.keys(walletFiles())).toHaveLength(2)
   })
 
-  it('tries the legacy keys on default.realm even when the marker says current', async () => {
-    walletEncryptedWith(REAL_KEY)
-    secure.set('wallet_key_derivation', 'pbkdf2-sha512')
+  it.each([
+    ['pbkdf2-sha512', 1],
+    [null, 3]
+  ])(
+    'on default.realm with the marker %s, a wrong passphrase makes %i opens',
+    async (marker, opens) => {
+      walletEncryptedWith(REAL_KEY)
+      if (marker !== null) secure.set('wallet_key_derivation', marker)
 
-    await expect(db.unlock('wrong passphrase')).rejects.toThrow(
-      'Realm file decryption failed'
-    )
+      await expect(db.unlock('wrong passphrase')).rejects.toThrow(
+        'Realm file decryption failed'
+      )
 
-    expect(openedKeys()).toHaveLength(3)
-  })
+      expect(openedKeys()).toHaveLength(opens)
+    }
+  )
 
   it('needs no legacy keys when only re-keyed files exist', async () => {
     walletEncryptedWith(REAL_KEY, `${DIR}/wallet-500.realm`)
@@ -1070,5 +1099,177 @@ describe('reset', () => {
 
     await expect(db.reset()).resolves.toBeUndefined()
     expect(mockFiles.size).toBe(0)
+  })
+})
+
+describe('a pointed file that will not open (rule A)', () => {
+  function setUp() {
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-500.realm`, realmFile(REAL_KEY))
+    secure.set('wallet_file', 'wallet-500.realm')
+    secure.set('wallet_key_derivation', 'pbkdf2-sha512')
+    // A transient error, not a wrong key
+    mockFail.open = (path) => path === `${DIR}/wallet-500.realm`
+  }
+
+  function expectNothingChanged() {
+    expect(secure.get('wallet_file')).toBe('wallet-500.realm')
+    expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
+    expect(walletFiles()).toEqual({
+      'default.realm': LEGACY_KEY,
+      'wallet-500.realm': REAL_KEY
+    })
+    expect(mockLog.filter((e) => e.startsWith('unlink '))).toEqual([])
+  }
+
+  it('passphrase: reports the error and tries no other file', async () => {
+    setUp()
+
+    await expect(db.unlock(PASSPHRASE)).rejects.toThrow('open failed')
+
+    expect(mockRealmOpen.mock.calls.map(([c]) => c.path)).toEqual([
+      `${DIR}/wallet-500.realm`
+    ])
+    expectNothingChanged()
+    expect(await db.isUnlocked()).toBe(false)
+  })
+
+  it('biometrics: reports the error and tries no other file', async () => {
+    setUp()
+    enableBiometricsWith(REAL_KEY)
+
+    await expect(db.unlockWithBiometrics()).rejects.toThrow('open failed')
+
+    expectNothingChanged()
+  })
+})
+
+describe('choosing a file without a usable pointer (rule B)', () => {
+  it('takes the file written to last, not the newest name', async () => {
+    // A stale orphan with a newer name but an older modification time
+    walletEncryptedWith(REAL_KEY)
+    mockFiles.set(`${DIR}/wallet-900.realm`, realmFile(REAL_KEY))
+    mockMtimes.set(`${DIR}/wallet-900.realm`, 1)
+    mockMtimes.set(WALLET, 2)
+
+    await db.unlock(PASSPHRASE)
+
+    expect(mockRealmOpen.mock.calls.map(([c]) => c.path)).toEqual([WALLET])
+    expect(secure.get('wallet_file')).toBe('default.realm')
+    // Nothing is deleted in the process that chose the file...
+    expect(mockFiles.has(`${DIR}/wallet-900.realm`)).toBe(true)
+    await db.lock()
+    await db.unlock(PASSPHRASE)
+    expect(mockFiles.has(`${DIR}/wallet-900.realm`)).toBe(true)
+  })
+
+  it('takes a re-keyed file when it was written to last', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-900.realm`, realmFile(REAL_KEY))
+
+    await db.unlock(PASSPHRASE)
+
+    expect(openedKeys()).toEqual([REAL_KEY])
+    expect(secure.get('wallet_file')).toBe('wallet-900.realm')
+  })
+})
+
+describe('stored-key forward moves (rule C)', () => {
+  it('refuses a newer-named orphan written before the current file', async () => {
+    // An interrupted re-key left wallet-900 and the new key in the
+    // keychain; the user then kept writing to default.realm.
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-900.realm`, realmFile(REAL_KEY))
+    mockMtimes.set(`${DIR}/wallet-900.realm`, 1)
+    mockMtimes.set(WALLET, 2)
+    secure.set('wallet_file', 'default.realm')
+    enableBiometricsWith(REAL_KEY)
+
+    await expect(db.unlockWithBiometrics()).rejects.toThrow(
+      'Realm file decryption failed'
+    )
+
+    expect(secure.get('wallet_file')).toBe('default.realm')
+    expect(Object.keys(walletFiles()).sort()).toEqual([
+      'default.realm',
+      'wallet-900.realm'
+    ])
+  })
+
+  it('accepts one written after the current file', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-900.realm`, realmFile(REAL_KEY))
+    secure.set('wallet_file', 'default.realm')
+    enableBiometricsWith(REAL_KEY)
+
+    await db.unlockWithBiometrics()
+
+    expect(secure.get('wallet_file')).toBe('wallet-900.realm')
+  })
+})
+
+describe('re-key when the biometrics status cannot be read (rule E)', () => {
+  it('stays on the current file and key, and re-keys at the next unlock', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+    mockFail.biometricsStatusUnreadable = true
+
+    await db.unlock(PASSPHRASE)
+
+    expect(mockLog).not.toContainEqual(expect.stringMatching(/writeCopyTo/))
+    expect(secure.get('wallet_file')).toBe('default.realm')
+    expect(walletFiles()).toEqual({ 'default.realm': LEGACY_KEY })
+    expect(secure.get('privileged_key')).toBe(LEGACY_KEY)
+
+    await db.lock()
+    delete mockFail.biometricsStatusUnreadable
+    await db.unlock(PASSPHRASE)
+    expect(currentFile()).toEqual(realmFile(REAL_KEY))
+  })
+})
+
+describe('pointer write failing after biometrics was turned off (rule F)', () => {
+  function setUp() {
+    walletEncryptedWith(LEGACY_KEY)
+    secure.set('wallet_file', 'default.realm')
+    enableBiometricsWith(LEGACY_KEY)
+    mockFail.pointerWrite = true
+  }
+
+  it('turns biometrics back on with the old key', async () => {
+    setUp()
+    mockFail.keychainStore = (key) => key === REAL_KEY
+
+    await db.unlock(PASSPHRASE)
+
+    expect(walletFiles()).toEqual({ 'default.realm': LEGACY_KEY })
+    expect(secure.get('biometrics_status')).toBe('enabled')
+    expect(mockKeychain.key).toBe(LEGACY_KEY)
+    expect(secure.get('biometric_key_fingerprint')).toBe(
+      fingerprint(LEGACY_KEY)
+    )
+  })
+
+  it('leaves it off if the old key cannot be stored either', async () => {
+    setUp()
+    mockFail.keychainStore = true
+
+    await db.unlock(PASSPHRASE)
+
+    expect(secure.get('biometrics_status')).toBe('disabled')
+    expect(secure.has('biometric_key_fingerprint')).toBe(false)
+  })
+})
+
+describe('initialize with a failing keychain (rule G)', () => {
+  it('still resets biometric state and creates the wallet', async () => {
+    enableBiometricsWith('key-from-a-previous-install')
+    mockFail.keychainResetRejects = true
+
+    await db.initialize(PASSPHRASE)
+
+    expect(secure.get('biometrics_status')).toBe('disabled')
+    expect(secure.has('biometric_key_fingerprint')).toBe(false)
+    expect(await db.isUnlocked()).toBe(true)
+    expect(Object.keys(walletFiles())).toEqual(['default.realm'])
   })
 })
