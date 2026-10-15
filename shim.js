@@ -7,8 +7,8 @@ import { Buffer } from '@craftzdog/react-native-buffer'
 
 import * as ExpoCrypto from 'expo-crypto'
 
-// The same implementations Metro and Babel use for `crypto` imports
-import { createHash, pbkdf2Sync, randomBytes } from './crypto-polyfill.js'
+// The module Metro and Babel use for `crypto` imports
+import cryptoPolyfill from './crypto-polyfill.js'
 
 // eslint-disable-next-line no-undef
 global.crypto = {}
@@ -42,12 +42,10 @@ crypto.subtle = subtle
 
 // Also make crypto functions available globally for module imports
 global.crypto = global.crypto || {}
-global.crypto.pbkdf2Sync = pbkdf2Sync
-global.crypto.randomBytes = randomBytes
-global.crypto.createHash = createHash
+Object.assign(global.crypto, cryptoPolyfill)
 
-// Create a crypto module that can be imported
-const cryptoModule = { pbkdf2Sync, randomBytes, createHash }
+// The same module, for code that looks it up through these globals
+const cryptoModule = cryptoPolyfill
 
 // Make crypto functions available for imports
 global.__CRYPTO_POLYFILL__ = cryptoModule
