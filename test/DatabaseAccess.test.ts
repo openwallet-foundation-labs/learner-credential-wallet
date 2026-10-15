@@ -55,8 +55,12 @@ const mockLog: string[] = []
 const mockOpenRealms = new Set<{ path: string; isClosed: boolean }>()
 const mockKeychain: { key: string | null } = { key: null }
 const mockFail: {
-  /** Never finish this step: 'secure:<key>', 'unlink:<file>', 'keychain' */
+  /**
+   * Never finish this step: 'secure:<key>=<value>', 'unlink:<file>',
+   * 'keychain', 'keychain reset'
+   */
   hang?: (step: string) => boolean
+  pointerUnreadable?: boolean
   writeCopyTo?: boolean
   open?: (path: string, key: string) => boolean
   copyCountOff?: boolean
@@ -241,11 +245,23 @@ async function settle() {
 function restart() {
   ;(db as any).realm = null
   ;(db as any).queue = Promise.resolve()
+  ;(db as any).writtenThisProcess = new Set()
   for (const r of mockOpenRealms) r.isClosed = true
   for (const k of Object.keys(mockFail)) delete (mockFail as any)[k]
   mockLog.length = 0
   mockRealmOpen.mockClear()
 }
+
+/** Runs an operation until it reaches the step `hang` matches, then restarts. */
+async function crashAt(hang: (step: string) => boolean, run: () => unknown) {
+  mockFail.hang = hang
+  void run()
+  await settle()
+  restart()
+}
+
+const isRekeyPointerWrite = (step: string) =>
+  /^secure:wallet_file=wallet-\d+\.realm$/.test(step)
 
 beforeEach(() => {
   mockFiles.clear()
@@ -257,20 +273,25 @@ beforeEach(() => {
   mockRealmOpen.mockClear()
   ;(db as any).realm = null
   ;(db as any).queue = Promise.resolve()
-  mockSecureStore.getItemAsync.mockImplementation(
-    async (k: string) => secure.get(k) ?? null
-  )
+  ;(db as any).writtenThisProcess = new Set()
+  mockSecureStore.getItemAsync.mockImplementation(async (k: string) => {
+    if (k === 'wallet_file' && mockFail.pointerUnreadable) {
+      throw new Error('SecureStore read failed')
+    }
+    return secure.get(k) ?? null
+  })
   mockSecureStore.setItemAsync.mockImplementation(
     async (k: string, v: string) => {
-      if (mockFail.hang?.(`secure:${k}`)) return mockNever()
+      if (mockFail.hang?.(`secure:${k}=${v}`)) return mockNever()
       if (k === 'wallet_file' && mockFail.pointerWrite) {
         throw new Error('SecureStore failed')
       }
-      mockLog.push(`secure ${k}`)
+      mockLog.push(k === 'wallet_file' ? `pointer ${v}` : `secure ${k}=${v}`)
       secure.set(k, v)
     }
   )
   mockSecureStore.deleteItemAsync.mockImplementation(async (k: string) => {
+    mockLog.push(`delete ${k}`)
     secure.delete(k)
   })
   ;(storeInBiometricKeychain as jest.Mock)
@@ -292,6 +313,8 @@ beforeEach(() => {
   ;(resetBiometricKeychain as jest.Mock)
     .mockReset()
     .mockImplementation(async () => {
+      if (mockFail.hang?.('keychain reset')) return mockNever()
+      mockLog.push('keychain reset')
       mockKeychain.key = null
     })
   jest.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -309,7 +332,7 @@ it('uses distinct keys for each derivation of the test passphrase', () => {
 })
 
 describe('unlock: wallet already on the current key (PBKDF2-SHA512)', () => {
-  it('opens with the current key and never tries a legacy key', async () => {
+  it('opens with the current key and names default.realm in the pointer', async () => {
     walletEncryptedWith(REAL_KEY)
 
     await db.unlock(PASSPHRASE)
@@ -318,6 +341,7 @@ describe('unlock: wallet already on the current key (PBKDF2-SHA512)', () => {
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
     expect(secure.get('privileged_key_status')).toBe('unlocked')
     expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
+    expect(secure.get('wallet_file')).toBe('default.realm')
     expect(walletFiles()).toEqual({ 'default.realm': REAL_KEY })
   })
 
@@ -332,17 +356,6 @@ describe('unlock: wallet already on the current key (PBKDF2-SHA512)', () => {
 
     expect(openedKeys()).toEqual([REAL_KEY, REAL_KEY])
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
-  })
-
-  it('skips the legacy derivations for a wrong passphrase once it is known to be current', async () => {
-    walletEncryptedWith(REAL_KEY)
-    secure.set('wallet_key_derivation', 'pbkdf2-sha512')
-
-    await expect(db.unlock('wrong passphrase')).rejects.toThrow(
-      'Realm file decryption failed'
-    )
-
-    expect(openedKeys()).toHaveLength(1)
   })
 })
 
@@ -361,19 +374,11 @@ describe.each([
     await db.unlock(PASSPHRASE)
 
     const [name] = rekeyedNames()
-    expect(walletFiles()).toEqual({ [name]: REAL_KEY })
     expect(currentFile()).toEqual(realmFile(REAL_KEY))
     expect(openedKeys()).toEqual([...tried, REAL_KEY])
-    // The old file is deleted only after the pointer has moved.
-    const log = mockLog
-    expect(log.indexOf(`writeCopyTo ${name}`)).toBeGreaterThan(-1)
-    expect(log.indexOf('secure wallet_file')).toBeGreaterThan(
-      log.indexOf(`open ${name} ${REAL_KEY.slice(0, 8)}`)
+    expect(mockLog.indexOf(`pointer ${name}`)).toBeGreaterThan(
+      mockLog.indexOf(`open ${name} ${REAL_KEY.slice(0, 8)}`)
     )
-    expect(log.indexOf('unlink default.realm')).toBeGreaterThan(
-      log.indexOf('secure wallet_file')
-    )
-    expect(secure.get('wallet_file')).toBe(name)
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
     expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
     // The new file stays open as the wallet; the old one was closed.
@@ -382,15 +387,43 @@ describe.each([
     ).toEqual([`${DIR}/${name}`])
   })
 
-  it('opens with the current key only after re-keying', async () => {
+  it('keeps the old file until the new one has opened in a later process', async () => {
     walletEncryptedWith(oldKey)
     await db.unlock(PASSPHRASE)
+    const [name] = rekeyedNames()
+    expect(walletFiles()).toEqual({
+      'default.realm': oldKey,
+      [name]: REAL_KEY
+    })
+
+    // Same process: still kept
     await db.lock()
-    mockRealmOpen.mockClear()
+    await db.unlock(PASSPHRASE)
+    expect(Object.keys(walletFiles())).toHaveLength(2)
+
+    // Next process: the new file opens, so the old one goes
+    await db.lock()
+    restart()
+    await db.unlock(PASSPHRASE)
+    expect(openedKeys()).toEqual([REAL_KEY])
+    expect(walletFiles()).toEqual({ [name]: REAL_KEY })
+  })
+
+  it('opens the old file with the legacy key if the new one is unreadable', async () => {
+    walletEncryptedWith(oldKey)
+    await db.unlock(PASSPHRASE)
+    const [first] = rekeyedNames()
+    await db.lock()
+    restart()
+    mockFail.open = (path) => path === `${DIR}/${first}`
 
     await db.unlock(PASSPHRASE)
 
-    expect(openedKeys()).toEqual([REAL_KEY])
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+    const newest = rekeyedNames().sort().pop() as string
+    expect(newest).not.toBe(first)
+    expect(secure.get('wallet_file')).toBe(newest)
+    expect(currentFile()).toEqual(realmFile(REAL_KEY))
   })
 
   it('records the legacy derivation when re-keying fails', async () => {
@@ -407,8 +440,7 @@ describe.each([
 describe('unlock: a re-key failure before the switch leaves the old file current', () => {
   async function expectOnLegacyKeyAndIntact() {
     expect(walletFiles()).toEqual({ 'default.realm': LEGACY_KEY })
-    expect(currentFile()).toEqual(realmFile(LEGACY_KEY))
-    expect(secure.has('wallet_file')).toBe(false)
+    expect(secure.get('wallet_file')).toBe('default.realm')
     expect(secure.get('privileged_key_status')).toBe('unlocked')
     expect(secure.get('privileged_key')).toBe(LEGACY_KEY)
     expect(mockLog).not.toContain('unlink default.realm')
@@ -418,7 +450,6 @@ describe('unlock: a re-key failure before the switch leaves the old file current
     for (const k of Object.keys(mockFail)) delete (mockFail as any)[k]
     await db.unlock(PASSPHRASE)
     expect(currentFile()).toEqual(realmFile(REAL_KEY))
-    expect(Object.keys(walletFiles())).toHaveLength(1)
   }
 
   it('when writing the copy fails', async () => {
@@ -442,8 +473,9 @@ describe('unlock: a re-key failure before the switch leaves the old file current
     await expectOnLegacyKeyAndIntact()
   })
 
-  it('when writing the pointer fails', async () => {
+  it('when writing the pointer to the new file fails', async () => {
     walletEncryptedWith(LEGACY_KEY)
+    secure.set('wallet_file', 'default.realm')
     mockFail.pointerWrite = true
     await db.unlock(PASSPHRASE)
     await expectOnLegacyKeyAndIntact()
@@ -451,6 +483,7 @@ describe('unlock: a re-key failure before the switch leaves the old file current
 
   it('and puts the old key back in the keychain', async () => {
     walletEncryptedWith(LEGACY_KEY)
+    secure.set('wallet_file', 'default.realm')
     enableBiometricsWith(LEGACY_KEY)
     mockFail.pointerWrite = true
 
@@ -465,17 +498,11 @@ describe('unlock: a re-key failure before the switch leaves the old file current
 })
 
 describe('crash before the pointer write', () => {
-  async function crashBeforePointer(hang: string) {
+  it('the old file stays current and a passphrase unlock re-keys again', async () => {
     walletEncryptedWith(LEGACY_KEY)
-    mockFail.hang = (step) => step === hang
-    void db.unlock(PASSPHRASE)
-    await settle()
-    restart()
-  }
-
-  it('the old file is still current and a passphrase unlock re-keys again', async () => {
-    await crashBeforePointer('secure:wallet_file')
+    await crashAt(isRekeyPointerWrite, () => db.unlock(PASSPHRASE))
     const [orphan] = rekeyedNames()
+    expect(secure.get('wallet_file')).toBe('default.realm')
     expect(walletFiles()).toEqual({
       'default.realm': LEGACY_KEY,
       [orphan]: REAL_KEY
@@ -485,16 +512,20 @@ describe('crash before the pointer write', () => {
     await db.unlock(PASSPHRASE)
 
     expect(currentFile()).toEqual(realmFile(REAL_KEY))
-    expect(Object.keys(walletFiles())).toHaveLength(1)
+    expect(secure.get('wallet_file')).not.toBe(orphan)
+    // Once the new file has opened in a later process, everything older,
+    // including the orphan, goes.
+    await db.lock()
+    restart()
+    await db.unlock(PASSPHRASE)
+    expect(Object.keys(walletFiles())).toEqual([secure.get('wallet_file')])
   })
 
   it('biometrics, keychain already holding the new key: adopts the new file', async () => {
     walletEncryptedWith(LEGACY_KEY)
     enableBiometricsWith(LEGACY_KEY)
-    mockFail.hang = (step) => step === 'secure:wallet_file'
-    void db.unlock(PASSPHRASE)
-    await settle()
-    restart()
+    secure.set('wallet_key_derivation', 'legacy-placeholder')
+    await crashAt(isRekeyPointerWrite, () => db.unlock(PASSPHRASE))
     expect(mockKeychain.key).toBe(REAL_KEY)
     expect(secure.has('biometric_key_fingerprint')).toBe(false)
 
@@ -502,38 +533,45 @@ describe('crash before the pointer write', () => {
 
     const [name] = rekeyedNames()
     expect(secure.get('wallet_file')).toBe(name)
-    expect(walletFiles()).toEqual({ [name]: REAL_KEY })
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
     expect(secure.get('biometric_key_fingerprint')).toBe(fingerprint(REAL_KEY))
-    expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
+    // A stored key does not say how it was derived.
+    expect(secure.has('wallet_key_derivation')).toBe(false)
+    // Nothing is deleted on the unlock that switched files.
+    expect(Object.keys(walletFiles())).toHaveLength(2)
   })
 
-  it('biometrics, keychain still holding the old key: opens the old file', async () => {
+  it('biometrics, keychain still holding the old key: opens the old file and keeps the newer one', async () => {
     walletEncryptedWith(LEGACY_KEY)
     enableBiometricsWith(LEGACY_KEY)
-    mockFail.hang = (step) => step === 'keychain'
-    void db.unlock(PASSPHRASE)
-    await settle()
-    restart()
+    await crashAt(
+      (step) => step === 'keychain',
+      () => db.unlock(PASSPHRASE)
+    )
     expect(mockKeychain.key).toBe(LEGACY_KEY)
+    const [orphan] = rekeyedNames()
 
     await db.unlockWithBiometrics()
 
-    expect(walletFiles()).toEqual({ 'default.realm': LEGACY_KEY })
     expect(secure.get('privileged_key')).toBe(LEGACY_KEY)
+    expect(secure.get('wallet_file')).toBe('default.realm')
+    expect(walletFiles()).toEqual({
+      'default.realm': LEGACY_KEY,
+      [orphan]: REAL_KEY
+    })
     expect(secure.get('biometric_key_fingerprint')).toBe(
       fingerprint(LEGACY_KEY)
     )
   })
 })
 
-describe('crash after the pointer write, before the old file is deleted', () => {
+describe('crash right after the pointer write', () => {
   async function crashAfterPointer() {
     walletEncryptedWith(LEGACY_KEY)
-    mockFail.hang = (step) => step === 'unlink:default.realm'
-    void db.unlock(PASSPHRASE)
-    await settle()
-    restart()
+    await crashAt(
+      (step) => step === 'secure:privileged_key_status=unlocked',
+      () => db.unlock(PASSPHRASE)
+    )
     const [name] = rekeyedNames()
     expect(secure.get('wallet_file')).toBe(name)
     expect(walletFiles()).toEqual({
@@ -565,8 +603,100 @@ describe('crash after the pointer write, before the old file is deleted', () => 
   })
 })
 
-describe('pointer naming a missing file', () => {
-  it('falls back to default.realm and repairs the pointer', async () => {
+describe('biometric unlock never rolls back to default.realm (item 1)', () => {
+  it('does not adopt default.realm when the pointer names a re-keyed file', async () => {
+    // A re-keyed wallet whose old file is still kept, and a keychain that
+    // somehow holds the old key.
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-500.realm`, realmFile(REAL_KEY))
+    secure.set('wallet_file', 'wallet-500.realm')
+    secure.set('wallet_key_derivation', 'pbkdf2-sha512')
+    enableBiometricsWith(LEGACY_KEY)
+
+    await expect(db.unlockWithBiometrics()).rejects.toThrow()
+
+    expect(secure.get('wallet_file')).toBe('wallet-500.realm')
+    expect(secure.get('wallet_key_derivation')).toBe('pbkdf2-sha512')
+    expect(walletFiles()).toEqual({
+      'default.realm': LEGACY_KEY,
+      'wallet-500.realm': REAL_KEY
+    })
+    await db.unlock(PASSPHRASE)
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+  })
+
+  it('never adopts an older re-keyed file than the current one', async () => {
+    walletEncryptedWith(REAL_KEY, `${DIR}/wallet-500.realm`)
+    mockFiles.set(`${DIR}/wallet-400.realm`, realmFile(LEGACY_KEY))
+    secure.set('wallet_file', 'wallet-500.realm')
+    enableBiometricsWith(LEGACY_KEY)
+
+    await expect(db.unlockWithBiometrics()).rejects.toThrow()
+
+    expect(secure.get('wallet_file')).toBe('wallet-500.realm')
+    expect(Object.keys(walletFiles())).toHaveLength(2)
+  })
+
+  it('tries the legacy keys on default.realm even when the marker says current', async () => {
+    walletEncryptedWith(REAL_KEY)
+    secure.set('wallet_key_derivation', 'pbkdf2-sha512')
+
+    await expect(db.unlock('wrong passphrase')).rejects.toThrow(
+      'Realm file decryption failed'
+    )
+
+    expect(openedKeys()).toHaveLength(3)
+  })
+
+  it('needs no legacy keys when only re-keyed files exist', async () => {
+    walletEncryptedWith(REAL_KEY, `${DIR}/wallet-500.realm`)
+    secure.set('wallet_file', 'wallet-500.realm')
+
+    await expect(db.unlock('wrong passphrase')).rejects.toThrow(
+      'Realm file decryption failed'
+    )
+
+    expect(openedKeys()).toHaveLength(1)
+  })
+})
+
+describe('no usable pointer (item 4)', () => {
+  it.each([
+    ['absent', () => undefined],
+    ['unreadable', () => (mockFail.pointerUnreadable = true)],
+    ['naming a missing file', () => secure.set('wallet_file', 'wallet-1.realm')]
+  ])(
+    'with the pointer %s, prefers the newest re-keyed file over default.realm',
+    async (_, setUp) => {
+      walletEncryptedWith(LEGACY_KEY)
+      mockFiles.set(`${DIR}/wallet-500.realm`, realmFile(REAL_KEY))
+      setUp()
+
+      await db.unlock(PASSPHRASE)
+
+      expect(openedKeys()).toEqual([REAL_KEY])
+      expect(secure.get('privileged_key')).toBe(REAL_KEY)
+      // Not deleted on a fallback: default.realm stays for now.
+      expect(Object.keys(walletFiles()).sort()).toEqual([
+        'default.realm',
+        'wallet-500.realm'
+      ])
+    }
+  )
+
+  it('still tries the legacy keys on default.realm if the re-keyed file fails', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-500.realm`, realmFile(SHA1_KEY))
+
+    await db.unlock(PASSPHRASE)
+
+    expect(secure.get('privileged_key')).toBe(REAL_KEY)
+    expect(currentFile()).toEqual(realmFile(REAL_KEY))
+    // The unreadable newer file was not deleted.
+    expect(mockFiles.has(`${DIR}/wallet-500.realm`)).toBe(true)
+  })
+
+  it('falls back to default.realm when the named file is gone', async () => {
     walletEncryptedWith(REAL_KEY)
     secure.set('wallet_file', 'wallet-123.realm')
 
@@ -577,15 +707,15 @@ describe('pointer naming a missing file', () => {
     expect(secure.get('privileged_key')).toBe(REAL_KEY)
   })
 
-  it('falls back to the newest re-keyed file when default.realm is gone', async () => {
-    walletEncryptedWith(REAL_KEY, `${DIR}/wallet-200.realm`)
-    mockFiles.set(`${DIR}/wallet-100.realm`, realmFile(LEGACY_KEY))
-    secure.set('wallet_file', 'wallet-300.realm')
+  it('never deletes a file newer than the current one', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+    mockFiles.set(`${DIR}/wallet-500.realm`, realmFile(SHA1_KEY))
+    secure.set('wallet_file', 'default.realm')
+    mockFail.writeCopyTo = true
 
     await db.unlock(PASSPHRASE)
 
-    expect(secure.get('wallet_file')).toBe('wallet-200.realm')
-    expect(walletFiles()).toEqual({ 'wallet-200.realm': REAL_KEY })
+    expect(mockFiles.has(`${DIR}/wallet-500.realm`)).toBe(true)
   })
 })
 
@@ -596,8 +726,9 @@ describe('unlock: biometric keychain', () => {
 
     await db.unlock(PASSPHRASE)
 
+    const [name] = rekeyedNames()
     expect(mockLog.indexOf('keychain store')).toBeLessThan(
-      mockLog.indexOf('secure wallet_file')
+      mockLog.indexOf(`pointer ${name}`)
     )
     expect(mockKeychain.key).toBe(REAL_KEY)
     expect(secure.get('biometrics_status')).toBe('enabled')
@@ -630,17 +761,65 @@ describe('unlock: biometric keychain', () => {
     expect(mockKeychain.key).toBe(REAL_KEY)
     expect(secure.get('biometric_key_fingerprint')).toBe(fingerprint(REAL_KEY))
   })
+})
 
-  it('switches anyway, and turns biometrics off, if the new key cannot be stored', async () => {
+describe('re-key when the new key cannot be stored (item 2)', () => {
+  it('turns biometrics off before switching files', async () => {
     walletEncryptedWith(LEGACY_KEY)
     enableBiometricsWith(LEGACY_KEY)
     mockFail.keychainStore = true
 
     await db.unlock(PASSPHRASE)
 
+    const [name] = rekeyedNames()
+    const switchAt = mockLog.indexOf(`pointer ${name}`)
+    expect(switchAt).toBeGreaterThan(-1)
+    expect(mockLog.indexOf('secure biometrics_status=disabled')).toBeLessThan(
+      switchAt
+    )
+    expect(mockLog.indexOf('keychain reset')).toBeLessThan(switchAt)
     expect(currentFile()).toEqual(realmFile(REAL_KEY))
     expect(secure.get('biometrics_status')).toBe('disabled')
     expect(secure.has('biometric_key_fingerprint')).toBe(false)
+  })
+
+  it('a crash right after the switch leaves biometrics off', async () => {
+    walletEncryptedWith(LEGACY_KEY)
+    enableBiometricsWith(LEGACY_KEY)
+    mockFail.keychainStore = true
+    await crashAt(
+      (step) => step === 'secure:privileged_key_status=unlocked',
+      () => db.unlock(PASSPHRASE)
+    )
+
+    expect(secure.get('biometrics_status')).toBe('disabled')
+    await expect(db.unlockWithBiometrics()).rejects.toThrow(
+      'Biometric authentication is not enabled.'
+    )
+  })
+})
+
+describe('disableBiometrics (item 3)', () => {
+  it('drops the fingerprint before anything else', async () => {
+    enableBiometricsWith(REAL_KEY)
+    await crashAt(
+      (step) => step === 'keychain reset',
+      () => db.disableBiometrics()
+    )
+
+    expect(secure.has('biometric_key_fingerprint')).toBe(false)
+    expect(secure.get('biometrics_status')).toBe('disabled')
+  })
+
+  it('leaves no fingerprint even if it stops at the status write', async () => {
+    enableBiometricsWith(REAL_KEY)
+    await crashAt(
+      (step) => step === 'secure:biometrics_status=disabled',
+      () => db.disableBiometrics()
+    )
+
+    expect(secure.has('biometric_key_fingerprint')).toBe(false)
+    expect(mockKeychain.key).toBe(REAL_KEY)
   })
 })
 
@@ -703,8 +882,9 @@ describe('concurrency', () => {
 
     await Promise.all([db.unlock(PASSPHRASE), db.unlockWithBiometrics()])
 
+    const [name] = rekeyedNames()
     expect(mockLog.indexOf('keychain read')).toBeLessThan(
-      mockLog.indexOf('secure wallet_file')
+      mockLog.indexOf(`pointer ${name}`)
     )
     // The biometric unlock found the wallet already unlocked.
     expect(openedKeys()).toHaveLength(4)
@@ -769,13 +949,26 @@ describe('initialize', () => {
     }
   )
 
-  it('drops a pointer to a file that is gone', async () => {
+  it('replaces a pointer to a file that is gone', async () => {
     secure.set('wallet_file', 'wallet-123.realm')
 
     await db.initialize(PASSPHRASE)
 
-    expect(secure.has('wallet_file')).toBe(false)
+    expect(secure.get('wallet_file')).toBe('default.realm')
     expect(Object.keys(walletFiles())).toEqual(['default.realm'])
+  })
+
+  it('resets biometric state left by a previous install (item 6)', async () => {
+    enableBiometricsWith('key-from-a-previous-install')
+
+    await db.initialize(PASSPHRASE)
+
+    expect(secure.get('biometrics_status')).toBe('disabled')
+    expect(secure.has('biometric_key_fingerprint')).toBe(false)
+    expect(mockKeychain.key).toBeNull()
+    await expect(db.unlockWithBiometrics()).rejects.toThrow(
+      'Biometric authentication is not enabled.'
+    )
   })
 })
 
@@ -790,7 +983,7 @@ describe('lock', () => {
     await db.lock()
 
     expect(open[0].isClosed).toBe(true)
-    expect(mockLog.indexOf('secure privileged_key_status')).toBeLessThan(
+    expect(mockLog.indexOf('secure privileged_key_status=locked')).toBeLessThan(
       mockLog.indexOf('close default.realm')
     )
   })
